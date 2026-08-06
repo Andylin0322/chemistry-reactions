@@ -6949,29 +6949,50 @@ document.getElementById('importInput').addEventListener('change', function(e){
 });
 
 // ---- feedback / bug reports ----
-// No backend of our own -- if FEEDBACK_ENDPOINT is set to a form-submission
-// URL (e.g. a free Formspree form at https://formspree.io, which both
-// emails every submission to whoever owns the form AND keeps a dashboard
-// you can check later -- satisfying "reach my email" and "a centralised
-// place" at once), reports POST there directly. Left blank, it falls back
-// to a prefilled mailto: link instead, so the feature works immediately
-// with zero setup, just with a manual "hit send" step in the user's own
-// mail client.
-var FEEDBACK_ENDPOINT = ''; // e.g. 'https://formspree.io/f/xxxxxxxx' -- set this after creating a free form at formspree.io tied to your inbox.
+// Submits straight into a Google Sheet you own -- no dashboard/account for
+// the STUDENT to sign into, no email client, nothing to open: the request
+// goes out via fetch() in the background while they stay on the page the
+// whole time. Google's `formResponse` endpoint doesn't send back CORS
+// headers, so the request has to go in `mode:'no-cors'` -- that makes the
+// response opaque (status/body unreadable), so success is assumed once the
+// request is dispatched without a network-level exception (offline, ad
+// blocker, bad URL are the only things fetch can actually surface here).
+// This is the standard, widely-used pattern for posting into Google Forms
+// from client-side JS.
+//
+// One-time setup (~3 minutes), if GOOGLE_FORM_ACTION is still blank below:
+//   1. Create a Google Form with exactly two questions, IN THIS ORDER:
+//      a short-answer "Message" and a paragraph "Details".
+//   2. Top-right 3-dot menu -> "Get pre-filled link" -> type anything into
+//      both questions -> "Get link" -> open that link and look at its URL.
+//      It contains "entry.XXXXXXXXX=..." once per question, in the same
+//      order you added them -- copy those two numbers into
+//      GOOGLE_FORM_ENTRY_MESSAGE / GOOGLE_FORM_ENTRY_DETAILS below.
+//   3. Copy the form's own edit-mode URL and change "viewform" to
+//      "formResponse" at the end -- that's GOOGLE_FORM_ACTION.
+//   4. Responses land in the Sheet you get to from the form's "Responses"
+//      tab (top-right green Sheets icon creates one if it doesn't exist).
+// Left blank, it falls back to a prefilled mailto: link instead, so the
+// feature works immediately with zero setup, just with a manual "hit send"
+// step in the student's own mail client.
+var GOOGLE_FORM_ACTION = ''; // e.g. 'https://docs.google.com/forms/d/e/1FAIpQLS.../formResponse'
+var GOOGLE_FORM_ENTRY_MESSAGE = ''; // e.g. 'entry.123456789'
+var GOOGLE_FORM_ENTRY_DETAILS = ''; // e.g. 'entry.987654321'
 var FEEDBACK_EMAIL = 'andrewlinzihao@gmail.com';
 
 function sendFeedback(payload){
   var body = Object.assign({ page: location.href, userAgent: navigator.userAgent, timestamp: new Date().toISOString() }, payload);
-  if(FEEDBACK_ENDPOINT){
-    return fetch(FEEDBACK_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(function(res){
-      if(!res.ok) throw new Error('server returned ' + res.status);
-      return { ok:true, via:'endpoint' };
-    });
+
+  if(GOOGLE_FORM_ACTION && GOOGLE_FORM_ENTRY_MESSAGE && GOOGLE_FORM_ENTRY_DETAILS){
+    var details = Object.keys(body).filter(function(k){ return k!=='message'; })
+      .map(function(k){ return k + ': ' + body[k]; }).join('\n');
+    var fd = new FormData();
+    fd.append(GOOGLE_FORM_ENTRY_MESSAGE, body.message);
+    fd.append(GOOGLE_FORM_ENTRY_DETAILS, details);
+    return fetch(GOOGLE_FORM_ACTION, { method:'POST', mode:'no-cors', body:fd })
+      .then(function(){ return { ok:true, via:'google-form' }; });
   }
+
   var subject = encodeURIComponent('[' + (payload.type==='bug-report' ? 'Bug report' : 'Feedback') + '] H2 Chemistry Reaction Drill');
   var lines = Object.keys(body).map(function(k){ return k + ': ' + body[k]; });
   window.location.href = 'mailto:' + FEEDBACK_EMAIL + '?subject=' + subject + '&body=' + encodeURIComponent(lines.join('\n'));
