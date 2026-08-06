@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <title>H2 Chemistry Reaction Drill</title>
+<!-- Vercel Web Analytics: counts visits/unique visitors, viewable in the
+     Vercel dashboard for this project. Does nothing until "Web Analytics"
+     is turned on for the project at vercel.com (Project, Analytics tab);
+     Vercel only serves a real script at this path once that's enabled, so
+     this tag is a harmless 404 until then. No extra account, no other
+     setup needed. -->
+<script defer src="/_vercel/insights/script.js"></script>
 <style>
   :root {
     /* Same light "lab notebook" palette as the molecule builder modal
@@ -336,6 +343,32 @@
   .feedbackActions button { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; font-size: 0.88rem; }
   .feedbackActions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .feedbackActions button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .feedbackSuccessOverlay { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 34px 10px; }
+  .feedbackSuccessOverlay.hidden { display: none; }
+  .feedbackCheckCircle {
+    position: relative; width: 64px; height: 64px; border-radius: 50%;
+    background: var(--good); display: flex; align-items: center; justify-content: center;
+    animation: feedbackPop .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .feedbackCheckCircle svg { width: 32px; height: 32px; overflow: visible; }
+  .feedbackCheckCircle path {
+    stroke: #fff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 24; stroke-dashoffset: 24;
+    animation: feedbackDrawCheck .35s .15s ease forwards;
+  }
+  .feedbackSuccessText { font-size: 0.95rem; font-weight: 600; color: var(--good); animation: feedbackPop .4s .1s cubic-bezier(.34,1.56,.64,1) backwards; }
+  .feedbackSpark {
+    position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    left: 50%; top: 50%; opacity: 0;
+    animation: feedbackSpark .6s .2s ease-out forwards;
+  }
+  @keyframes feedbackPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes feedbackDrawCheck { to { stroke-dashoffset: 0; } }
+  @keyframes feedbackSpark {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
+  }
 </style>
 </head>
 <body>
@@ -482,15 +515,31 @@
       <h2 id="feedbackModalTitle">Feedback</h2>
       <button type="button" class="modalCloseX" id="feedbackCloseBtn" aria-label="Close">✕</button>
     </div>
-    <div id="feedbackContextBox" class="feedbackContextBox hidden"></div>
-    <label class="feedbackFieldLabel" for="feedbackMessage">What's wrong, or your feedback</label>
-    <textarea id="feedbackMessage" class="feedbackTextarea" placeholder="Describe what you saw and what you expected instead…"></textarea>
-    <label class="feedbackFieldLabel" for="feedbackContactEmail">Your email (optional, only if you'd like a reply)</label>
-    <input type="email" id="feedbackContactEmail" class="feedbackInput" placeholder="you@example.com">
-    <div id="feedbackStatus" class="feedbackStatus hidden"></div>
-    <div class="feedbackActions">
-      <button type="button" id="feedbackCancelBtn">Cancel</button>
-      <button type="button" id="feedbackSubmitBtn" class="primary">Send</button>
+    <div id="feedbackFormFields">
+      <div id="feedbackContextBox" class="feedbackContextBox hidden"></div>
+      <label class="feedbackFieldLabel" for="feedbackMessage">What's wrong, or your feedback</label>
+      <textarea id="feedbackMessage" class="feedbackTextarea" placeholder="Describe what you saw and what you expected instead…"></textarea>
+      <label class="feedbackFieldLabel" for="feedbackContactEmail">Your email (optional, only if you'd like a reply)</label>
+      <input type="email" id="feedbackContactEmail" class="feedbackInput" placeholder="you@example.com">
+      <div id="feedbackStatus" class="feedbackStatus hidden"></div>
+      <div class="feedbackActions">
+        <button type="button" id="feedbackCancelBtn">Cancel</button>
+        <button type="button" id="feedbackSubmitBtn" class="primary">Send</button>
+      </div>
+    </div>
+    <div id="feedbackSuccessOverlay" class="feedbackSuccessOverlay hidden">
+      <div class="feedbackCheckCircle">
+        <svg viewBox="0 0 24 24"><path d="M4 12.5 L9.5 18 L20 5.5"/></svg>
+        <span class="feedbackSpark" style="--dx:-42px;--dy:-42px;"></span>
+        <span class="feedbackSpark" style="--dx:0px;--dy:-58px;"></span>
+        <span class="feedbackSpark" style="--dx:42px;--dy:-42px;"></span>
+        <span class="feedbackSpark" style="--dx:58px;--dy:0px;"></span>
+        <span class="feedbackSpark" style="--dx:42px;--dy:42px;"></span>
+        <span class="feedbackSpark" style="--dx:0px;--dy:58px;"></span>
+        <span class="feedbackSpark" style="--dx:-42px;--dy:42px;"></span>
+        <span class="feedbackSpark" style="--dx:-58px;--dy:0px;"></span>
+      </div>
+      <div class="feedbackSuccessText">Sent — thank you!</div>
     </div>
   </div>
 </div>
@@ -6948,54 +6997,28 @@ document.getElementById('importInput').addEventListener('change', function(e){
   reader.readAsText(file);
 });
 
-// ---- feedback / bug reports ----
-// Submits straight into a Google Sheet you own -- no dashboard/account for
-// the STUDENT to sign into, no email client, nothing to open: the request
-// goes out via fetch() in the background while they stay on the page the
-// whole time. Google's `formResponse` endpoint doesn't send back CORS
-// headers, so the request has to go in `mode:'no-cors'` -- that makes the
-// response opaque (status/body unreadable), so success is assumed once the
-// request is dispatched without a network-level exception (offline, ad
-// blocker, bad URL are the only things fetch can actually surface here).
-// This is the standard, widely-used pattern for posting into Google Forms
-// from client-side JS.
-//
-// One-time setup (~3 minutes), if GOOGLE_FORM_ACTION is still blank below:
-//   1. Create a Google Form with exactly two questions, IN THIS ORDER:
-//      a short-answer "Message" and a paragraph "Details".
-//   2. Top-right 3-dot menu -> "Get pre-filled link" -> type anything into
-//      both questions -> "Get link" -> open that link and look at its URL.
-//      It contains "entry.XXXXXXXXX=..." once per question, in the same
-//      order you added them -- copy those two numbers into
-//      GOOGLE_FORM_ENTRY_MESSAGE / GOOGLE_FORM_ENTRY_DETAILS below.
-//   3. Copy the form's own edit-mode URL and change "viewform" to
-//      "formResponse" at the end -- that's GOOGLE_FORM_ACTION.
-//   4. Responses land in the Sheet you get to from the form's "Responses"
-//      tab (top-right green Sheets icon creates one if it doesn't exist).
-// Left blank, it falls back to a prefilled mailto: link instead, so the
-// feature works immediately with zero setup, just with a manual "hit send"
-// step in the student's own mail client.
-var GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSc3v73sBRFz8VR290rPPAe4vSxwRKn5z9zTCxCF6FAnrAbBCQ/viewform'; 
-var GOOGLE_FORM_ENTRY_MESSAGE = 'entry.1685840369'; // e.g. 'entry.123456789'
-var GOOGLE_FORM_ENTRY_DETAILS = 'entry.1012638416'; // e.g. 'entry.987654321'
+var GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSc3v73sBRFz8VR290rPPAe4vSxwRKn5z9zTCxCF6FAnrAbBCQ/viewform';
+var GOOGLE_FORM_ENTRY_MESSAGE = 'entry.1685840369';
+var GOOGLE_FORM_ENTRY_EMAIL = 'entry.1012638416'; 
+var GOOGLE_FORM_ENTRY_CONTEXT = 'entry.1181194142';
 
 function sendFeedback(payload){
-  var body = Object.assign({ page: location.href, userAgent: navigator.userAgent, timestamp: new Date().toISOString() }, payload);
+  var fd = new FormData();
+  fd.append(GOOGLE_FORM_ENTRY_MESSAGE, payload.message);
+  if(GOOGLE_FORM_ENTRY_EMAIL) fd.append(GOOGLE_FORM_ENTRY_EMAIL, payload.contactEmail || '');
+  if(GOOGLE_FORM_ENTRY_CONTEXT) fd.append(GOOGLE_FORM_ENTRY_CONTEXT, payload.context || '');
+  var action = GOOGLE_FORM_ACTION.replace(/\/viewform.*$/, '/formResponse');
+  return fetch(action, { method:'POST', mode:'no-cors', body:fd })
+    .then(function(){ return { ok:true }; });
+}
 
-  if(GOOGLE_FORM_ACTION && GOOGLE_FORM_ENTRY_MESSAGE && GOOGLE_FORM_ENTRY_DETAILS){
-    var details = Object.keys(body).filter(function(k){ return k!=='message'; })
-      .map(function(k){ return k + ': ' + body[k]; }).join('\n');
-    var fd = new FormData();
-    fd.append(GOOGLE_FORM_ENTRY_MESSAGE, body.message);
-    fd.append(GOOGLE_FORM_ENTRY_DETAILS, details);
-    return fetch(GOOGLE_FORM_ACTION, { method:'POST', mode:'no-cors', body:fd })
-      .then(function(){ return { ok:true, via:'google-form' }; });
-  }
-
-  var subject = encodeURIComponent('[' + (payload.type==='bug-report' ? 'Bug report' : 'Feedback') + '] H2 Chemistry Reaction Drill');
-  var lines = Object.keys(body).map(function(k){ return k + ': ' + body[k]; });
-  window.location.href = 'mailto:' + FEEDBACK_EMAIL + '?subject=' + subject + '&body=' + encodeURIComponent(lines.join('\n'));
-  return Promise.resolve({ ok:true, via:'mailto' });
+// Turns a context object (see buildQuestionContext/buildDistinguishContext
+// below) into the plain multi-line text that fills the "Question details"
+// column -- '' (and so an empty column) when there's no context at all,
+// i.e. a plain feedback submission rather than a mistake report.
+function contextToText(ctx){
+  if(!ctx) return '';
+  return Object.keys(ctx).map(function(k){ return k + ': ' + ctx[k]; }).join('\n');
 }
 
 // Compact, reproducible summary of the CURRENT reaction-drill question --
@@ -7045,12 +7068,22 @@ function openFeedbackModal(type, contextObj){
   statusEl.classList.add('hidden');
   statusEl.classList.remove('feedbackStatusGood', 'feedbackStatusBad');
   document.getElementById('feedbackSubmitBtn').disabled = false;
-  document.getElementById('feedbackOverlay').dataset.type = type;
+  document.getElementById('feedbackFormFields').classList.remove('hidden');
+  document.getElementById('feedbackSuccessOverlay').classList.add('hidden');
   document.getElementById('feedbackOverlay').classList.add('open');
   document.getElementById('feedbackMessage').focus();
 }
 function closeFeedbackModal(){
   document.getElementById('feedbackOverlay').classList.remove('open');
+}
+// Swaps the form for a brief animated checkmark + "firework" burst, then
+// closes on its own -- much clearer confirmation that a silent background
+// POST (see sendFeedback) actually went through than the modal just
+// vanishing with no acknowledgment at all.
+function showFeedbackSuccess(){
+  document.getElementById('feedbackFormFields').classList.add('hidden');
+  document.getElementById('feedbackSuccessOverlay').classList.remove('hidden');
+  setTimeout(closeFeedbackModal, 1300);
 }
 
 document.getElementById('openFeedbackBtn').addEventListener('click', function(){ openFeedbackModal('feedback', null); });
@@ -7070,28 +7103,26 @@ document.getElementById('feedbackOverlay').addEventListener('click', function(ev
 document.getElementById('feedbackSubmitBtn').addEventListener('click', function(){
   var message = document.getElementById('feedbackMessage').value.trim();
   if(!message){ alert('Please describe the issue or your feedback first.'); return; }
-  var type = document.getElementById('feedbackOverlay').dataset.type;
-  var payload = { type: type, message: message, contactEmail: document.getElementById('feedbackContactEmail').value.trim() };
-  if(feedbackContext){
-    Object.keys(feedbackContext).forEach(function(k){ payload['context_'+k] = feedbackContext[k]; });
-  }
+  var payload = {
+    message: message,
+    contactEmail: document.getElementById('feedbackContactEmail').value.trim(),
+    context: contextToText(feedbackContext)
+  };
   var statusEl = document.getElementById('feedbackStatus');
   var btn = document.getElementById('feedbackSubmitBtn');
   btn.disabled = true;
-  statusEl.classList.remove('hidden', 'feedbackStatusGood', 'feedbackStatusBad');
-  statusEl.textContent = 'Sending…';
-  sendFeedback(payload).then(function(result){
-    statusEl.classList.add('feedbackStatusGood');
-    if(result.via==='mailto'){
-      statusEl.textContent = 'Opening your email app — please hit send there to finish.';
-      setTimeout(closeFeedbackModal, 2200);
-    } else {
-      statusEl.textContent = 'Thanks — feedback sent!';
-      setTimeout(closeFeedbackModal, 1400);
-    }
+  statusEl.classList.add('hidden');
+  statusEl.classList.remove('feedbackStatusGood', 'feedbackStatusBad');
+  // The POST itself is silent/backgrounded (see sendFeedback), but the
+  // UI now gives a clear animated confirmation before auto-closing --
+  // see showFeedbackSuccess.
+  sendFeedback(payload).then(function(){
+    btn.disabled = false;
+    showFeedbackSuccess();
   }).catch(function(err){
+    statusEl.classList.remove('hidden');
     statusEl.classList.add('feedbackStatusBad');
-    statusEl.textContent = "Couldn't send automatically (" + err.message + "). Please email " + FEEDBACK_EMAIL + ' directly with your message.';
+    statusEl.textContent = "Couldn't send (" + err.message + "). Please try again.";
     btn.disabled = false;
   });
 });
