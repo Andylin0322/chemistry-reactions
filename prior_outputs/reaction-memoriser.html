@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reaction Memoriser — Pilot</title>
+<style>
+  :root{
+    --bg:#fafafa; --panel:#ffffff; --ink:#1c1c1c; --muted:#6b6b6b;
+    --line:#d9d9d9; --accent:#2a5d8a; --accent-ink:#ffffff;
+    --good:#1e7d34; --good-bg:#e6f4ea; --bad:#a3231c; --bad-bg:#fbe9e7;
+    --chip-bg:#eef2f5; --chip-sel:#2a5d8a; --double:#c0392b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  #app{max-width:820px;margin:0 auto;padding:20px 16px 60px;}
+  h1{font-size:20px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:7px;cursor:pointer;font-size:14px;}
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  .btn.primary:hover{opacity:.92;}
+  .btn.sm{padding:4px 10px;font-size:12px;}
+  .btn.active{background:var(--chip-sel);color:#fff;border-color:var(--chip-sel);}
+  .tag{display:inline-block;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 7px;margin-right:6px;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+  .molecule{display:flex;align-items:center;gap:2px;padding:14px 6px;overflow-x:auto;}
+  .carbon{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:46px;}
+  .carbon .c{width:38px;height:38px;border:2px solid var(--ink);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;background:#fff;}
+  .sub-label{font-size:11px;color:var(--accent);text-align:center;min-height:14px;}
+  .bond{width:22px;text-align:center;font-weight:800;color:var(--muted);cursor:pointer;user-select:none;}
+  .bond.editable{color:var(--ink);}
+  .bond.editable:hover{color:var(--accent);}
+  .bond.D{color:var(--double);}
+  .editorRow{margin-top:6px;}
+  .editorRow .lbl{font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .chipset{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{border:1px solid var(--line);background:var(--chip-bg);border-radius:16px;padding:5px 12px;font-size:13px;cursor:pointer;}
+  .chip.on{background:var(--chip-sel);color:#fff;border-color:var(--chip-sel);}
+  .given{background:#f4f6f8;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+  .given .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .blankbox{border:2px dashed var(--accent);border-radius:8px;padding:12px;background:#f7fafc;}
+  .feedback{border-radius:8px;padding:12px;margin-top:12px;font-size:14px;}
+  .feedback.good{background:var(--good-bg);color:var(--good);}
+  .feedback.bad{background:var(--bad-bg);color:var(--bad);}
+  .small-note{font-size:12px;color:var(--muted);margin-top:6px;}
+  .statgrid{display:grid;grid-template-columns:1fr auto auto;gap:6px 14px;font-size:13px;align-items:center;}
+  .statgrid .bar{background:#e6e6e6;border-radius:5px;height:8px;width:120px;overflow:hidden;}
+  .statgrid .fill{background:var(--accent);height:100%;}
+  select{padding:6px 8px;border-radius:6px;border:1px solid var(--line);font-size:14px;}
+  .hidden{display:none;}
+  .footer-nav{display:flex;justify-content:space-between;margin-top:14px;}
+  .arrowform{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================= DATA MODEL =============================
+Molecule kinds:
+  chain: {kind:'chain', carbons:[{subs:[..halogen/OH strings max2], oxo:bool, group:null|'COOH'|'CHO'}], bonds:['S'|'D',...]}
+  small: {kind:'small', species:['CO2','H2O',...]}   -- species identity only, no stoichiometry
+  text:  {kind:'text', value:'No reaction'}
+========================================================================= */
+
+function chain(n){
+  const carbons=[]; for(let i=0;i<n;i++) carbons.push({subs:[],oxo:false,group:null});
+  return {kind:'chain', carbons, bonds:Array(n-1).fill('S')};
+}
+function withBond(mol, idx, type){ const m=clone(mol); m.bonds[idx]=type; return m; }
+function withSubs(mol, idx, subs){ const m=clone(mol); m.carbons[idx].subs=subs.slice(); return m; }
+function withGroup(mol, idx, group){ const m=clone(mol); m.carbons[idx].group=group; return m; }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function small(species){ return {kind:'small', species:species.slice()}; }
+function text(v){ return {kind:'text', value:v}; }
+
+const REACTIONS = [
+// ---------------- ALKANES ----------------
+{id:'complete_combustion_alkanes', topic:'Alkanes', name:'Complete combustion of alkanes',
+ mechanism:'', observation:'',
+ reactant: chain(3),
+ methodSets:[{reagents:['O2 (excess)'], conditions:[]}],
+ product: small(['CO2','H2O'])},
+
+{id:'incomplete_combustion_co', topic:'Alkanes', name:'Incomplete combustion of alkanes to carbon monoxide',
+ mechanism:'', observation:'',
+ reactant: chain(3),
+ methodSets:[{reagents:['O2 (limited)'], conditions:[]}],
+ product: small(['CO','H2O'])},
+
+{id:'incomplete_combustion_soot', topic:'Alkanes', name:'Incomplete combustion of alkanes to carbon (soot)',
+ mechanism:'', observation:'',
+ reactant: chain(3),
+ methodSets:[{reagents:['O2 (limited)'], conditions:[]}],
+ product: small(['C','H2O'])},
+
+{id:'free_radical_chlorination', topic:'Alkanes', name:'Free radical chlorination of alkanes',
+ mechanism:'Free radical substitution', observation:'Greenish-yellow Cl2 decolourised.',
+ reactant: chain(2),
+ methodSets:[{reagents:['Cl2'], conditions:['UV light','room temperature']},{reagents:['Cl2'], conditions:['heat']}],
+ product: withSubs(chain(2),0,['Cl']),
+ byproduct: small(['HCl'])},
+
+{id:'free_radical_bromination', topic:'Alkanes', name:'Free radical bromination of alkanes',
+ mechanism:'Free radical substitution', observation:'Reddish-brown Br2 decolourised.',
+ reactant: chain(2),
+ methodSets:[{reagents:['Br2'], conditions:['UV light','room temperature']},{reagents:['Br2'], conditions:['heat']}],
+ product: withSubs(chain(2),0,['Br']),
+ byproduct: small(['HBr'])},
+
+{id:'further_chlorination', topic:'Alkanes', name:'Further chlorination of a halogenoalkane',
+ mechanism:'Free radical substitution', observation:'',
+ reactant: withSubs(chain(2),0,['Cl']),
+ methodSets:[{reagents:['Cl2'], conditions:['UV light']},{reagents:['Cl2'], conditions:['heat']}],
+ product: withSubs(chain(2),0,['Cl','Cl']),
+ byproduct: small(['HCl'])},
+
+{id:'free_radical_fluorination', topic:'Alkanes', name:'Free radical fluorination of alkanes',
+ mechanism:'Free radical substitution', observation:'',
+ reactant: chain(2),
+ methodSets:[{reagents:['F2'], conditions:['room temperature']}],
+ product: withSubs(chain(2),0,['F']),
+ byproduct: small(['HF'])},
+
+{id:'free_radical_iodination', topic:'Alkanes', name:'Reaction of alkanes with iodine',
+ mechanism:'Free radical substitution', observation:'',
+ reactant: chain(2),
+ methodSets:[{reagents:['I2'], conditions:[]}],
+ product: text('No reaction')},
+
+{id:'formation_nitric_oxide', topic:'Alkanes (combustion byproducts)', name:'Formation of nitric oxide in combustion engines',
+ mechanism:'', observation:'',
+ reactant: small(['N2','O2']),
+ methodSets:[{reagents:[], conditions:['high temperature (internal combustion engine)']}],
+ product: small(['NO'])},
+
+{id:'oxidation_no', topic:'Alkanes (combustion byproducts)', name:'Oxidation of nitric oxide',
+ mechanism:'', observation:'',
+ reactant: small(['NO']),
+ methodSets:[{reagents:['O2'], conditions:[]}],
+ product: small(['NO2'])},
+
+{id:'no2_water', topic:'Alkanes (combustion byproducts)', name:'Reaction of nitrogen dioxide with water',
+ mechanism:'', observation:'',
+ reactant: small(['NO2']),
+ methodSets:[{reagents:['H2O'], conditions:[]}],
+ product: small(['HNO2','HNO3'])},
+
+{id:'so2_oxidation_no2', topic:'Alkanes (combustion byproducts)', name:'Oxidation of sulfur dioxide by nitrogen dioxide',
+ mechanism:'', observation:'',
+ reactant: small(['SO2']),
+ methodSets:[{reagents:['NO2'], conditions:[]}],
+ product: small(['SO3','NO'])},
+
+{id:'oxidation_no_atmosphere', topic:'Alkanes (combustion byproducts)', name:'Atmospheric oxidation of nitric oxide',
+ mechanism:'', observation:'',
+ reactant: small(['NO']),
+ methodSets:[{reagents:['O2 (atmospheric)'], conditions:[]}],
+ product: small(['NO2'])},
+
+{id:'cat_converter_reduction', topic:'Alkanes (combustion byproducts)', name:'Catalytic reduction of nitric oxide',
+ mechanism:'', observation:'',
+ reactant: small(['NO','CO']),
+ methodSets:[{reagents:['Pt/Rh catalytic converter'], conditions:[]}],
+ product: small(['N2','CO2'])},
+
+{id:'cat_converter_oxidation_co', topic:'Alkanes (combustion byproducts)', name:'Catalytic oxidation of carbon monoxide',
+ mechanism:'', observation:'',
+ reactant: small(['CO']),
+ methodSets:[{reagents:['O2','Pt/Rh catalytic converter'], conditions:[]}],
+ product: small(['CO2'])},
+
+{id:'cat_converter_oxidation_hc', topic:'Alkanes (combustion byproducts)', name:'Catalytic oxidation of unburnt hydrocarbons',
+ mechanism:'', observation:'',
+ reactant: chain(3),
+ methodSets:[{reagents:['O2','Pt/Rh catalytic converter'], conditions:[]}],
+ product: small(['CO2','H2O'])},
+
+// ---------------- ALKENES (example alkene used throughout: but-2-ene, CH3-CH=CH-CH3, symmetric) ----------------
+{id:'ea_hydrogen_halides', topic:'Alkenes', name:'Electrophilic addition of hydrogen halides',
+ mechanism:'Electrophilic addition', observation:'',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['HBr'], conditions:['room temperature']}],
+ product: withSubs(withBond(chain(4),1,'S'),1,['Br'])},
+
+{id:'ea_halogens_ccl4', topic:'Alkenes', name:'Electrophilic addition of halogens',
+ mechanism:'Electrophilic addition', observation:'Reddish-brown Br2 decolourised.',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['Br2'], conditions:['CCl4','room temperature']},{reagents:['Br2'], conditions:['room temperature']}],
+ product: withSubs(withSubs(withBond(chain(4),1,'S'),1,['Br']),2,['Br'])},
+
+{id:'ea_fluorine', topic:'Alkenes', name:'Electrophilic addition of fluorine',
+ mechanism:'Electrophilic addition', observation:'',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['F2'], conditions:[]}],
+ product: withSubs(withSubs(withBond(chain(4),1,'S'),1,['F']),2,['F'])},
+
+{id:'ea_iodine', topic:'Alkenes', name:'Reaction of alkenes with iodine',
+ mechanism:'Electrophilic addition', observation:'',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['I2'], conditions:[]}],
+ product: text('No reaction')},
+
+{id:'ea_bromine_water', topic:'Alkenes', name:'Electrophilic addition of bromine water',
+ mechanism:'Electrophilic addition', observation:'Yellow-orange Br2(aq) decolourised.',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['Br2(aq)'], conditions:['room temperature']}],
+ product: withSubs(withSubs(withBond(chain(4),1,'S'),1,['Br']),2,['OH'])},
+
+{id:'ea_steam', topic:'Alkenes', name:'Electrophilic addition of steam',
+ mechanism:'Electrophilic addition', observation:'',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['H2O(g)'], conditions:['H3PO4 catalyst','high temperature','high pressure']}],
+ product: withSubs(withBond(chain(4),1,'S'),1,['OH'])},
+
+{id:'catalytic_hydrogenation', topic:'Alkenes', name:'Catalytic hydrogenation of alkenes',
+ mechanism:'', observation:'',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['H2'], conditions:['Ni catalyst']}],
+ product: chain(4)},
+
+{id:'mild_oxidation', topic:'Alkenes', name:'Mild oxidation of alkenes (to diols)',
+ mechanism:'', observation:'Purple KMnO4 decolourised; brown MnO2 precipitate formed.',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['KMnO4'], conditions:['dilute NaOH','cold']}],
+ product: withSubs(withSubs(withBond(chain(4),1,'S'),1,['OH']),2,['OH'])},
+
+{id:'oxidative_cleavage', topic:'Alkenes', name:'Oxidative cleavage of alkenes',
+ mechanism:'', observation:'Purple KMnO4 decolourised.',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['KMnO4'], conditions:['dilute H2SO4','heat']}],
+ product: withGroup(chain(2),1,'COOH'),
+ note:'Symmetric cleavage of but-2-ene gives two identical ethanoic acid fragments — only one fragment is asked for here.'},
+
+{id:'oxidative_cleavage_terminal', topic:'Alkenes', name:'Oxidative cleavage of a terminal alkene',
+ mechanism:'', observation:'Effervescence of CO2.',
+ reactant: chain(4), // but-1-ene: C1=C2-C3-C4
+ methodSets:[{reagents:['KMnO4'], conditions:['dilute H2SO4','heat']}],
+ product: withGroup(chain(3),2,'COOH'),
+ byproduct: small(['CO2']),
+ note:'Reactant here is but-1-ene (terminal C=C). The terminal =CH2 carbon is fully oxidised to CO2 (shown as given); build only the acid fragment.'},
+
+{id:'oxidation_dichromate', topic:'Alkenes', name:'Reaction of alkenes with potassium dichromate(VI)',
+ mechanism:'', observation:'',
+ reactant: withBond(chain(4),1,'D'),
+ methodSets:[{reagents:['K2Cr2O7'], conditions:['H+']}],
+ product: text('No reaction')},
+];
+// fix the but-1-ene / but-2-ene double bond positions explicitly
+REACTIONS.find(r=>r.id==='oxidative_cleavage_terminal').reactant = withBond(chain(4),0,'D'); // C1=C2-C3-C4
+
+// vocabulary for chip pickers, gathered from the data itself
+function collectVocab(){
+  const reagents=new Set(), conditions=new Set(), species=new Set();
+  REACTIONS.forEach(r=>{
+    r.methodSets.forEach(ms=>{ ms.reagents.forEach(x=>reagents.add(x)); ms.conditions.forEach(x=>conditions.add(x)); });
+    [r.reactant,r.product,r.byproduct].forEach(m=>{ if(m && m.kind==='small') m.species.forEach(s=>species.add(s)); });
+  });
+  return {reagents:[...reagents].sort(), conditions:[...conditions].sort(), species:[...species].sort()};
+}
+const VOCAB = collectVocab();
+
+/* ============================= MOLECULE RENDER / EDIT ============================= */
+
+function renderMoleculeReadonly(mol){
+  if(!mol) return '<span class="small-note">(none)</span>';
+  if(mol.kind==='text') return '<span class="tag" style="font-size:13px;padding:6px 10px;">'+escapeHtml(mol.value)+'</span>';
+  if(mol.kind==='small') return '<div class="chipset">'+mol.species.map(s=>'<span class="chip">'+escapeHtml(s)+'</span>').join('')+'</div>';
+  // chain
+  let html='<div class="molecule">';
+  mol.carbons.forEach((c,i)=>{
+    html+=carbonHtml(c);
+    if(i<mol.bonds.length) html+='<div class="bond '+mol.bonds[i]+'">'+(mol.bonds[i]==='D'?'=':'—')+'</div>';
+  });
+  html+='</div>';
+  return html;
+}
+function carbonHtml(c){
+  let label = c.group ? c.group : [...(c.oxo?['=O']:[]), ...c.subs].join(', ');
+  return '<div class="carbon"><div class="c">C</div><div class="sub-label">'+(label?escapeHtml(label):'')+'</div></div>';
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* Editable chain builder. Renders into container and calls onChange(mol) on every edit. */
+function mountChainEditor(container, initialMol, onChange){
+  let mol = initialMol && initialMol.kind==='chain' ? clone(initialMol) : chain(2);
+  function emit(){ onChange(clone(mol)); render(); }
+  function render(){
+    let html = '<div class="editorRow"><div class="lbl">Chain length</div><div class="row">';
+    for(let n=2;n<=6;n++){
+      html += '<button type="button" class="btn sm '+(mol.carbons.length===n?'active':'')+'" data-len="'+n+'">'+n+'C</button>';
+    }
+    html += '</div></div>';
+    html += '<div class="molecule">';
+    mol.carbons.forEach((c,i)=>{
+      html += '<div class="carbon">';
+      html += '<div class="c" data-carbon="'+i+'">C</div>';
+      html += '<div class="sub-label">'+((c.group?c.group:[...(c.oxo?['=O']:[]),...c.subs].join(','))||'')+'</div>';
+      html += '</div>';
+      if(i<mol.bonds.length){
+        html += '<div class="bond editable '+mol.bonds[i]+'" data-bond="'+i+'" title="Click to toggle single/double">'+(mol.bonds[i]==='D'?'=':'—')+'</div>';
+      }
+    });
+    html += '</div>';
+    html += '<div class="editorRow"><div class="lbl">Select a carbon above, then choose its substituents</div>';
+    html += '<div class="chipset" id="subChips">';
+    ['OH','F','Cl','Br','I'].forEach(s=>{ html += '<button type="button" class="chip" data-sub="'+s+'">'+s+'</button>'; });
+    html += '<button type="button" class="chip" data-oxo="1">=O (oxo)</button>';
+    html += '<button type="button" class="chip" data-group="COOH">–COOH (terminal)</button>';
+    html += '<button type="button" class="chip" data-group="CHO">–CHO (terminal)</button>';
+    html += '<button type="button" class="chip" data-clear="1">clear carbon</button>';
+    html += '</div></div>';
+    container.innerHTML = html;
+
+    let selected = 0;
+    function markSelected(){
+      container.querySelectorAll('[data-carbon]').forEach(el=>{
+        el.style.outline = (+el.dataset.carbon===selected) ? '3px solid var(--accent)' : 'none';
+      });
+      refreshChipState();
+    }
+    function refreshChipState(){
+      const c = mol.carbons[selected];
+      container.querySelectorAll('[data-sub]').forEach(el=>{
+        el.classList.toggle('on', c.subs.includes(el.dataset.sub));
+      });
+      const oxoBtn = container.querySelector('[data-oxo]'); if(oxoBtn) oxoBtn.classList.toggle('on', !!c.oxo);
+      container.querySelectorAll('[data-group]').forEach(el=>{
+        el.classList.toggle('on', c.group===el.dataset.group);
+        el.disabled = !(selected===0 || selected===mol.carbons.length-1);
+        el.style.opacity = el.disabled ? .4 : 1;
+      });
+    }
+    container.querySelectorAll('[data-len]').forEach(b=>b.onclick=()=>{
+      const n=+b.dataset.len;
+      const carbons=[]; for(let i=0;i<n;i++) carbons.push(mol.carbons[i]||{subs:[],oxo:false,group:null});
+      mol = {kind:'chain', carbons, bonds:Array(n-1).fill('S').map((v,i)=>mol.bonds[i]||'S')};
+      if(selected>=n) selected=n-1;
+      emit();
+    });
+    container.querySelectorAll('[data-bond]').forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.bond; mol.bonds[i]= mol.bonds[i]==='S' ? 'D' : 'S'; emit();
+    });
+    container.querySelectorAll('[data-carbon]').forEach(b=>b.onclick=()=>{ selected=+b.dataset.carbon; markSelected(); });
+    container.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{
+      const c=mol.carbons[selected]; const s=b.dataset.sub;
+      const idx=c.subs.indexOf(s);
+      if(idx>=0) c.subs.splice(idx,1); else if(c.subs.length<2) c.subs.push(s);
+      c.group=null; emit();
+    });
+    const oxoBtn = container.querySelector('[data-oxo]');
+    if(oxoBtn) oxoBtn.onclick=()=>{ const c=mol.carbons[selected]; c.oxo=!c.oxo; c.group=null; emit(); };
+    container.querySelectorAll('[data-group]').forEach(b=>b.onclick=()=>{
+      if(b.disabled) return;
+      const c=mol.carbons[selected]; c.group = (c.group===b.dataset.group) ? null : b.dataset.group;
+      c.subs=[]; c.oxo=false; emit();
+    });
+    const clearBtn = container.querySelector('[data-clear]');
+    if(clearBtn) clearBtn.onclick=()=>{ mol.carbons[selected]={subs:[],oxo:false,group:null}; emit(); };
+    markSelected();
+  }
+  render();
+  return { getMolecule: ()=>clone(mol) };
+}
+
+/* Small-species multi-select chip picker */
+function mountSpeciesPicker(container, vocabList, onChange){
+  let selected = new Set();
+  function render(){
+    container.innerHTML = '<div class="chipset">' + vocabList.map(s=>
+      '<button type="button" class="chip" data-s="'+escapeHtml(s)+'">'+escapeHtml(s)+'</button>').join('') + '</div>';
+    container.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+      const s=b.dataset.s;
+      if(selected.has(s)) selected.delete(s); else selected.add(s);
+      b.classList.toggle('on');
+      onChange([...selected]);
+    });
+  }
+  render();
+  return { getSpecies: ()=>[...selected] };
+}
+
+/* ============================= EQUALITY / GRADING ============================= */
+
+function serializeCarbon(c){
+  if(c.group) return 'G:'+c.group;
+  const parts=[]; if(c.oxo) parts.push('O'); parts.push(...c.subs.slice().sort());
+  return parts.join(',');
+}
+function serializeChain(mol){ return mol.carbons.map(serializeCarbon).join('|')+'::'+mol.bonds.join(','); }
+function canonicalChain(mol){
+  const fwd = serializeChain(mol);
+  const rev = serializeChain({carbons:[...mol.carbons].reverse(), bonds:[...mol.bonds].reverse()});
+  return fwd < rev ? fwd : rev;
+}
+function normSpecies(s){ return s.replace(/^\d+/,'').trim().toLowerCase(); }
+function setsEqual(a,b){
+  if(a.length!==b.length) return false;
+  const sa=new Set(a.map(x=>x.toLowerCase().trim())), sb=new Set(b.map(x=>x.toLowerCase().trim()));
+  if(sa.size!==sb.size) return false;
+  for(const x of sa) if(!sb.has(x)) return false;
+  return true;
+}
+function moleculesEqual(a,b){
+  if(!a||!b) return false;
+  if(a.kind!==b.kind) return false;
+  if(a.kind==='text') return a.value.trim().toLowerCase()===b.value.trim().toLowerCase();
+  if(a.kind==='small') return setsEqual(a.species.map(normSpecies), b.species.map(normSpecies));
+  if(a.kind==='chain') return canonicalChain(a)===canonicalChain(b);
+  return false;
+}
+function methodSetMatches(userReagents, userConditions, methodSets){
+  return methodSets.some(ms=> setsEqual(ms.reagents,userReagents) && setsEqual(ms.conditions,userConditions) );
+}
+
+/* ============================= PROGRESS STORAGE ============================= */
+
+const STORAGE_KEY='reaction-memoriser-stats-v1';
+async function loadStats(){
+  try{ const r = await window.storage.get(STORAGE_KEY); return r ? JSON.parse(r.value) : {}; }
+  catch(e){ return {}; }
+}
+async function saveStats(stats){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(stats)); }catch(e){ console.error('storage error',e); }
+}
+let STATS = {};
+
+function weightFor(id){
+  const s = STATS[id] || {attempts:0, correct:0};
+  // Laplace-smoothed error rate, plus small base weight so untried reactions get picked too
+  return 1 + 3*((s.attempts - s.correct + 1) / (s.attempts + 2));
+}
+function pickWeightedReaction(){
+  const weights = REACTIONS.map(r=>weightFor(r.id));
+  const total = weights.reduce((a,b)=>a+b,0);
+  let r = Math.random()*total;
+  for(let i=0;i<REACTIONS.length;i++){ r-=weights[i]; if(r<=0) return REACTIONS[i]; }
+  return REACTIONS[REACTIONS.length-1];
+}
+function recordAttempt(id, wasCorrect){
+  const s = STATS[id] || {attempts:0, correct:0};
+  s.attempts++; if(wasCorrect) s.correct++;
+  STATS[id]=s; saveStats(STATS);
+}
+
+/* ============================= APP / ROUTER ============================= */
+
+const app = document.getElementById('app');
+let current = null;
+
+function chooseBlankType(reaction){
+  const options = ['name','product','reactant'];
+  if(reaction.methodSets && reaction.methodSets.some(ms=>ms.reagents.length||ms.conditions.length)) options.push('reagentCondition');
+  return options[Math.floor(Math.random()*options.length)];
+}
+
+function distractorNames(correct, topic, count){
+  const pool = REACTIONS.filter(r=>r.name!==correct);
+  const shuffled = pool.sort(()=>Math.random()-.5).slice(0,count).map(r=>r.name);
+  return shuffled;
+}
+
+async function startQuestion(){
+  const reaction = pickWeightedReaction();
+  const blank = chooseBlankType(reaction);
+  current = {reaction, blank, submitted:false};
+  renderQuestion();
+}
+
+function renderGivenBlock(label, html){
+  return '<div class="given"><div class="k">'+label+'</div>'+html+'</div>';
+}
+
+function renderQuestion(){
+  const {reaction, blank} = current;
+  let html = '<div class="panel">';
+  html += '<div class="topbar"><span><span class="tag">'+escapeHtml(reaction.topic)+'</span></span>'
+        + '<button class="btn sm" id="toHome">← Home</button></div>';
+
+  if(blank!=='name') html += '<h1 style="margin-bottom:10px;">'+escapeHtml(reaction.name)+'</h1>';
+  else html += '<h1 style="margin-bottom:10px;">Name this reaction</h1>';
+
+  if(blank!=='reactant') html += renderGivenBlock('Reactant', renderMoleculeReadonly(reaction.reactant));
+
+  if(blank!=='reagentCondition'){
+    const ms = reaction.methodSets;
+    const msHtml = ms.map(m=>{
+      const chips=[...m.reagents.map(x=>'<span class="chip">'+escapeHtml(x)+'</span>'),
+                   ...m.conditions.map(x=>'<span class="chip" style="background:#eef7ee;">'+escapeHtml(x)+'</span>')];
+      return '<div class="chipset" style="margin-bottom:4px;">'+(chips.join('')||'<span class="small-note">(none specified)</span>')+'</div>';
+    }).join('<div class="small-note">— or —</div>');
+    html += renderGivenBlock('Reagents / Conditions', msHtml);
+  }
+
+  if(blank!=='product'){
+    html += renderGivenBlock('Product', renderMoleculeReadonly(reaction.product));
+    if(reaction.byproduct) html += '<div class="small-note">Also formed (given): '+
+      (reaction.byproduct.kind==='small'? reaction.byproduct.species.join(' + ') : '')+'</div>';
+  }
+  if(reaction.note) html += '<div class="small-note">Note: '+escapeHtml(reaction.note)+'</div>';
+
+  html += '<div class="blankbox" id="blankArea"><div class="lbl" style="margin-bottom:8px;font-weight:600;">Your answer — '+labelForBlank(blank)+'</div><div id="editorMount"></div></div>';
+
+  html += '<div class="footer-nav"><span></span><button class="btn primary" id="submitBtn">Check answer</button></div>';
+  html += '<div id="feedbackMount"></div>';
+  html += '</div>';
+  app.innerHTML = html;
+
+  document.getElementById('toHome').onclick = renderHome;
+  mountBlankEditor(blank, reaction);
+  document.getElementById('submitBtn').onclick = ()=>gradeCurrent();
+}
+
+function labelForBlank(blank){
+  return {name:'reaction name', product:'product', reactant:'reactant', reagentCondition:'reagents & conditions'}[blank];
+}
+
+let editorHandle = null;
+let reagentPicker = null, conditionPicker = null;
+let noReactionToggle = false;
+
+function mountBlankEditor(blank, reaction){
+  const mount = document.getElementById('editorMount');
+  editorHandle = null; reagentPicker=null; conditionPicker=null; noReactionToggle=false;
+
+  if(blank==='name'){
+    const opts = [reaction.name, ...distractorNames(reaction.name, reaction.topic, 3)].sort(()=>Math.random()-.5);
+    mount.innerHTML = '<div class="row" id="nameOpts">'+opts.map(o=>'<button type="button" class="btn" data-name="'+escapeHtml(o)+'">'+escapeHtml(o)+'</button>').join('')+'</div>';
+    let chosen=null;
+    mount.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>{
+      mount.querySelectorAll('[data-name]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); chosen=b.dataset.name;
+    });
+    editorHandle = { getAnswer: ()=>chosen };
+    return;
+  }
+
+  if(blank==='reagentCondition'){
+    mount.innerHTML = '<div class="editorRow"><div class="lbl">Reagent(s)</div><div id="reagentMount"></div></div>'
+      + '<div class="editorRow"><div class="lbl">Condition(s)</div><div id="conditionMount"></div></div>';
+    reagentPicker = mountSpeciesPicker(document.getElementById('reagentMount'), VOCAB.reagents, ()=>{});
+    conditionPicker = mountSpeciesPicker(document.getElementById('conditionMount'), VOCAB.conditions, ()=>{});
+    editorHandle = { getAnswer: ()=>({reagents:reagentPicker.getSpecies(), conditions:conditionPicker.getSpecies()}) };
+    return;
+  }
+
+  // reactant / product — structure answer
+  const expected = reaction[blank];
+  let html = '';
+  if(expected.kind==='text'){
+    html += '<label class="row"><input type="checkbox" id="noRxnBox"> This reaction does not occur</label>';
+  }
+  html += '<div id="structureMount" style="margin-top:8px;"></div>';
+  mount.innerHTML = html;
+
+  const structureMount = document.getElementById('structureMount');
+  let subHandle;
+  if(expected.kind==='small'){
+    subHandle = mountSpeciesPicker(structureMount, VOCAB.species, ()=>{});
+    editorHandle = { getAnswer: ()=> noReactionToggle ? text('No reaction') : small(subHandle.getSpecies()) };
+  } else {
+    subHandle = mountChainEditor(structureMount, chain(2), ()=>{});
+    editorHandle = { getAnswer: ()=> noReactionToggle ? text('No reaction') : subHandle.getMolecule() };
+  }
+  const noBox = document.getElementById('noRxnBox');
+  if(noBox){
+    noBox.onchange = ()=>{ noReactionToggle = noBox.checked; structureMount.style.opacity = noReactionToggle?0.35:1; };
+  }
+}
+
+function gradeCurrent(){
+  if(!editorHandle) return;
+  const {reaction, blank} = current;
+  const userAnswer = editorHandle.getAnswer();
+  let correct = false, revealHtml = '';
+
+  if(blank==='name'){
+    correct = userAnswer===reaction.name;
+    revealHtml = 'Correct name: <strong>'+escapeHtml(reaction.name)+'</strong>';
+  } else if(blank==='reagentCondition'){
+    correct = methodSetMatches(userAnswer.reagents, userAnswer.conditions, reaction.methodSets);
+    const msHtml = reaction.methodSets.map(m=> [...m.reagents,...m.conditions].join(' + ') || '(none)').join('  —or—  ');
+    revealHtml = 'Accepted: <strong>'+escapeHtml(msHtml)+'</strong>';
+  } else {
+    if(!userAnswer){ correct=false; }
+    else correct = moleculesEqual(userAnswer, reaction[blank]);
+    revealHtml = 'Correct '+blank+': '+renderMoleculeReadonly(reaction[blank]);
+  }
+
+  recordAttempt(reaction.id, correct);
+
+  const fb = document.getElementById('feedbackMount');
+  fb.innerHTML = '<div class="feedback '+(correct?'good':'bad')+'"><strong>'+(correct?'Correct.':'Not quite.')+'</strong><br>'+revealHtml
+    + (reaction.observation? '<div class="small-note">Observation: '+escapeHtml(reaction.observation)+'</div>':'')
+    + (reaction.mechanism? '<div class="small-note">Mechanism: '+escapeHtml(reaction.mechanism)+'</div>':'')
+    + '<div style="margin-top:10px;"><button class="btn primary sm" id="nextBtn">Next question →</button></div>';
+  document.getElementById('nextBtn').onclick = startQuestion;
+  document.getElementById('submitBtn').disabled = true;
+}
+
+function renderHome(){
+  const byTopic = {};
+  REACTIONS.forEach(r=>{
+    byTopic[r.topic] = byTopic[r.topic] || {attempts:0, correct:0, count:0};
+    const s = STATS[r.id] || {attempts:0, correct:0};
+    byTopic[r.topic].attempts += s.attempts; byTopic[r.topic].correct += s.correct; byTopic[r.topic].count++;
+  });
+  let statHtml = '<div class="statgrid">';
+  Object.keys(byTopic).forEach(t=>{
+    const b = byTopic[t]; const pct = b.attempts? Math.round(100*b.correct/b.attempts) : 0;
+    statHtml += '<div>'+escapeHtml(t)+' <span class="small-note">('+b.count+' reactions)</span></div>'
+      + '<div class="bar"><div class="fill" style="width:'+pct+'%"></div></div>'
+      + '<div>'+(b.attempts? pct+'% of '+b.attempts : '—')+'</div>';
+  });
+  statHtml += '</div>';
+
+  app.innerHTML = '<div class="panel">'
+    + '<h1>Organic Reaction Memoriser — Pilot</h1>'
+    + '<div class="sub">Alkanes &amp; Alkenes (H2 Chemistry). '+REACTIONS.length+' reactions loaded. Practice weights toward reactions you get wrong more often.</div>'
+    + statHtml
+    + '<div style="margin-top:16px;"><button class="btn primary" id="startBtn">Start practice</button> '
+    + '<button class="btn sm" id="resetBtn">Reset progress</button></div>'
+    + '</div>'
+    + '<div class="panel"><div class="sub" style="margin-bottom:0;">Pilot notes: symmetric alkenes (but-2-ene / but-1-ene) are used throughout to sidestep Markovnikov regiochemistry for now, as agreed. Chain builder supports up to 6 carbons, one or two halogens/OH per carbon, terminal –COOH/–CHO, and internal oxo (=O). Stoichiometric coefficients are not graded for small-molecule species — only species identity.</div></div>';
+
+  document.getElementById('startBtn').onclick = startQuestion;
+  document.getElementById('resetBtn').onclick = async ()=>{
+    STATS = {}; await saveStats(STATS); renderHome();
+  };
+}
+
+(async function init(){
+  STATS = await loadStats();
+  renderHome();
+})();
+</script>
+</body>
+</html>

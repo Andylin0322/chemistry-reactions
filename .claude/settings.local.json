@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -o \"/Users/zihaolin/Downloads/chem-app-handoff.zip\" -d .)",
+      "Bash(node test.js)",
+      "Bash(node engine/demo.js)",
+      "Bash(node -e ' *)",
+      "Bash(node engine/test.js)"
+    ]
+  }
+}

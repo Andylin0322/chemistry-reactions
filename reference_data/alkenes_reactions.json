@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0",
+  "topic": "Alkenes",
+  "reactions": [
+    {
+      "id": "electrophilic_addition_hydrogen_halides",
+      "name": "Electrophilic addition of hydrogen halides",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + HX → RCHX-CH2R'",
+      "methods": ["HCl(g), room temperature", "HBr(g), room temperature", "HI(g), room temperature"],
+      "observation": "",
+      "limitations": [],
+      "mechanism": "Electrophilic addition",
+      "reversible": false
+    },
+    {
+      "id": "electrophilic_addition_halogens_ccl4",
+      "name": "Electrophilic addition of halogens",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + X2 → RCHX-CHXR'",
+      "methods": ["Cl2 in CCl4, room temperature", "Br2 in CCl4, room temperature", "Cl2(g), room temperature", "Br2(l), room temperature"],
+      "observation": "Greenish-yellow Cl2 or reddish-brown Br2 decolourised.",
+      "limitations": ["Reaction carried out in the absence of UV light"],
+      "mechanism": "Electrophilic addition",
+      "reversible": false
+    },
+    {
+      "id": "electrophilic_addition_fluorine",
+      "name": "Electrophilic addition of fluorine",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + F2 → RCHF-CHFR'",
+      "methods": ["F2"],
+      "observation": "",
+      "limitations": ["Reaction is very violent"],
+      "mechanism": "Electrophilic addition",
+      "reversible": false
+    },
+    {
+      "id": "electrophilic_addition_iodine",
+      "name": "Reaction of alkenes with iodine",
+      "reaction_occurs": false,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + I2 → RCHI-CHIR'",
+      "methods": ["I2"],
+      "observation": "",
+      "limitations": ["Iodine does not react with most alkenes"],
+      "mechanism": "Electrophilic addition",
+      "reversible": false
+    },
+    {
+      "id": "electrophilic_addition_bromine_water",
+      "name": "Electrophilic addition of bromine water",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + Br2(aq) + H2O → bromoalcohol",
+      "methods": ["Br2(aq), room temperature"],
+      "observation": "Yellow-orange Br2(aq) decolourised.",
+      "limitations": ["Major product is bromoalcohol"],
+      "mechanism": "Electrophilic addition",
+      "reversible": false
+    },
+    {
+      "id": "electrophilic_addition_steam",
+      "name": "Electrophilic addition of steam",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + H2O → alcohol",
+      "methods": ["H2O(g), H3PO4 catalyst, high temperature, high pressure", "1. conc H2SO4, cold; 2. H2O"],
+      "observation": "",
+      "limitations": [],
+      "mechanism": "Electrophilic addition",
+      "reversible": false
+    },
+    {
+      "id": "catalytic_hydrogenation_alkenes",
+      "name": "Catalytic hydrogenation of alkenes",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' + H2 → RCH2CH2R'",
+      "methods": ["H2(g), Ni catalyst"],
+      "observation": "",
+      "limitations": [],
+      "mechanism": "",
+      "reversible": false
+    },
+    {
+      "id": "mild_oxidation_alkenes",
+      "name": "Mild oxidation of alkenes to diols",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' → RCH(OH)-CH(OH)R'",
+      "methods": ["KMnO4, dilute NaOH, cold"],
+      "observation": "Purple KMnO4 decolourised and brown MnO2 precipitate formed.",
+      "limitations": [],
+      "mechanism": "",
+      "reversible": false
+    },
+    {
+      "id": "oxidative_cleavage_alkenes",
+      "name": "Oxidative cleavage of alkenes",
+      "reaction_occurs": true,
+      "applicable_to": ["Alkenes"],
+      "transform": "RCH=CHR' → carbonyl compound(s) and/or carboxylic acid(s)",
+      "methods": ["KMnO4, dilute H2SO4, heat"],
+      "observation": "Purple KMnO4 decolourised. Carbon dioxide effervescence may be observed for selected alkenes.",
+      "limitations": [],
+      "mechanism": "",
+      "reversible": false
+    },
+    {
+      "id": "oxidative_cleavage_terminal_alkene",
+      "name": "Oxidative cleavage of terminal alkene",
+      "reaction_occurs": true,
+      "applicable_to": ["Terminal alkene"],
+      "transform": "RCH=CH2 → carboxylic acid + CO2 + H2O",
+      "methods": ["KMnO4, dilute H2SO4, heat"],
+      "observation": "Effervescence of CO2.",
+      "limitations": ["Terminal C=C only"],
+      "mechanism": "",
+      "reversible": false
+    },
+    {
+      "id": "oxidation_with_dichromate",
+      "name": "Oxidation of alkenes with potassium dichromate(VI)",
+      "reaction_occurs": false,
+      "applicable_to": ["Alkenes"],
+      "transform": "Alkene + K2Cr2O7/H+ → No reaction",
+      "methods": ["K2Cr2O7/H+"],
+      "observation": "",
+      "limitations": ["Alkenes cannot be oxidised with potassium dichromate(VI)"],
+      "mechanism": "",
+      "reversible": false
+    }
+  ]
+}
