@@ -6975,10 +6975,9 @@ document.getElementById('importInput').addEventListener('change', function(e){
 // Left blank, it falls back to a prefilled mailto: link instead, so the
 // feature works immediately with zero setup, just with a manual "hit send"
 // step in the student's own mail client.
-var GOOGLE_FORM_ACTION = ''; // e.g. 'https://docs.google.com/forms/d/e/1FAIpQLS.../formResponse'
-var GOOGLE_FORM_ENTRY_MESSAGE = ''; // e.g. 'entry.123456789'
-var GOOGLE_FORM_ENTRY_DETAILS = ''; // e.g. 'entry.987654321'
-var FEEDBACK_EMAIL = 'andrewlinzihao@gmail.com';
+var GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSc3v73sBRFz8VR290rPPAe4vSxwRKn5z9zTCxCF6FAnrAbBCQ/viewform'; 
+var GOOGLE_FORM_ENTRY_MESSAGE = 'entry.1685840369'; // e.g. 'entry.123456789'
+var GOOGLE_FORM_ENTRY_DETAILS = 'entry.1012638416'; // e.g. 'entry.987654321'
 
 function sendFeedback(payload){
   var body = Object.assign({ page: location.href, userAgent: navigator.userAgent, timestamp: new Date().toISOString() }, payload);
