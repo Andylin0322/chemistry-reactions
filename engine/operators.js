@@ -328,17 +328,16 @@ function nitrileFormation(mol, leavingX){
   return { occurs:true, product:v };
 }
 
-// R-CN + H2O -> R-COOH (acidic or alkaline conditions both end up at the
-// same organic product for grading purposes here, matching how this app
-// never requires inorganic byproducts like HX/H2 to be built for any
-// other substitution/addition reaction -- only CO2+H2O gets its own
-// toggle, and only because oxidative cleavage can produce it as the WHOLE
-// answer with no organic product at all, which never happens here).
-function nitrileHydrolysis(mol){
+// R-CN + H2O -> R-COOH (acidic, target:'COOH') or R-COO-Na+ (alkaline,
+// target:'COONa') -- same acidic-vs-alkaline distinction hydrolyzeEster/
+// hydrolyzeAmide already make: alkaline conditions immediately deprotonate
+// the carboxylic acid as it forms, so the isolated product is the sodium
+// carboxylate salt, not the neutral acid.
+function nitrileHydrolysis(mol, target){
   const v = cloneMol(mol);
   const cn = v.nodes.find(n=>n.group==='CN');
   if(!cn) return { occurs:false };
-  cn.group = 'COOH';
+  cn.group = target;
   return { occurs:true, product:v };
 }
 

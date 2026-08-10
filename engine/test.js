@@ -325,8 +325,11 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
   const nitrile = nitrileFormation(propylChloride, 'Cl');
   t('nitrile formation occurs and adds exactly one new (CN) node', nitrile.occurs===true && nitrile.product.nodes.length===4 && nitrile.product.nodes.some(n=>n.group==='CN'));
 
-  const acid = nitrileHydrolysis(nitrile.product);
-  t('nitrile hydrolysis gives a COOH group node, no CN left', acid.occurs===true && acid.product.nodes.some(n=>n.group==='COOH') && !acid.product.nodes.some(n=>n.group==='CN'));
+  const acid = nitrileHydrolysis(nitrile.product, 'COOH');
+  t('acidic nitrile hydrolysis gives a COOH group node, no CN left', acid.occurs===true && acid.product.nodes.some(n=>n.group==='COOH') && !acid.product.nodes.some(n=>n.group==='CN'));
+
+  const carboxylate = nitrileHydrolysis(nitrile.product, 'COONa');
+  t('alkaline nitrile hydrolysis gives a COONa group node, not COOH', carboxylate.occurs===true && carboxylate.product.nodes.some(n=>n.group==='COONa') && !carboxylate.product.nodes.some(n=>n.group==='COOH'));
 
   const reducedAmine = nitrileReduction(nitrile.product);
   const butanamine = chain(4); butanamine.nodes[3].subs.push('NH2');

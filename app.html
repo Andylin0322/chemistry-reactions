@@ -27,6 +27,7 @@
     --bad: #a43e3e;
   }
   * { box-sizing: border-box; }
+  html { font-size: 17px; }
   body {
     margin: 0;
     background: var(--bg);
@@ -34,15 +35,13 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     line-height: 1.5;
   }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
-  header h1 { font-size: 1.4rem; margin: 0 0 4px; }
-  header .tagline { color: var(--muted); margin: 0 0 20px; font-size: 0.92rem; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 32px 72px; }
   .panel {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-    margin-bottom: 18px;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
   }
   .modeToggle { display: flex; gap: 8px; margin-bottom: 14px; }
   .modeBtn {
@@ -77,13 +76,13 @@
   .warnNote { color: var(--muted); font-size: 0.8rem; margin: 10px 0 8px; }
   .ioBtns { display: flex; gap: 10px; align-items: center; }
   button {
-    padding: 8px 14px;
+    padding: 10px 16px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: transparent;
     color: var(--text);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
   button:hover { border-color: var(--accent); }
   .fileBtn {
@@ -115,10 +114,10 @@
     display: flex;
     justify-content: center;
   }
-  .molVisualBox svg { width: 100%; max-width: 420px; height: 160px; }
+  .molVisualBox svg { width: 100%; max-width: 520px; height: 200px; }
   .molFormula {
     font-family: "SF Mono", Menlo, Consolas, monospace;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
     text-align: center;
     margin-bottom: 10px;
@@ -126,29 +125,44 @@
   }
   .hintText { font-size: 0.82rem; color: var(--accent); min-height: 1.2em; margin-bottom: 8px; }
 
-  /* ---- reaction equation row: Reactant(s) -> [reagents/conditions] -> Product ---- */
-  .equationRow { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
-  .eqItem { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+  /* ---- reaction equation row: Reactant(s) -> [reagents/conditions] -> Product ----
+     Boxes are sized as a SHARE of the row (flex:1 1 0, all competing equally
+     for space) rather than a fixed pixel size, so each one lands around
+     30-40%+ of the row's width in the common 2-3-box case and just scales
+     down together on narrow screens -- never wrapping to a second line,
+     since flex-wrap stays off and there's nothing here with a hard minimum
+     width. aspect-ratio keeps every box a true square at whatever size it
+     lands on. The arrow itself stays short and doesn't grow (flex:0 1 auto)
+     so the boxes get the space instead; its reagent/condition label wraps
+     across multiple lines rather than forcing the arrow -- and so the whole
+     row -- wider. */
+  .equationRow { display: flex; align-items: center; flex-wrap: nowrap; gap: 18px; margin-bottom: 14px; }
+  .eqItem { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1 1 0; min-width: 0; }
   .eqBox {
-    width: 150px; height: 150px; box-sizing: border-box;
+    width: 100%; max-width: 340px; aspect-ratio: 1 / 1; box-sizing: border-box;
     background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    display: flex; align-items: center; justify-content: center; padding: 8px;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; padding: 10px;
   }
   .eqBox svg { max-width: 100%; max-height: 100%; }
-  .eqBox.eqBoxUnknown { font-size: 2.6rem; font-weight: 700; color: var(--accent); }
-  .eqFormula { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; font-weight: 600; text-align: center; color: var(--text); min-height: 1.2em; }
-  .eqPlus { font-weight: 700; color: var(--muted); font-size: 1.4rem; flex-shrink: 0; }
-  .eqArrowWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 120px; min-width: 100px; padding: 0 4px; }
-  .eqArrowLabel { font-size: 0.78rem; color: var(--muted); text-align: center; min-height: 1.1em; }
-  .eqArrowLabel.eqArrowUnknown { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
-  .eqArrow { width: 100%; min-width: 90px; height: 2px; background: var(--muted); position: relative; margin: 6px 0; }
+  .eqBox.eqBoxUnknown { font-size: 3rem; font-weight: 700; color: var(--accent); }
+  .eqFormula { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.98rem; font-weight: 600; text-align: center; color: var(--text); min-height: 1.2em; overflow-wrap: anywhere; }
+  .eqPlus { font-weight: 700; color: var(--muted); font-size: 1.5rem; flex: 0 0 auto; }
+  .eqArrowWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0.8 1 190px; min-width: 140px; padding: 0 4px; }
+  .eqArrowLabel { font-size: 0.86rem; line-height: 1.4; color: var(--muted); text-align: center; min-height: 1.1em; overflow-wrap: break-word; }
+  .eqArrowLabel.eqArrowUnknown { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+  .eqArrow { width: 100%; min-width: 32px; height: 2px; background: var(--muted); position: relative; margin: 6px 0; flex-shrink: 0; }
   .eqArrow:after {
     content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
     border-style: solid; border-width: 7px 0 7px 12px; border-color: transparent transparent transparent var(--muted);
   }
-  #productGivenArea { display: flex; }
-  #productGivenArea .missingAnswerRow { justify-content: flex-start; }
+  #productGivenArea { display: flex; width: 100%; }
+  #productGivenArea .missingAnswerRow { flex-wrap: nowrap; justify-content: center; width: 100%; gap: 8px; }
+  #productGivenArea .missingAnswerCard { width: 100%; max-width: 340px; flex: 1 1 0; min-width: 0; }
+  #productGivenArea .missingAnswerCard .molVisualBox {
+    width: 100%; aspect-ratio: 1 / 1; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center; padding: 8px; margin-bottom: 4px;
+  }
+  #productGivenArea .missingAnswerCard .molVisualBox svg { width: auto; height: auto; max-width: 100%; max-height: 100%; }
   .guessLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
 
   .reactionNameToggle { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
@@ -302,14 +316,12 @@
   .buildControlsRow { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
 
   /* ---- feedback / bug-report ---- */
-  .headerRow { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .feedbackTrigger, .reportMistakeBtn {
-    font-size: 0.82rem; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--panel); color: var(--text); cursor: pointer; white-space: nowrap;
+  .reportMistakeBtn {
+    font-size: 0.85rem; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap;
   }
-  .feedbackTrigger:hover, .reportMistakeBtn:hover { border-color: var(--accent); color: var(--accent); }
-  .reportRow { margin-top: 12px; text-align: center; }
-  .reportMistakeBtn { font-size: 0.78rem; color: var(--muted); background: transparent; }
+  .reportMistakeBtn:hover { border-color: var(--accent); color: var(--accent); }
+  .reportRow { margin-top: 14px; text-align: center; }
   #statsSavedNote { color: var(--good); }
 
   .modalOverlay {
@@ -369,37 +381,151 @@
     0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
   }
+
+  /* ================= top nav bar ================= */
+  /* Full-bleed bar (own background/border, edge to edge) with its inner
+     content capped at the same max-width as .wrap so the brand/buttons
+     line up with the panels below -- deliberately OUTSIDE .wrap rather
+     than inside it, so it reads as a real app navbar, not just a page
+     header competing with the panels for the same narrow column. */
+  .topNav { background: var(--panel); border-bottom: 1px solid var(--border); }
+  .topNavInner {
+    max-width: 1200px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  }
+  .topNavBrand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
+  .topNavTitle { font-size: 1.35rem; font-weight: 700; margin: 0; white-space: nowrap; }
+  .topNavTagline { color: var(--muted); font-size: 0.88rem; margin: 0; }
+  .navControls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .navBtn { font-size: 0.9rem; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; white-space: nowrap; }
+  .navBtn:hover { border-color: var(--accent); color: var(--accent); }
+  .navBtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .zenExitBtn {
+    display: none; position: fixed; top: 16px; right: 16px; z-index: 950;
+    font-size: 0.85rem; padding: 9px 16px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.12);
+  }
+  .zenExitBtn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ================= session / mode indicators ================= */
+  .modeIndicator {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600;
+    color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid var(--accent); border-radius: 20px; padding: 5px 14px; margin: 24px 0 10px;
+  }
+  .sessionIndicator { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px; min-height: 1.1em; }
+  .modeDescription { font-size: 0.85rem; color: var(--muted); margin: 10px 0 0; line-height: 1.55; }
+
+  /* ================= topics/mode drawer ================= */
+  .drawerOverlay { display: none; position: fixed; inset: 0; background: rgba(20,22,18,.45); z-index: 900; }
+  .drawerOverlay.open { display: block; }
+  .drawerPanel {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 360px; max-width: 88vw;
+    background: var(--panel); border-right: 1px solid var(--border); box-shadow: 10px 0 30px rgba(0,0,0,.25);
+    overflow-y: auto; padding: 18px 20px 32px; transform: translateX(-100%); transition: transform 0.2s ease;
+  }
+  .drawerOverlay.open .drawerPanel { transform: translateX(0); }
+  .drawerHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .drawerHead h2 { font-size: 1rem; margin: 0; }
+  .drawerSection { margin-bottom: 22px; }
+  .drawerSectionLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
+  .qtypeChecks { display: flex; flex-direction: column; gap: 8px; }
+
+  /* ================= stats screen ================= */
+  .statsScreenHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; }
+  .statsScreenHead h2 { margin: 0; font-size: 1.1rem; }
+  .streakSummary { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
+  .heatmapScroll { overflow-x: auto; padding-bottom: 8px; margin-bottom: 4px; }
+  .heatmapGrid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; width: max-content; }
+  .heatmapCell { width: 13px; height: 13px; border-radius: 3px; background: var(--bg); border: 1px solid var(--border); }
+  .heatmapCell[data-level="1"] { background: color-mix(in srgb, var(--accent) 28%, var(--bg)); border-color: transparent; }
+  .heatmapCell[data-level="2"] { background: color-mix(in srgb, var(--accent) 52%, var(--bg)); border-color: transparent; }
+  .heatmapCell[data-level="3"] { background: color-mix(in srgb, var(--accent) 76%, var(--bg)); border-color: transparent; }
+  .heatmapCell[data-level="4"] { background: var(--accent); border-color: transparent; }
+  .sessionHistoryList { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .sessionHistoryItem { display: flex; justify-content: space-between; gap: 10px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--bg); }
+  .tableScroll { overflow-x: auto; }
+
+  /* ================= zen mode ================= */
+  body.zen .topNavTagline { display: none; }
+  body.zen .navControls { display: none; }
+  body.zen .modeIndicator { display: none; }
+  body.zen .sessionIndicator { display: none; }
+  body.zen .reportRow { display: none; }
+  body.zen .zenExitBtn { display: inline-flex; align-items: center; }
+
+  /* ================= responsive ================= */
+  @media (max-width: 900px) {
+    .wrap { padding: 24px 20px 56px; }
+    .topNavInner { padding: 16px 20px; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 18px 14px 56px; }
+    .topNavInner { padding: 14px 16px; gap: 12px; }
+    .topNavTitle { font-size: 1.1rem; }
+    .drawerPanel { width: 100%; max-width: 100%; }
+    .equationRow { gap: 8px; }
+    .eqArrowWrap { flex: 0 1 70px; min-width: 56px; }
+    .eqArrowLabel { font-size: 0.72rem; }
+    .eqBox.eqBoxUnknown { font-size: 2.2rem; }
+    .panel { padding: 18px 16px; }
+  }
+  @media (max-width: 420px) {
+    .navBtn { padding: 8px 12px; font-size: 0.85rem; }
+  }
 </style>
 </head>
 <body>
+<nav class="topNav">
+  <div class="topNavInner">
+    <div class="topNavBrand">
+      <h1 class="topNavTitle">H2 Chemistry Reaction Drill</h1>
+      <p class="topNavTagline">Procedurally generated organic reaction questions on random molecules — never the same one twice.</p>
+    </div>
+    <div class="navControls">
+      <button type="button" id="topicsDrawerBtn" class="navBtn">Topics</button>
+      <button type="button" id="zenToggleBtn" class="navBtn">Zen mode</button>
+      <button type="button" id="statsNavBtn" class="navBtn">Stats</button>
+      <button type="button" id="openFeedbackBtn" class="navBtn">Feedback</button>
+    </div>
+  </div>
+</nav>
 <div class="wrap">
-  <header class="headerRow">
-    <div>
-      <h1>H2 Chemistry Reaction Drill</h1>
-      <p class="tagline">Procedurally generated organic reaction questions on random molecules — never the same one twice.</p>
-    </div>
-    <button type="button" id="openFeedbackBtn" class="feedbackTrigger">💬 Feedback</button>
-  </header>
+  <div id="modeIndicator" class="modeIndicator"></div>
+  <div id="sessionIndicator" class="sessionIndicator"></div>
 
-  <section class="panel" id="setupPanel">
-    <div class="modeToggle">
-      <button type="button" class="modeBtn active" id="modeABtn">Pick reactions</button>
-      <button type="button" class="modeBtn" id="modeBBtn">Practice weak spots</button>
-      <button type="button" class="modeBtn" id="modeDBtn">Distinguishing tests</button>
-      <button type="button" class="modeBtn" id="modeCBtn">Progress</button>
+  <section class="panel hidden" id="statsScreen">
+    <div class="statsScreenHead">
+      <h2>Progress</h2>
+      <button type="button" id="statsBackBtn" class="navBtn">← Back to practice</button>
     </div>
 
-    <div id="pickerBlock"></div>
+    <div class="drawerSection">
+      <div class="drawerSectionLabel">Activity</div>
+      <div id="streakSummary" class="streakSummary"></div>
+      <div id="streakHeatmap" class="heatmapScroll"></div>
+    </div>
 
-    <div id="statsBlock" class="hidden">
-      <table id="statsTable">
-        <thead><tr><th>Reaction</th><th>Attempts</th><th>Wrong</th><th>Accuracy</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p class="warnNote">Progress saves automatically in this browser (it stays on this device only — a different browser or device starts fresh). Export a backup file if you want to move it, or as insurance against clearing your browser data. <span id="statsSavedNote"></span></p>
-      <div class="ioBtns">
-        <button type="button" id="exportBtn">Export progress</button>
-        <label class="fileBtn">Import progress<input type="file" id="importInput" accept="application/json"></label>
+    <div class="drawerSection">
+      <div class="drawerSectionLabel">Recent sessions</div>
+      <div id="sessionHistoryList" class="sessionHistoryList"></div>
+      <button type="button" id="endSessionBtn">End current session</button>
+    </div>
+
+    <div class="drawerSection">
+      <div class="drawerSectionLabel">Per-reaction accuracy</div>
+      <div id="statsBlock">
+        <div class="tableScroll">
+          <table id="statsTable">
+            <thead><tr><th>Reaction</th><th>Attempts</th><th>Wrong</th><th>Accuracy</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="warnNote">Progress saves automatically in this browser (it stays on this device only — a different browser or device starts fresh). Export a backup file if you want to move it, or as insurance against clearing your browser data. <span id="statsSavedNote"></span></p>
+        <div class="ioBtns">
+          <button type="button" id="exportBtn">Export progress</button>
+          <label class="fileBtn">Import progress<input type="file" id="importInput" accept="application/json"></label>
+        </div>
       </div>
     </div>
   </section>
@@ -437,7 +563,7 @@
       <button type="button" id="distinguishNextBtn">New set of molecules</button>
     </div>
     <div class="reportRow">
-      <button type="button" id="reportMistakeDistinguishBtn" class="reportMistakeBtn">🚩 Report a mistake with this set</button>
+      <button type="button" id="reportMistakeDistinguishBtn" class="reportMistakeBtn">Report a mistake with this set</button>
     </div>
   </section>
 
@@ -498,10 +624,72 @@
       </div>
     </div>
     <div class="reportRow">
-      <button type="button" id="reportMistakeBtn" class="reportMistakeBtn">🚩 Report a mistake with this question</button>
+      <button type="button" id="reportMistakeBtn" class="reportMistakeBtn">Report a mistake with this question</button>
     </div>
   </section>
 </div>
+
+<!-- ============================================================
+     Topics & question-type drawer -- slides in from the left, holds
+     practice mode (all reactions / weak spots), the 4 question-type
+     toggles, and the per-reaction topic tree (#pickerBlock, rendered by
+     renderPicker()). Kept entirely separate from the practice screen so
+     picking what to practice never interrupts actually practicing.
+     ============================================================ -->
+<div class="drawerOverlay" id="topicsDrawerOverlay">
+  <div class="drawerPanel" id="topicsDrawerPanel">
+    <div class="drawerHead">
+      <h2>Topics & question types</h2>
+      <button type="button" class="modalCloseX" id="topicsDrawerCloseBtn" aria-label="Close">✕</button>
+    </div>
+
+    <div class="drawerSection">
+      <div class="drawerSectionLabel">Practice mode</div>
+      <div class="modeToggle">
+        <button type="button" class="modeBtn active" id="modeABtn">All reactions</button>
+        <button type="button" class="modeBtn" id="modeBBtn">Practice weak spots</button>
+      </div>
+      <p class="modeDescription" id="modeDescription"></p>
+    </div>
+
+    <div class="drawerSection">
+      <div class="drawerSectionLabel">Question types</div>
+      <div class="qtypeChecks">
+        <label class="checkLabel"><input type="checkbox" id="qtypeProduct"> Guess product</label>
+        <label class="checkLabel"><input type="checkbox" id="qtypeReactant"> Guess starting material</label>
+        <label class="checkLabel"><input type="checkbox" id="qtypeReagent"> Guess reagents & conditions</label>
+        <label class="checkLabel"><input type="checkbox" id="qtypeDistinguish"> Distinguishing tests</label>
+      </div>
+    </div>
+
+    <div class="drawerSection">
+      <div class="drawerSectionLabel">Topics</div>
+      <p class="warnNote" style="margin-top:0;">Applies to "All reactions" mode. "Practice weak spots" draws from every topic, weighted toward reactions you've gotten wrong more often.</p>
+      <div id="pickerBlock"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Session summary modal -- shown when a session ends (explicitly via
+     "End current session" in Stats, or automatically detected on return
+     after a break long enough that the previous session had clearly
+     wrapped up).
+     ============================================================ -->
+<div class="modalOverlay" id="sessionSummaryOverlay">
+  <div class="modalBox">
+    <div class="modalHead">
+      <h2>Session summary</h2>
+      <button type="button" class="modalCloseX" id="sessionSummaryCloseBtn" aria-label="Close">✕</button>
+    </div>
+    <div id="sessionSummaryBody"></div>
+    <div class="feedbackActions">
+      <button type="button" id="sessionSummaryContinueBtn" class="primary">Keep practicing</button>
+    </div>
+  </div>
+</div>
+
+<button type="button" id="zenExitBtn" class="zenExitBtn">Exit zen mode</button>
 
 <!-- ============================================================
      Feedback / bug-report modal -- shared by the header "Feedback"
@@ -1195,17 +1383,16 @@ function nitrileFormation(mol, leavingX){
   return { occurs:true, product:v };
 }
 
-// R-CN + H2O -> R-COOH (acidic or alkaline conditions both end up at the
-// same organic product for grading purposes here, matching how this app
-// never requires inorganic byproducts like HX/H2 to be built for any
-// other substitution/addition reaction -- only CO2+H2O gets its own
-// toggle, and only because oxidative cleavage can produce it as the WHOLE
-// answer with no organic product at all, which never happens here).
-function nitrileHydrolysis(mol){
+// R-CN + H2O -> R-COOH (acidic, target:'COOH') or R-COO-Na+ (alkaline,
+// target:'COONa') -- same acidic-vs-alkaline distinction hydrolyzeEster/
+// hydrolyzeAmide already make: alkaline conditions immediately deprotonate
+// the carboxylic acid as it forms, so the isolated product is the sodium
+// carboxylate salt, not the neutral acid.
+function nitrileHydrolysis(mol, target){
   const v = cloneMol(mol);
   const cn = v.nodes.find(n=>n.group==='CN');
   if(!cn) return { occurs:false };
-  cn.group = 'COOH';
+  cn.group = target;
   return { occurs:true, product:v };
 }
 
@@ -5141,7 +5328,7 @@ var POOL = [
     gen:function(d){ return generateAlkylbenzene(1+Math.floor(Math.random()*3)); },
     run:function(mol){ return op.sideChainOxidationToBenzoicAcid(mol); } },
   { id:'alkylbenzeneOxidationAlkaline', label:'Side-chain oxidation of alkylbenzene (alkaline KMnO4)', topic:'Arenes',
-    reagentText:'KMnO4(aq), dilute NaOH, heat; then dilute H2SO4', tags: ['KMnO4(aq)', 'dilute NaOH', 'heat; then dilute H2SO4'], mode:'single',
+    reagentText:'KMnO4(aq), dilute NaOH, heat; then dilute H2SO4', tags: ['KMnO4(aq)', 'dilute NaOH', 'heat', 'dilute H2SO4'], mode:'single',
     gen:function(d){ return generateAlkylbenzene(1+Math.floor(Math.random()*3)); },
     run:function(mol){ return op.sideChainOxidationToBenzoicAcid(mol); } },
   { id:'tertButylbenzeneOxidation', label:'Side-chain oxidation of tert-butylbenzene', topic:'Arenes',
@@ -5167,11 +5354,11 @@ var POOL = [
   { id:'nitrileHydrolysisAcidic', label:'Acidic hydrolysis of nitriles', topic:'Halogen Derivatives',
     reagentText:'dilute H2SO4, heat', tags: ['dilute H2SO4', 'heat'], mode:'single',
     gen:function(d){ return generateNitrile(d); },
-    run:function(mol){ return op.nitrileHydrolysis(mol); } },
+    run:function(mol){ return op.nitrileHydrolysis(mol, 'COOH'); } },
   { id:'nitrileHydrolysisAlkaline', label:'Alkaline hydrolysis of nitriles', topic:'Halogen Derivatives',
     reagentText:'dilute NaOH(aq), heat', tags: ['dilute NaOH(aq)', 'heat'], mode:'single',
     gen:function(d){ return generateNitrile(d); },
-    run:function(mol){ return op.nitrileHydrolysis(mol); } },
+    run:function(mol){ return op.nitrileHydrolysis(mol, 'COONa'); } },
   { id:'nitrileReduction', label:'Reduction of nitriles', topic:'Halogen Derivatives',
     reagentText:'LiAlH4 in dry ether (or H2, Ni catalyst)', tags: ['LiAlH4', 'dry ether'], tagAlternates: [['H2', 'Ni catalyst']], mode:'single',
     gen:function(d){ return generateNitrile(d); },
@@ -5189,11 +5376,11 @@ var POOL = [
     gen:function(d){ return generateMolecule(d, {forceExistingHalogen:true, forceHalogenType:'F', forceNoDoubleBonds:true}); },
     run:function(mol){ return { occurs:false }; } },
   { id:'haloareneNoSubstitution', label:'Nucleophilic substitution of halogenoarenes', topic:'Halogen Derivatives',
-    reagentText:'NaOH(aq), heat (halogenoalkane conditions)', tags: ['NaOH(aq)', 'heat (halogenoalkane conditions)'], mode:'single',
+    reagentText:'NaOH(aq), heat (halogenoalkane conditions)', tags: ['NaOH(aq)', 'heat'], mode:'single',
     gen:function(d){ return generateHaloarene(['Cl','Br','I'][Math.floor(Math.random()*3)]); },
     run:function(mol){ return { occurs:false }; } },
   { id:'haloareneElectrophilicSubstitution', label:'Electrophilic substitution of halogenoarenes', topic:'Halogen Derivatives',
-    reagentText:'conc HNO3, conc H2SO4 (occurs less readily than benzene)', tags: ['conc HNO3', 'conc H2SO4 (occurs less readily than benzene)'], mode:'variants',
+    reagentText:'conc HNO3, conc H2SO4 (occurs less readily than benzene)', tags: ['conc HNO3', 'conc H2SO4'], mode:'variants',
     gen:function(d){ return generateHaloarene(Math.random()<0.5 ? 'Cl' : 'Br'); },
     run:function(mol){ return op.ringElectrophilicSubstitution(mol, 'NO2'); } },
 
@@ -5263,11 +5450,26 @@ var POOL = [
   { id:'tertiaryAlcoholToChloroalkaneHCl', label:'Conversion of tertiary alcohols to chloroalkanes (HCl)', topic:'Hydroxy Compounds',
     reagentText:'conc HCl, room temperature', tags: ['conc HCl', 'room temperature'], mode:'single',
     gen:function(d){ return alcoholClass(3); },
-    run:function(mol){ return op.nucleophilicSubstitutionFlat(mol,'OH','Cl'); } },
+    run:function(mol){ return op.nucleophilicSubstitutionFlat(mol,'OH','Cl'); },
+    // nucleophilicSubstitutionFlat itself doesn't check carbon degree (unlike
+    // oxidizeAlcohol), so the reagent-equivalence search (see
+    // getReagentAcceptableCombos) would otherwise also offer this entry's
+    // tags for a primary/secondary alcohol question, where they're wrong --
+    // HCl alone only substitutes a tertiary -OH at a useful rate.
+    applicable:function(mol){
+      var c = mol.nodes.find(function(n){ return !n.ring && n.subs && n.subs.indexOf('OH')!==-1; });
+      return !!c && engineMod.neighborsOf(mol, c.id).length===3;
+    } },
   { id:'primarySecondaryAlcoholToChloroalkaneHCl', label:'Conversion of primary/secondary alcohols to chloroalkanes (HCl/ZnCl2)', topic:'Hydroxy Compounds',
     reagentText:'conc HCl, ZnCl2, heat', tags: ['conc HCl', 'ZnCl2', 'heat'], mode:'single',
     gen:function(d){ return alcoholClass(1+Math.floor(Math.random()*2)); },
-    run:function(mol){ return op.nucleophilicSubstitutionFlat(mol,'OH','Cl'); } },
+    run:function(mol){ return op.nucleophilicSubstitutionFlat(mol,'OH','Cl'); },
+    // Mirror image of tertiaryAlcoholToChloroalkaneHCl's guard above -- only
+    // offered as an equivalent answer for a non-tertiary alcohol.
+    applicable:function(mol){
+      var c = mol.nodes.find(function(n){ return !n.ring && n.subs && n.subs.indexOf('OH')!==-1; });
+      return !!c && engineMod.neighborsOf(mol, c.id).length!==3;
+    } },
   { id:'alcoholToBromoalkane', label:'Conversion of alcohols to bromoalkanes', topic:'Hydroxy Compounds',
     reagentText:'conc HBr (or NaBr, conc H2SO4, heat)', tags: ['conc HBr'], tagAlternates: [['NaBr', 'conc H2SO4', 'heat']], mode:'single',
     gen:function(d){ return anyAlcohol(); },
@@ -5277,7 +5479,7 @@ var POOL = [
     gen:function(d){ return anyAlcohol(); },
     run:function(mol){ return op.nucleophilicSubstitutionFlat(mol,'OH','I'); } },
   { id:'phenolToHalogenoareneNoReaction', label:'Conversion of phenols to halogenoarenes', topic:'Hydroxy Compounds',
-    reagentText:'Halogenating reagents (requires extremely harsh conditions)', tags: ['Halogenating reagents (requires extremely harsh conditions)'], mode:'single',
+    reagentText:'Halogenating reagents (requires extremely harsh conditions)', tags: ['Halogenating reagents'], mode:'single',
     gen:function(d){ return generatePhenol(); },
     run:function(mol){ return { occurs:false }; } },
   { id:'dehydrationOfAlcohols', label:'Dehydration of alcohols', topic:'Hydroxy Compounds',
@@ -5371,7 +5573,16 @@ var POOL = [
   { id:'oxidationKetoneNoReaction', label:'Oxidation of ketone with acidified oxidising agents', topic:'Carbonyl Compounds',
     reagentText:'K2Cr2O7 (or KMnO4), dilute H2SO4, heat', tags: ['K2Cr2O7', 'dilute H2SO4', 'heat'], tagAlternates: [['KMnO4', 'dilute H2SO4', 'heat']], mode:'single',
     gen:function(d){ return anyKetone(); },
-    run:function(mol){ return op.oxidizeAldehyde(mol); } },
+    run:function(mol){ return op.oxidizeAldehyde(mol); },
+    // oxidizeAldehyde just looks for ANY group:'CHO' node -- this entry's
+    // own gen() only ever hands it a ketone (no CHO), which is why its run
+    // always safely refuses on its own molecules, but the reagent-
+    // equivalence search (see getReagentAcceptableCombos) can substitute in
+    // a foreign molecule that DOES have a CHO (any aldehyde question), where
+    // oxidizeAldehyde would incorrectly succeed. Only offered as an
+    // alternative when the substrate genuinely has no CHO group, i.e. really
+    // is ketone-shaped.
+    applicable:function(mol){ return !mol.nodes.some(function(n){ return n.group==='CHO'; }); } },
   { id:'tollensTestAldehyde', label:"Tollens' reagent test (aldehyde)", topic:'Carbonyl Compounds',
     reagentText:"Tollens' reagent, warm", tags: ["Tollens' reagent", 'warm'], mode:'single',
     gen:function(d){ return anyAldehydeOrBenzaldehyde(); },
@@ -5379,15 +5590,35 @@ var POOL = [
   { id:'tollensTestKetoneNoReaction', label:"Tollens' reagent test (ketone)", topic:'Carbonyl Compounds',
     reagentText:"Tollens' reagent, warm", tags: ["Tollens' reagent", 'warm'], mode:'single',
     gen:function(d){ return anyKetone(); },
-    run:function(mol){ return op.oxidizeAldehyde(mol); } },
+    run:function(mol){ return op.oxidizeAldehyde(mol); },
+    // Same reasoning as oxidationKetoneNoReaction's guard just above --
+    // oxidizeAldehyde has no aromaticity/substrate-class awareness of its
+    // own, so this only applies when there's genuinely no CHO group to react.
+    applicable:function(mol){ return !mol.nodes.some(function(n){ return n.group==='CHO'; }); } },
   { id:'fehlingsTestAliphaticAldehyde', label:"Fehling's reagent test (aliphatic aldehyde)", topic:'Carbonyl Compounds',
     reagentText:"Fehling's reagent, warm", tags: ["Fehling's reagent", 'warm'], mode:'single',
     gen:function(d){ return anyAldehyde(); },
-    run:function(mol){ return op.oxidizeAldehyde(mol); } },
+    run:function(mol){ return op.oxidizeAldehyde(mol); },
+    // oxidizeAldehyde itself doesn't check aromaticity, so the reagent-
+    // equivalence search (see getReagentAcceptableCombos) would otherwise
+    // also offer "Fehling's reagent" for a benzaldehyde question -- but
+    // Fehling's does NOT oxidise benzaldehyde (see
+    // fehlingsTestBenzaldehydeNoReaction), so this only applies when the
+    // CHO carbon isn't attached to a ring.
+    applicable:function(mol){
+      var c = mol.nodes.find(function(n){ return n.group==='CHO'; });
+      if(!c) return false;
+      return !engineMod.neighborsOf(mol, c.id).some(function(nb){
+        var node = engineMod.findNode(mol, nb.to);
+        return node && node.ring;
+      });
+    } },
   { id:'fehlingsTestKetoneNoReaction', label:"Fehling's reagent test (ketone)", topic:'Carbonyl Compounds',
     reagentText:"Fehling's reagent, warm", tags: ["Fehling's reagent", 'warm'], mode:'single',
     gen:function(d){ return anyKetone(); },
-    run:function(mol){ return op.oxidizeAldehyde(mol); } },
+    run:function(mol){ return op.oxidizeAldehyde(mol); },
+    // Same reasoning as oxidationKetoneNoReaction's guard above.
+    applicable:function(mol){ return !mol.nodes.some(function(n){ return n.group==='CHO'; }); } },
   { id:'fehlingsTestBenzaldehydeNoReaction', label:"Fehling's reagent test (benzaldehyde)", topic:'Carbonyl Compounds',
     reagentText:"Fehling's reagent, warm", tags: ["Fehling's reagent", 'warm'], mode:'single',
     gen:function(d){ return generateBenzaldehyde(); },
@@ -5467,7 +5698,8 @@ var POOL = [
     genReactant:function(d){ return { mol:generateAmine([shortHalideChainLen(), shortHalideChainLen()]) }; },
     run:function(mol, reactant){ return op.acylChlorideToAmide(mol, reactant.mol); } },
   { id:'esterHydrolysisAcidic', label:'Acid hydrolysis of ester', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'dilute acid, heat under reflux', tags: ['dilute acid', 'heat under reflux'], mode:'fragments',
+    reagentText:'dilute acid, heat under reflux', tags: ['dilute acid', 'heat under reflux'],
+    tagAlternates: [['dilute HCl(aq)', 'heat under reflux'], ['dilute H2SO4(aq)', 'heat under reflux']], mode:'fragments',
     gen:function(d){ return anyEster(); },
     run:function(mol){ return op.hydrolyzeEster(mol, 'COOH'); } },
   { id:'esterHydrolysisAlkaline', label:'Alkaline hydrolysis of ester', topic:'Carboxylic Acids & Derivatives',
@@ -5479,7 +5711,8 @@ var POOL = [
     gen:function(d){ return generateAcidAnhydride(shortHalideChainLen(), shortHalideChainLen()); },
     run:function(mol){ return op.hydrolyzeAcidAnhydride(mol); } },
   { id:'amideHydrolysisAcidic', label:'Acid hydrolysis of amide', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'dilute acid, heat under reflux', tags: ['dilute acid', 'heat under reflux'], mode:'single',
+    reagentText:'dilute acid, heat under reflux', tags: ['dilute acid', 'heat under reflux'],
+    tagAlternates: [['dilute HCl(aq)', 'heat under reflux'], ['dilute H2SO4(aq)', 'heat under reflux']], mode:'single',
     gen:function(d){ return op.acylChlorideToAmide(anyAcylChloride(), null).product; },
     run:function(mol){ return op.hydrolyzeAmide(mol, 'COOH'); } },
   { id:'amideHydrolysisAlkaline', label:'Alkaline hydrolysis of amide', topic:'Carboxylic Acids & Derivatives',
@@ -5515,7 +5748,8 @@ var POOL = [
     gen:function(d){ return generateNitrobenzene(); },
     run:function(mol){ return op.ringFlatSubSwap(mol, 'NO2', 'NH2'); } },
   { id:'phenylammoniumSaltFormation', label:'Formation of phenylammonium salt', topic:'Nitrogen Compounds',
-    reagentText:'dilute acid', tags: ['dilute acid'], mode:'single',
+    reagentText:'dilute acid', tags: ['dilute acid'],
+    tagAlternates: [['dilute HCl(aq)'], ['dilute H2SO4(aq)']], mode:'single',
     gen:function(d){ return Math.random()<0.5 ? generatePhenylamine() : generateAminoAlkane(d); },
     run:function(mol){ return op.protonateAmine(mol); } },
   { id:'phenylamineBromination', label:'Bromination of phenylamine', topic:'Nitrogen Compounds',
@@ -5596,13 +5830,34 @@ function canonicalTag(text){ var f = ALL_TAGS.find(function(t){ return t.toLower
 function allTagCombos(spec){
   return [spec.tags||[]].concat(spec.tagAlternates||[]);
 }
+// Room temperature is the implicit default whenever a combo doesn't call
+// out any temperature/condition of its own -- matches how this is actually
+// marked in H2 exams. A tag counts as "temperature-ish" fairly broadly (any
+// heat/warm/reflux/cold/distil wording, or a literal degree value like
+// '30°C' or '0-10°C') so genuinely temperature-specific combos are never
+// mistaken for temperature-less ones.
+function isTemperatureTag(tag){
+  return /heat|warm|reflux|cold|room temperature|distil|\d+\s*°?c/i.test(tag);
+}
+// Same idea as tagSetsEqual, but first drops a submitted 'room temperature'
+// tag when `combo` itself specifies no temperature at all -- so adding it
+// is never penalised as an extraneous wrong tag, while a combo that DOES
+// specify a real temperature (even just '30°C') still requires an exact
+// match, not this leniency.
+function tagsMatchForGrading(submitted, combo){
+  var hasTemp = combo.some(isTemperatureTag);
+  var sub = hasTemp ? submitted : submitted.filter(function(t){ return t.toLowerCase()!=='room temperature'; });
+  return tagSetsEqual(sub, combo);
+}
 // Whichever combo the submission matches best -- an exact match if one
 // exists, otherwise whichever combo shares the most tags with what was
 // submitted, purely so the "missing" reveal has a single sensible combo to
-// show rather than an arbitrary one when nothing matched exactly.
-function bestMatchingTagCombo(submittedTags, spec){
-  var combos = allTagCombos(spec);
-  var exact = combos.find(function(c){ return tagSetsEqual(submittedTags, c); });
+// show rather than an arbitrary one when nothing matched exactly. Takes the
+// already-resolved list of acceptable combos (see getReagentAcceptableCombos)
+// rather than a spec, since which combos are acceptable now depends on more
+// than just the current spec's own tags/tagAlternates.
+function bestMatchingTagCombo(submittedTags, combos){
+  var exact = combos.find(function(c){ return tagsMatchForGrading(submittedTags, c); });
   if(exact) return exact;
   var subLower = new Set(submittedTags.map(function(t){ return t.toLowerCase(); }));
   var best = combos[0], bestScore = -1;
@@ -5611,6 +5866,49 @@ function bestMatchingTagCombo(submittedTags, spec){
     if(score>bestScore){ bestScore = score; best = c; }
   });
   return best;
+}
+// Every acceptable tag combo for THIS 'reagent'-mode question, not just
+// current.spec's own -- re-runs every OTHER POOL spec's run() against the
+// SAME current.mol/current.reactant, and if the result's product
+// structurally matches what was actually shown to the student
+// (computeGivenProductItems), folds that sibling spec's own combos in too.
+// Same "verify by re-simulation" idea reactantCandidateMatchesGiven already
+// uses for 'reactant' mode, just walking the reagent axis instead of the
+// reactant axis: rather than hand-maintaining which POOL entries describe
+// the "same" transformation, actually run each one and see if it reproduces
+// the given product. Deliberately no tag-based pre-filter -- discovering a
+// sibling via a totally DIFFERENT tag set is the whole point. A spec with an
+// `applicable` guard (see e.g. fehlingsTestAliphaticAldehyde) is skipped
+// unless the guard passes -- needed for the handful of specs whose operator
+// doesn't itself enforce a substrate restriction that only their own `gen`
+// currently relies on (e.g. Fehling's not working on benzaldehyde), so the
+// generic search can't be fooled into offering a chemically wrong answer for
+// those. Cached on `current` (a fresh object every question) since
+// renderTagBox calls this on every keystroke.
+function getReagentAcceptableCombos(){
+  if(current._reagentAcceptableCombos) return current._reagentAcceptableCombos;
+  var givenItems = computeGivenProductItems();
+  var combos = allTagCombos(current.spec).slice();
+  POOL.forEach(function(p){
+    if(p===current.spec) return;
+    if(p.applicable && !p.applicable(current.mol)) return;
+    // The whole per-sibling body is guarded, not just p.run() -- a spec
+    // built for a different substrate can return {occurs:true} with a
+    // product shape that's technically well-formed by its OWN run()'s
+    // standards but incompatible with what computeCorrectAnswerSet/
+    // productSetEqual expect here (e.g. a 'fragments'-mode spec's run
+    // silently leaving .products unset for a substrate it wasn't designed
+    // for). A malformed/incompatible sibling should just be skipped, the
+    // same as one that throws outright inside run() itself.
+    try {
+      var r = p.run(current.mol, current.reactant);
+      if(!r) return;
+      var items = r.occurs ? computeCorrectAnswerSet(p, r).items : [{ kind:'chain', mol: current.mol }];
+      if(engineMod.productSetEqual(items, givenItems)) combos = combos.concat(allTagCombos(p));
+    } catch(e){ /* incompatible sibling -- not a valid alternative answer */ }
+  });
+  current._reagentAcceptableCombos = combos;
+  return combos;
 }
 
 // guessMode: which of the three things in a reaction the student has to
@@ -5622,15 +5920,36 @@ function bestMatchingTagCombo(submittedTags, spec){
 // mode (ester/amide/anhydride hydrolysis, combustion, oxidative cleavage
 // alternatives bundled as multiple separate correct-answer molecules),
 // since "the" starting material isn't a single unambiguous target there
-// the same way it is for 'single'/'variants'.
-function guessModeOptions(spec){
-  var opts = ['product', 'reagent'];
+// the same way it is for 'single'/'variants'. 'reagent' is additionally
+// excluded whenever THIS instance's reaction doesn't occur (occurs:false) --
+// with the reactant and given "product" shown as the same unchanged
+// molecule, there's no way to deduce which one specific reagent was tried
+// and failed (infinitely many wouldn't react); 'product' still legitimately
+// asks for "No reaction" as the answer, and 'reactant' already has its own
+// no-reaction handling (see revealReactantAnswer), so only 'reagent' needs
+// this exclusion. Checked dynamically per-instance rather than via a
+// hand-flagged list of "no reaction" specs, so it automatically covers every
+// current and future such entry with no bookkeeping.
+function guessModeOptions(spec, occurs){
+  var opts = ['product'];
+  if(occurs) opts.push('reagent');
   if(spec.mode!=='fragments') opts.push('reactant');
   return opts;
 }
-function pickGuessMode(spec){
-  var opts = guessModeOptions(spec);
-  return opts[Math.floor(Math.random()*opts.length)];
+// Picks among whichever of this spec's valid guessModeOptions are also
+// enabled in the Topics drawer's question-type checkboxes -- `forced` (the
+// type nextQuestion() rolled for this round) wins when it's actually valid
+// here, otherwise falls back to a random pick among the enabled/valid
+// intersection. If the student has disabled every option this particular
+// spec supports (e.g. only 'reactant' is on, but this spec is 'fragments'
+// mode so 'reactant' isn't offered), falls back to the full unfiltered set
+// rather than a blank question.
+function pickGuessMode(spec, occurs, forced){
+  var opts = guessModeOptions(spec, occurs);
+  if(forced && opts.indexOf(forced)!==-1 && questionTypes[forced]) return forced;
+  var enabled = opts.filter(function(o){ return questionTypes[o]; });
+  var pool = enabled.length ? enabled : opts;
+  return pool[Math.floor(Math.random()*pool.length)];
 }
 
 // ---- tag input (reagent/conditions guess) ----
@@ -5668,12 +5987,17 @@ function renderTagBox(){
   var box = document.getElementById('tagBox');
   var input = document.getElementById('tagTextInput');
   Array.from(box.querySelectorAll('.tagChip')).forEach(function(el){ el.remove(); });
-  var matchedCombo = current ? bestMatchingTagCombo(reagentGuessTags, current.spec) : [];
+  var matchedCombo = current ? bestMatchingTagCombo(reagentGuessTags, getReagentAcceptableCombos()) : [];
   reagentGuessTags.forEach(function(tag, idx){
     var chip = document.createElement('span');
     var cls = 'tagChip';
     if(revealed){
-      var isCorrect = matchedCombo.some(function(c){ return c.toLowerCase()===tag.toLowerCase(); });
+      // A leniently-accepted extra 'room temperature' chip (see
+      // tagsMatchForGrading) needs to render green here too -- otherwise a
+      // submission the app just marked fully correct would still show that
+      // one chip in red, a confusing contradiction.
+      var isCorrect = matchedCombo.some(function(c){ return c.toLowerCase()===tag.toLowerCase(); })
+        || (tag.toLowerCase()==='room temperature' && !matchedCombo.some(isTemperatureTag));
       cls += isCorrect ? ' tagCorrect' : ' tagWrong';
     } else if(!isKnownTag(tag)){
       cls += ' tagInvalid';
@@ -5785,8 +6109,9 @@ function moveAutocompleteHighlight(delta){
 })();
 
 function revealTagAnswer(){
-  var isCorrect = allTagCombos(current.spec).some(function(c){ return tagSetsEqual(reagentGuessTags, c); });
-  var matchedCombo = bestMatchingTagCombo(reagentGuessTags, current.spec);
+  var acceptableCombos = getReagentAcceptableCombos();
+  var isCorrect = acceptableCombos.some(function(c){ return tagsMatchForGrading(reagentGuessTags, c); });
+  var matchedCombo = bestMatchingTagCombo(reagentGuessTags, acceptableCombos);
   var submittedLower = new Set(reagentGuessTags.map(function(t){ return t.toLowerCase(); }));
   var missing = matchedCombo.filter(function(t){ return !submittedLower.has(t.toLowerCase()); });
 
@@ -5849,7 +6174,7 @@ function computeGivenProductItems(){
   return computeCorrectAnswerSet(current.spec, current.result).items;
 }
 
-function generateQuestion(){
+function generateQuestion(forcedType){
   var spec, mol, result, difficulty, visual, reactant, reactantVisual, guard = 0;
   do {
     spec = pickSpec();
@@ -5874,8 +6199,30 @@ function generateQuestion(){
     (spec.mode==='variants' && result.occurs && (result.variants ? result.variants.length : 1)>4 || (visual && visual.overlap) || (reactantVisual && reactantVisual.overlap))
     && guard<50
   );
-  current = { spec:spec, mol:mol, difficulty:difficulty, result:result, visual:visual, reactant:reactant, reactantVisual:reactantVisual, guessMode: pickGuessMode(spec) };
+  current = { spec:spec, mol:mol, difficulty:difficulty, result:result, visual:visual, reactant:reactant, reactantVisual:reactantVisual, guessMode: pickGuessMode(spec, result.occurs, forcedType) };
   showQuestion();
+}
+
+// Rotates between whichever question types are enabled in the Topics
+// drawer -- the 3 POOL-driven guess modes (product/reactant/reagent) plus
+// the separately-implemented Distinguishing Tests practice mode, all
+// treated as equally-weighted options for "what's next" rather than 4
+// entirely separate screens. If every type somehow ends up disabled (the
+// drawer's own checkbox guard should prevent this, but defensively), falls
+// back to 'product' rather than generating nothing.
+function nextQuestion(){
+  var reactionTypes = ['product','reactant','reagent'].filter(function(t){ return questionTypes[t]; });
+  var choices = reactionTypes.slice();
+  if(questionTypes.distinguish) choices.push('distinguish');
+  if(choices.length===0) choices = ['product'];
+  var chosen = choices[Math.floor(Math.random()*choices.length)];
+  if(chosen==='distinguish'){
+    showPracticeMode('distinguish');
+    generateDistinguishSet();
+  } else {
+    showPracticeMode('reaction');
+    generateQuestion(chosen);
+  }
 }
 
 var GUESS_LABELS = {
@@ -6155,6 +6502,7 @@ function finishReveal(verdict){
   s.attempts++;
   if(!verdict.correct) s.wrong++;
   renderStats();
+  recordAttempt(current.guessMode, !!verdict.correct);
 
   var box = document.getElementById('verdictBox');
   box.classList.remove('hidden', 'verdictGood', 'verdictBad', 'verdictWarn');
@@ -6413,8 +6761,8 @@ function renderPicker(){
       label.className = 'checkLabel';
       var cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.checked = true;
-      cb.addEventListener('change', function(){ selected[p.id] = cb.checked; syncSelectAllState(); });
+      cb.checked = selected[p.id];
+      cb.addEventListener('change', function(){ selected[p.id] = cb.checked; syncSelectAllState(); saveSettings(); });
       label.appendChild(cb);
       label.appendChild(document.createTextNode(p.label));
       body.appendChild(label);
@@ -6434,6 +6782,7 @@ function renderPicker(){
       var checkAll = selectAllCb.checked;
       rows.forEach(function(cb, i){ cb.checked = checkAll; selected[entries[i].id] = checkAll; });
       syncSelectAllState();
+      saveSettings();
     });
     toggleBtn.addEventListener('click', function(){
       var open = body.classList.toggle('hidden')===false;
@@ -6442,6 +6791,285 @@ function renderPicker(){
 
     pickerRoot.appendChild(group);
   });
+}
+
+// ---- settings persistence (topics, practice mode, question types, zen) ----
+// Everything the student would otherwise have to re-set every visit --
+// loaded once at startup (before the first question is generated) and
+// saved on every change, so reopening the app drops straight back into
+// practicing with the same setup, no settings screen in the way.
+var SETTINGS_STORAGE_KEY = 'h2ChemDrill.settings.v1';
+var questionTypes = { product:true, reactant:true, reagent:true, distinguish:true };
+var zenEnabled = false;
+function saveSettings(){
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      selected: selected, mode: mode, questionTypes: questionTypes, zenEnabled: zenEnabled
+    }));
+  } catch(e){ /* storage unavailable -- settings just won't persist this session */ }
+}
+function loadSettings(){
+  try {
+    var raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if(!raw) return;
+    var parsed = JSON.parse(raw);
+    if(!parsed) return;
+    if(parsed.selected){
+      Object.keys(selected).forEach(function(id){
+        if(parsed.selected.hasOwnProperty(id)) selected[id] = !!parsed.selected[id];
+      });
+    }
+    if(parsed.mode==='A' || parsed.mode==='B') mode = parsed.mode;
+    if(parsed.questionTypes){
+      ['product','reactant','reagent','distinguish'].forEach(function(k){
+        if(typeof parsed.questionTypes[k]==='boolean') questionTypes[k] = parsed.questionTypes[k];
+      });
+    }
+    if(typeof parsed.zenEnabled==='boolean') zenEnabled = parsed.zenEnabled;
+  } catch(e){ /* corrupt or unavailable -- just start with defaults */ }
+}
+
+// ---- sessions (a continuous block of practicing) + GitHub-style streak ----
+// A session is bounded by either an explicit "End current session" click, or
+// by the app noticing on load that too much time passed since the last
+// recorded answer (IDLE_TIMEOUT_MS) to still be "the same sitting" -- in
+// that case the stale session is silently closed out and folded into
+// history right away, and its summary is shown once (a "welcome back, here's
+// how that went" moment) without blocking the next question from already
+// being ready underneath it.
+var ACTIVE_SESSION_KEY = 'h2ChemDrill.activeSession.v1';
+var SESSIONS_HISTORY_KEY = 'h2ChemDrill.sessions.v1';
+var IDLE_TIMEOUT_MS = 20*60*1000;
+var MAX_SESSION_HISTORY = 60;
+var QTYPE_LABELS = { product:'Guess product', reactant:'Guess starting material', reagent:'Guess reagents & conditions', distinguish:'Distinguishing tests' };
+
+var sessionsHistory = [];
+var activeSession = null; // { startedAt, lastActivity, log:[{ts,type,correct}] } -- correct is null for ungraded (distinguish) entries
+
+function loadSessionsHistory(){
+  try {
+    var raw = localStorage.getItem(SESSIONS_HISTORY_KEY);
+    sessionsHistory = raw ? (JSON.parse(raw) || []) : [];
+  } catch(e){ sessionsHistory = []; }
+}
+function saveSessionsHistory(){
+  try { localStorage.setItem(SESSIONS_HISTORY_KEY, JSON.stringify(sessionsHistory)); } catch(e){}
+}
+function saveActiveSession(){
+  try { localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(activeSession)); } catch(e){}
+}
+function summarizeSession(s){
+  var byType = {};
+  ['product','reactant','reagent','distinguish'].forEach(function(t){ byType[t] = { n:0, correct:0 }; });
+  s.log.forEach(function(entry){
+    if(!byType[entry.type]) return;
+    byType[entry.type].n++;
+    if(entry.correct===true) byType[entry.type].correct++;
+  });
+  var graded = s.log.filter(function(e){ return e.correct!==null; });
+  return {
+    id: s.startedAt, startedAt: s.startedAt, endedAt: s.lastActivity, total: s.log.length,
+    correct: graded.filter(function(e){ return e.correct; }).length,
+    graded: graded.length, byType: byType
+  };
+}
+function finalizeActiveSession(){
+  if(!activeSession || activeSession.log.length===0){
+    activeSession = null;
+    try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch(e){}
+    return null;
+  }
+  var summary = summarizeSession(activeSession);
+  sessionsHistory.unshift(summary);
+  if(sessionsHistory.length>MAX_SESSION_HISTORY) sessionsHistory.length = MAX_SESSION_HISTORY;
+  saveSessionsHistory();
+  try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch(e){}
+  activeSession = null;
+  return summary;
+}
+function startNewSession(){
+  var now = new Date().toISOString();
+  activeSession = { startedAt: now, lastActivity: now, log: [] };
+  saveActiveSession();
+}
+// Reads whatever session was active last time the app was open. If it's
+// still within the idle window, resumes it silently (same session
+// continues). If too much time has passed, closes it out into history and
+// returns its summary so the caller can show a "here's how that went" modal
+// once the next question is already on screen.
+function initSession(){
+  loadSessionsHistory();
+  var resumedSummaryToShow = null;
+  try {
+    var raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      if(parsed && parsed.startedAt && Array.isArray(parsed.log)){
+        var gapMs = Date.now() - new Date(parsed.lastActivity).getTime();
+        activeSession = parsed;
+        if(gapMs >= IDLE_TIMEOUT_MS) resumedSummaryToShow = finalizeActiveSession();
+      }
+    }
+  } catch(e){ /* corrupt -- just start fresh below */ }
+  if(!activeSession) startNewSession();
+  return resumedSummaryToShow;
+}
+function recordAttempt(type, correct){
+  if(!activeSession) startNewSession();
+  activeSession.log.push({ ts: new Date().toISOString(), type: type, correct: (correct===undefined ? null : correct) });
+  activeSession.lastActivity = new Date().toISOString();
+  saveActiveSession();
+  renderSessionIndicator();
+}
+function renderSessionIndicator(){
+  var el = document.getElementById('sessionIndicator');
+  if(!activeSession || activeSession.log.length===0){ el.textContent = ''; return; }
+  var s = summarizeSession(activeSession);
+  var accTxt = s.graded>0 ? Math.round(100*s.correct/s.graded)+'% correct' : 'self-checked so far';
+  el.textContent = 'This session: ' + s.total + ' question' + (s.total===1?'':'s') + ' · ' + accTxt;
+}
+
+// Practice mode (see the drawer's "Practice mode" section) picks WHICH
+// reaction is generated next; it's a persistent, easy-to-miss setting (set
+// once, then invisible for the rest of the session), so it's surfaced as an
+// always-visible badge above the question -- not just inside the drawer --
+// plus a plain-language explanation of what each option actually does,
+// shown right under the toggle buttons themselves.
+var PRACTICE_MODE_LABELS = { A: 'All reactions', B: 'Practice weak spots' };
+var PRACTICE_MODE_DESCRIPTIONS = {
+  A: 'Questions are drawn at random from every reaction you’ve enabled below in Topics.',
+  B: 'Ignores the Topics selection below and draws from every reaction in the app, weighted so ones you’ve gotten wrong more often come up more.'
+};
+function renderModeIndicator(){
+  document.getElementById('modeIndicator').textContent = PRACTICE_MODE_LABELS[mode];
+  var desc = document.getElementById('modeDescription');
+  if(desc) desc.textContent = PRACTICE_MODE_DESCRIPTIONS[mode];
+}
+
+function sessionSummaryHtml(summary){
+  var pct = summary.graded>0 ? Math.round(100*summary.correct/summary.graded) : null;
+  var lines = '<p><strong>' + summary.total + '</strong> question' + (summary.total===1?'':'s') + ' this session'
+    + (pct!==null ? ', <strong>' + pct + '%</strong> correct' : '') + '.</p>';
+  var rows = Object.keys(QTYPE_LABELS).filter(function(t){ return summary.byType[t] && summary.byType[t].n>0; }).map(function(t){
+    var bt = summary.byType[t];
+    var accTxt = t==='distinguish' ? bt.n + ' done (self-checked)' : bt.correct + '/' + bt.n + ' correct';
+    return '<div class="sessionHistoryItem"><span>' + escapeHtml(QTYPE_LABELS[t]) + '</span><span>' + escapeHtml(accTxt) + '</span></div>';
+  }).join('');
+  return lines + rows;
+}
+function showSessionSummary(summary){
+  document.getElementById('sessionSummaryBody').innerHTML = sessionSummaryHtml(summary);
+  document.getElementById('sessionSummaryOverlay').classList.add('open');
+}
+
+function dateKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function computeDailyCounts(){
+  var counts = {};
+  sessionsHistory.forEach(function(s){
+    var k = dateKey(new Date(s.startedAt));
+    counts[k] = (counts[k]||0) + s.total;
+  });
+  if(activeSession && activeSession.log.length){
+    activeSession.log.forEach(function(entry){
+      var k = dateKey(new Date(entry.ts));
+      counts[k] = (counts[k]||0) + 1;
+    });
+  }
+  return counts;
+}
+function heatLevel(n){
+  if(!n) return 0;
+  if(n<3) return 1;
+  if(n<6) return 2;
+  if(n<12) return 3;
+  return 4;
+}
+// GitHub-contribution-graph-style grid: columns are weeks, rows are days
+// Sun-Sat, most recent week on the right. Padded with invisible cells at
+// the start so the first real day lands in its correct weekday row.
+function renderStreakHeatmap(){
+  var counts = computeDailyCounts();
+  var container = document.getElementById('streakHeatmap');
+  container.innerHTML = '';
+  var grid = document.createElement('div');
+  grid.className = 'heatmapGrid';
+  var today = new Date(); today.setHours(0,0,0,0);
+  var days = 7*18;
+  var cells = [];
+  for(var i=days-1;i>=0;i--){
+    var d = new Date(today.getTime() - i*86400000);
+    var k = dateKey(d);
+    cells.push({ date:k, count: counts[k]||0, dow:d.getDay() });
+  }
+  var startDow = cells[0].dow;
+  for(var p=0;p<startDow;p++) cells.unshift(null);
+  cells.forEach(function(c){
+    var cell = document.createElement('div');
+    cell.className = 'heatmapCell';
+    if(c){
+      cell.setAttribute('data-level', heatLevel(c.count));
+      cell.title = c.date + ': ' + c.count + ' question' + (c.count===1?'':'s');
+    } else {
+      cell.style.visibility = 'hidden';
+    }
+    grid.appendChild(cell);
+  });
+  container.appendChild(grid);
+
+  var activeDays = Object.keys(counts).filter(function(k){ return counts[k]>0; });
+  var streak = 0;
+  var cursor = new Date(today);
+  while(counts[dateKey(cursor)] > 0){ streak++; cursor.setDate(cursor.getDate()-1); }
+  document.getElementById('streakSummary').textContent =
+    streak + ' day' + (streak===1?'':'s') + ' current streak · ' + activeDays.length + ' active day' + (activeDays.length===1?'':'s') + ' total';
+}
+
+function renderSessionHistoryList(){
+  var list = document.getElementById('sessionHistoryList');
+  list.innerHTML = '';
+  if(sessionsHistory.length===0){
+    var p = document.createElement('p');
+    p.className = 'warnNote';
+    p.style.marginTop = '0';
+    p.textContent = "No completed sessions yet — they're saved when you end one, or automatically when you come back after a break.";
+    list.appendChild(p);
+    return;
+  }
+  sessionsHistory.slice(0, 15).forEach(function(s){
+    var row = document.createElement('div');
+    row.className = 'sessionHistoryItem';
+    var d = new Date(s.startedAt);
+    var accTxt = s.graded>0 ? Math.round(100*s.correct/s.graded)+'% correct' : 'self-checked';
+    row.innerHTML = '<span>' + escapeHtml(d.toLocaleDateString(undefined,{month:'short',day:'numeric'})) + '</span><span>' + s.total + ' q · ' + escapeHtml(accTxt) + '</span>';
+    list.appendChild(row);
+  });
+}
+
+function renderStatsScreen(){
+  renderStreakHeatmap();
+  renderSessionHistoryList();
+  renderStats();
+}
+
+var currentPracticeMode = 'reaction'; // 'reaction' | 'distinguish' -- which of the two practice panels is showing, so Stats can restore it on close
+function showPracticeMode(which){
+  currentPracticeMode = which;
+  document.getElementById('questionPanel').classList.toggle('hidden', which!=='reaction');
+  document.getElementById('distinguishPanel').classList.toggle('hidden', which!=='distinguish');
+}
+function openStatsScreen(){
+  document.getElementById('questionPanel').classList.add('hidden');
+  document.getElementById('distinguishPanel').classList.add('hidden');
+  document.getElementById('sessionIndicator').classList.add('hidden');
+  document.getElementById('modeIndicator').classList.add('hidden');
+  document.getElementById('statsScreen').classList.remove('hidden');
+  renderStatsScreen();
+}
+function closeStatsScreen(){
+  document.getElementById('statsScreen').classList.add('hidden');
+  document.getElementById('sessionIndicator').classList.remove('hidden');
+  document.getElementById('modeIndicator').classList.remove('hidden');
+  showPracticeMode(currentPracticeMode);
 }
 
 // ---- distinguishing tests (separate practice mode, own panel) ----
@@ -6798,6 +7426,7 @@ function renderDistinguishSet(){
 // the table rather than crammed into cells.
 function revealDistinguishAnswers(){
   distinguishRevealed = true;
+  recordAttempt('distinguish', null);
 
   distinguishRows.forEach(function(row){
     row.testEl.contentEditable = 'false';
@@ -6863,7 +7492,7 @@ function revealDistinguishAnswers(){
 }
 
 document.getElementById('distinguishRevealBtn').addEventListener('click', revealDistinguishAnswers);
-document.getElementById('distinguishNextBtn').addEventListener('click', generateDistinguishSet);
+document.getElementById('distinguishNextBtn').addEventListener('click', nextQuestion);
 document.getElementById('distinguishAddRowBtn').addEventListener('click', addDistinguishRow);
 document.getElementById('distinguishModeTable').addEventListener('change', function(){
   if(this.checked){
@@ -6879,39 +7508,74 @@ document.getElementById('distinguishModeFree').addEventListener('change', functi
 });
 
 // ---- wiring ----
-// A third, purely presentational "Progress" tab alongside the two real quiz
-// modes -- switching to it doesn't touch `mode` (the actual weighted-pick
-// vs manual-pick generation setting), it just swaps which panel is shown;
-// switching back to Pick/Weak spots leaves whichever mode was already
-// active exactly as it was. "Distinguishing tests" is a genuinely separate
-// practice mode (free-text self-check, no molecule building at all), so
-// unlike the other three it also swaps out questionPanel itself for
-// distinguishPanel rather than just changing what's shown in setupPanel.
-function setActivePanel(which){
-  document.getElementById('modeABtn').classList.toggle('active', which==='pick');
-  document.getElementById('modeBBtn').classList.toggle('active', which==='weak');
-  document.getElementById('modeDBtn').classList.toggle('active', which==='distinguish');
-  document.getElementById('modeCBtn').classList.toggle('active', which==='progress');
-  document.getElementById('pickerBlock').classList.toggle('hidden', which!=='pick');
-  document.getElementById('statsBlock').classList.toggle('hidden', which!=='progress');
-  document.getElementById('questionPanel').classList.toggle('hidden', which==='distinguish');
-  document.getElementById('distinguishPanel').classList.toggle('hidden', which!=='distinguish');
-}
 document.getElementById('modeABtn').addEventListener('click', function(){
   mode = 'A';
-  setActivePanel('pick');
+  document.getElementById('modeABtn').classList.add('active');
+  document.getElementById('modeBBtn').classList.remove('active');
+  renderModeIndicator();
+  saveSettings();
 });
 document.getElementById('modeBBtn').addEventListener('click', function(){
   mode = 'B';
-  setActivePanel('weak');
+  document.getElementById('modeBBtn').classList.add('active');
+  document.getElementById('modeABtn').classList.remove('active');
+  renderModeIndicator();
+  saveSettings();
 });
-document.getElementById('modeDBtn').addEventListener('click', function(){
-  setActivePanel('distinguish');
-  if(!distinguishCurrent) generateDistinguishSet();
+
+function wireQtypeCheckbox(type, elId){
+  var el = document.getElementById(elId);
+  el.checked = questionTypes[type];
+  el.addEventListener('change', function(){
+    questionTypes[type] = el.checked;
+    // Never allow every question type to end up disabled at once -- there'd
+    // be nothing left for nextQuestion() to offer. Reverting just the box
+    // the student last touched is the least surprising fix.
+    var anyOn = ['product','reactant','reagent','distinguish'].some(function(k){ return questionTypes[k]; });
+    if(!anyOn){ questionTypes[type] = true; el.checked = true; }
+    saveSettings();
+  });
+}
+wireQtypeCheckbox('product', 'qtypeProduct');
+wireQtypeCheckbox('reactant', 'qtypeReactant');
+wireQtypeCheckbox('reagent', 'qtypeReagent');
+wireQtypeCheckbox('distinguish', 'qtypeDistinguish');
+
+function closeDrawer(){ document.getElementById('topicsDrawerOverlay').classList.remove('open'); }
+document.getElementById('topicsDrawerBtn').addEventListener('click', function(){
+  document.getElementById('topicsDrawerOverlay').classList.add('open');
 });
-document.getElementById('modeCBtn').addEventListener('click', function(){
-  renderStats();
-  setActivePanel('progress');
+document.getElementById('topicsDrawerCloseBtn').addEventListener('click', closeDrawer);
+document.getElementById('topicsDrawerOverlay').addEventListener('click', function(ev){
+  if(ev.target===this) closeDrawer();
+});
+
+document.getElementById('statsNavBtn').addEventListener('click', openStatsScreen);
+document.getElementById('statsBackBtn').addEventListener('click', closeStatsScreen);
+document.getElementById('endSessionBtn').addEventListener('click', function(){
+  var summary = finalizeActiveSession();
+  startNewSession();
+  renderSessionIndicator();
+  renderStatsScreen();
+  if(summary) showSessionSummary(summary);
+});
+
+function setZen(on){
+  zenEnabled = on;
+  document.body.classList.toggle('zen', on);
+  saveSettings();
+}
+document.getElementById('zenToggleBtn').addEventListener('click', function(){ setZen(true); });
+document.getElementById('zenExitBtn').addEventListener('click', function(){ setZen(false); });
+
+document.getElementById('sessionSummaryCloseBtn').addEventListener('click', function(){
+  document.getElementById('sessionSummaryOverlay').classList.remove('open');
+});
+document.getElementById('sessionSummaryContinueBtn').addEventListener('click', function(){
+  document.getElementById('sessionSummaryOverlay').classList.remove('open');
+});
+document.getElementById('sessionSummaryOverlay').addEventListener('click', function(ev){
+  if(ev.target===this) this.classList.remove('open');
 });
 // What the builder opens seeded with -- the GIVEN side of the reaction, so
 // the student edits what's already there instead of drawing from scratch.
@@ -6956,7 +7620,7 @@ document.getElementById('submitAnswerBtn').addEventListener('click', function(){
   if(current.guessMode==='reagent'){ if(reagentGuessTags.length>0) revealAnswer(); return; }
   if(userAnswer.noReaction || userAnswer.molecules.length>0 || userAnswer.co2h2o) revealAnswer();
 });
-document.getElementById('nextBtn').addEventListener('click', generateQuestion);
+document.getElementById('nextBtn').addEventListener('click', nextQuestion);
 document.getElementById('showReactionNameToggle').addEventListener('change', function(){
   if(current) renderQLabel();
 });
@@ -7127,9 +7791,21 @@ document.getElementById('feedbackSubmitBtn').addEventListener('click', function(
   });
 });
 
+loadSettings();
+document.body.classList.toggle('zen', zenEnabled);
+document.getElementById('modeABtn').classList.toggle('active', mode==='A');
+document.getElementById('modeBBtn').classList.toggle('active', mode==='B');
+renderModeIndicator();
+document.getElementById('qtypeProduct').checked = questionTypes.product;
+document.getElementById('qtypeReactant').checked = questionTypes.reactant;
+document.getElementById('qtypeReagent').checked = questionTypes.reagent;
+document.getElementById('qtypeDistinguish').checked = questionTypes.distinguish;
 renderPicker();
 renderStats();
-generateQuestion();
+var __resumedSummary = initSession();
+renderSessionIndicator();
+nextQuestion();
+if(__resumedSummary) showSessionSummary(__resumedSummary);
 })();
 </script>
 </body>
