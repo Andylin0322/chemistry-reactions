@@ -7,7 +7,7 @@ const { radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxida
   diazotisation, azoCoupling, protonateAmine,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide } = require('./operators');
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, iodoformCleavage } = require('./operators');
 const { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateHaloarene, generateAmine, generateAlkylChloride, generateSubstitutedArene,
   generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde,
   generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium } = require('./generator');
@@ -612,6 +612,20 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
     coupledProducts[0].nodes.filter(n=>n.ring).length===2 &&
     coupledProducts[0].edges.some(e=>e.type==='D' && [e.a,e.b].includes(coupledN[0].id) && [e.a,e.b].includes(coupledN[1].id)));
   t('azo coupling refuses a non-diazonium input', azoCoupling(generateAldehyde(2), generatePhenol()).occurs===false);
+
+  // CH3-CO-CH2CH3 (butan-2-one, a methyl ketone) -- iodoform reaction should
+  // fire, giving CHI3 (1 carbon, 3 I, 1 implicit H) + CH3CH2COONa.
+  const methylKetone = generateKetone(1, 2);
+  const iodoform = iodoformCleavage(methylKetone);
+  const chi3Product = iodoform.products && iodoform.products.find(p=>p.mol.nodes.length===1);
+  const saltProduct = iodoform.products && iodoform.products.find(p=>p!==chi3Product);
+  t('iodoform reaction occurs on a methyl ketone, gives CHI3 + a carboxylate salt',
+    iodoform.occurs===true && iodoform.products.length===2 &&
+    !!chi3Product && chi3Product.mol.nodes[0].subs.filter(s=>s==='I').length===3 &&
+    implicitH(chi3Product.mol, chi3Product.mol.nodes[0].id)===1 &&
+    !!saltProduct && saltProduct.mol.nodes.some(n=>n.group==='COONa'));
+  t('iodoform reaction refuses a non-methyl ketone (no terminal CH3 arm)', iodoformCleavage(generateKetone(2,2)).occurs===false);
+  t('iodoform reaction refuses a non-ketone input', iodoformCleavage(generateAldehyde(2)).occurs===false);
 }
 
 console.log('\\n'+pass+' passed, '+fail+' failed');

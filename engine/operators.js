@@ -794,6 +794,38 @@ function hydrolyzeAmide(mol, target){
   return { occurs:true, product:v };
 }
 
+// CH3-CO-R + I2/NaOH(aq), warm -> CHI3 + RCOONa (iodoform reaction).
+// Methyl ketones only -- finds the carbonyl carbon (oxo, no group) and, of
+// its neighbours, the one that's a genuinely terminal, unsubstituted methyl
+// (a plain carbon bonded to nothing else at all, exactly one neighbour: the
+// carbonyl carbon itself) -- if there isn't one, the ketone has no methyl
+// arm to trigger the test and this correctly refuses, same "look for the
+// shape, refuse if absent" style as every other operator here. The methyl
+// carbon's own 3 H's become CHI3 (built fresh, not derived from it, since
+// the 3 I substituents replace those H's); the carbonyl carbon closes up
+// into a carboxylate salt exactly like hydrolyzeEster's alkaline branch.
+function iodoformCleavage(mol){
+  const v = cloneMol(mol);
+  const c = v.nodes.find(n=>!n.ring && n.oxo && !n.group);
+  if(!c) return { occurs:false };
+  const methylNb = neighborsOf(v, c.id).find(nb=>{
+    const n = findNode(v, nb.to);
+    if(!n || n.ring || n.oxo || n.group || (n.subs && n.subs.length)) return false;
+    return neighborsOf(v, n.id).length===1;
+  });
+  if(!methylNb) return { occurs:false };
+  c.oxo = false;
+  c.group = 'COONa';
+  v.nodes = v.nodes.filter(n=>n.id!==methylNb.to);
+  v.edges = v.edges.filter(e=>e.a!==methylNb.to && e.b!==methylNb.to);
+  const chi3Carbon = newNode();
+  chi3Carbon.subs = ['I','I','I'];
+  const chi3 = { nodes:[chi3Carbon], edges:[] };
+  const products = connectedComponents(v).map(f=>({ kind:'chain', mol:{nodes:f.nodes, edges:f.edges} }));
+  products.push({ kind:'chain', mol: chi3 });
+  return { occurs:true, products };
+}
+
 /* =========================================================================
    NITROGEN COMPOUND OPERATORS
    The diazonium group (-N2Cl) is a CLOSED group node, same family as
@@ -903,5 +935,5 @@ module.exports = {
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
   hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, connectedComponents,
-  diazotisation, azoCoupling, protonateAmine
+  diazotisation, azoCoupling, protonateAmine, iodoformCleavage
 };

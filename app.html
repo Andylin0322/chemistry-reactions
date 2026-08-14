@@ -27,34 +27,16 @@
     --bad: #a43e3e;
   }
   * { box-sizing: border-box; }
-  html { font-size: 17px; }
+  html { font-size: 17px; height: 100%; }
   body {
     margin: 0;
+    height: 100%;
+    overflow: hidden;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     line-height: 1.5;
   }
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 32px 72px; }
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px 32px;
-    margin-bottom: 24px;
-  }
-  .modeToggle { display: flex; gap: 8px; margin-bottom: 14px; }
-  .modeBtn {
-    flex: 1;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  .modeBtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .topicGroup { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
   .topicHeader { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg); }
   .topicHeader input[type=checkbox] { flex: 0 0 auto; }
@@ -76,18 +58,20 @@
   .warnNote { color: var(--muted); font-size: 0.8rem; margin: 10px 0 8px; }
   .ioBtns { display: flex; gap: 10px; align-items: center; }
   button {
-    padding: 10px 16px;
-    border-radius: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
     border: 1px solid var(--border);
     background: transparent;
     color: var(--text);
     cursor: pointer;
     font-size: 0.95rem;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.12s ease, background 0.15s ease;
   }
   button:hover { border-color: var(--accent); }
+  button:active { transform: scale(0.97); }
   .fileBtn {
     padding: 8px 14px;
-    border-radius: 8px;
+    border-radius: 999px;
     border: 1px solid var(--border);
     cursor: pointer;
     font-size: 0.9rem;
@@ -136,39 +120,44 @@
      so the boxes get the space instead; its reagent/condition label wraps
      across multiple lines rather than forcing the arrow -- and so the whole
      row -- wider. */
-  .equationRow { display: flex; align-items: center; flex-wrap: nowrap; gap: 18px; margin-bottom: 14px; }
-  .eqItem { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1 1 0; min-width: 0; }
+  .equationRow { display: flex; align-items: center; flex-wrap: nowrap; justify-content: center; gap: 18px; margin-bottom: 20px; }
+  .eqItem { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; min-width: 0; }
   .eqBox {
-    width: 100%; max-width: 340px; aspect-ratio: 1 / 1; box-sizing: border-box;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    width: var(--eqBoxSize, 260px); max-width: 100%; aspect-ratio: 1 / 1; box-sizing: border-box;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
     display: flex; align-items: center; justify-content: center; padding: 10px;
   }
-  .eqBox svg { max-width: 100%; max-height: 100%; }
+  .eqBox svg { max-width: 100%; max-height: 100%; aspect-ratio:1;}
   .eqBox.eqBoxUnknown { font-size: 3rem; font-weight: 700; color: var(--accent); }
   .eqFormula { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.98rem; font-weight: 600; text-align: center; color: var(--text); min-height: 1.2em; overflow-wrap: anywhere; }
   .eqPlus { font-weight: 700; color: var(--muted); font-size: 1.5rem; flex: 0 0 auto; }
-  .eqArrowWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0.8 1 190px; min-width: 140px; padding: 0 4px; }
-  .eqArrowLabel { font-size: 0.86rem; line-height: 1.4; color: var(--muted); text-align: center; min-height: 1.1em; overflow-wrap: break-word; }
-  .eqArrowLabel.eqArrowUnknown { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+  .eqArrowWrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; flex: 1 1 200px; min-width: 90px; padding: 0 4px; }
+  /* The reagent/condition label reads as a pill sitting on the arrow
+     (matches the reference look) -- the "?" placeholder (reagent-guess
+     mode) stays plain text, not a pill, via .eqArrowUnknown below. */
+  .eqArrowLabel {
+    font-size: 0.86rem; line-height: 1.4; color: var(--text); text-align: center; overflow-wrap: break-word;
+    border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 14px; background: var(--bg);
+  }
+  .eqArrowLabel.eqArrowUnknown { font-size: 1.6rem; font-weight: 700; color: var(--accent); border: none; background: none; padding: 0; border-radius: 0; }
   .eqArrow { width: 100%; min-width: 32px; height: 2px; background: var(--muted); position: relative; margin: 6px 0; flex-shrink: 0; }
   .eqArrow:after {
     content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
     border-style: solid; border-width: 7px 0 7px 12px; border-color: transparent transparent transparent var(--muted);
   }
-  #productGivenArea { display: flex; width: 100%; }
-  #productGivenArea .missingAnswerRow { flex-wrap: nowrap; justify-content: center; width: 100%; gap: 8px; }
-  #productGivenArea .missingAnswerCard { width: 100%; max-width: 340px; flex: 1 1 0; min-width: 0; }
+  #productGivenArea { display: flex; width: auto; max-width: 100%; }
+  #productGivenArea .missingAnswerRow { flex-wrap: nowrap; justify-content: center; gap: 8px; }
+  #productGivenArea .missingAnswerRow.eqGrid { display: grid; grid-template-columns: repeat(2, var(--eqBoxSize, 260px)); }
+  #productGivenArea .missingAnswerCard { width: var(--eqBoxSize, 260px); max-width: 100%; flex: 0 0 auto; min-width: 0; }
   #productGivenArea .missingAnswerCard .molVisualBox {
     width: 100%; aspect-ratio: 1 / 1; box-sizing: border-box;
     display: flex; align-items: center; justify-content: center; padding: 8px; margin-bottom: 4px;
   }
   #productGivenArea .missingAnswerCard .molVisualBox svg { width: auto; height: auto; max-width: 100%; max-height: 100%; }
-  .guessLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .guessLabel { font-size: 1.35rem; font-weight: 700; color: var(--text); margin-bottom: 20px; }
 
-  .reactionNameToggle { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
 
   /* ---- tag input (reagents/conditions guess) ---- */
-  .tagInputWrap { position: relative; margin-bottom: 8px; }
   .tagBox { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); min-height: 40px; }
   .tagChip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid var(--accent); color: var(--accent); font-size: 0.82rem; }
   .tagChip.tagInvalid { background: color-mix(in srgb, var(--bad) 12%, transparent); border-color: var(--bad); color: var(--bad); }
@@ -176,12 +165,14 @@
   .tagChip button:hover { opacity: 1; }
   .tagChip.tagCorrect { background: color-mix(in srgb, var(--good) 15%, transparent); border-color: var(--good); color: var(--good); }
   .tagChip.tagWrong { background: color-mix(in srgb, var(--bad) 15%, transparent); border-color: var(--bad); color: var(--bad); }
+  /* a missing reagent/condition tag, merged straight into #tagBox once
+     revealed -- the tag-mode equivalent of .ghostCard above. */
+  .tagChip.tagGhost { border-style: dashed; opacity: 0.55; }
   .tagTextInput { flex: 1; min-width: 120px; border: none; outline: none; background: transparent; color: var(--text); font-size: 0.88rem; padding: 4px 2px; }
   .tagAutocompleteToggle { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; cursor: pointer; user-select: none; }
   .tagAutocompleteList { position: absolute; left: 0; right: 0; top: 100%; margin-top: 3px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); max-height: 220px; overflow-y: auto; z-index: 20; }
   .tagAutocompleteItem { padding: 7px 10px; font-size: 0.85rem; cursor: pointer; }
   .tagAutocompleteItem:hover, .tagAutocompleteItem.tagAcActive { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-  .tagMissingRow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   #revealRow, #nextRow { margin-top: 6px; }
 
   /* ---- distinguishing tests ---- */
@@ -197,6 +188,30 @@
   .distinguishTable th, .distinguishTable td { border: 1px solid var(--border); padding: 6px; vertical-align: top; }
   .distinguishTable th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: var(--bg); }
   .distinguishTable th:first-child, .distinguishTable td:first-child { width: 26%; }
+  /* Rounded corners via the wrapper (a plain <table> with border-collapse
+     can't round its own cell borders) -- flex:1 lets it soak up whatever
+     height is left in the pane, same "fill the space" treatment as the
+     answer rectangle elsewhere in Play. */
+  #playPane #distinguishTableWrap {
+    flex: 1; min-height: 150px; overflow-y: auto;
+    border: 1.5px solid var(--border); border-radius: 12px;
+  }
+  /* The mol-row/instructions above it are fixed-size and can otherwise eat
+     the whole pane, leaving the table crushed to nothing -- shrink those a
+     touch so the table (the thing that actually needs the room) gets it. */
+  #playPane .distinguishMolRow { margin-bottom: 10px; }
+  #playPane .distinguishMolCard { padding: 6px; }
+  #playPane .distinguishMolCard .molVisualBox svg { height: 66px; }
+  #playPane .distinguishMolCardLabel { margin-bottom: 2px; }
+  #playPane #distinguishPanel > .hintText { margin-bottom: 8px; font-size: 0.78rem; line-height: 1.4; }
+  #playPane .distinguishTable { margin-bottom: 0; }
+  #playPane .distinguishTable th:first-child, #playPane .distinguishTable td:first-child { border-left: none; }
+  #playPane .distinguishTable th:last-child, #playPane .distinguishTable td:last-child { border-right: none; }
+  #playPane .distinguishTable tr:first-child th { border-top: none; }
+  #playPane .distinguishTable tr:last-child td { border-bottom: none; }
+  #playPane #distinguishFreeWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #playPane #distinguishFreeField { flex: 1; min-height: 0; margin-bottom: 0; }
+  #playPane #distinguishRevealBtn { display: block; margin: 10px 0 0 auto; }
   .distinguishCell { min-height: 2.2em; padding: 4px 6px; border-radius: 5px; background: var(--panel); color: var(--text); font-size: 0.85rem; outline: none; }
   .distinguishCell:focus { box-shadow: 0 0 0 2px var(--accent) inset; }
   .distinguishCell:empty:before { content: attr(data-placeholder); color: var(--muted); }
@@ -208,10 +223,17 @@
   .distinguishExplanations { margin-top: 10px; padding: 10px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px solid var(--accent); font-size: 0.85rem; }
   .distinguishExplanations p { margin: 2px 0 8px; }
   .distinguishExplanations p:last-child { margin-bottom: 0; }
-  .verdictBox { margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; }
-  .verdictGood { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); border: 1px solid var(--good); }
-  .verdictBad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); border: 1px solid var(--bad); }
-  .verdictWarn { background: color-mix(in srgb, #c97c2e 15%, transparent); color: #c97c2e; border: 1px solid #c97c2e; font-weight: 400; }
+  /* Correct/wrong indicator -- a compact inline pill sharing the row with
+     "Next question" (see #nextRow) instead of its own bordered paragraph
+     above it, so revealing an answer never adds enough height to push the
+     pane into scrolling. */
+  .verdictBadge {
+    font-size: 0.82rem; font-weight: 700; padding: 5px 12px; border-radius: 999px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; cursor: default;
+  }
+  .verdictBadge.verdictGood { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); border: 1px solid var(--good); }
+  .verdictBadge.verdictBad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); border: 1px solid var(--bad); }
+  .verdictBadge.verdictWarn { background: color-mix(in srgb, #c97c2e 15%, transparent); color: #c97c2e; border: 1px solid #c97c2e; }
   .hidden { display: none !important; }
 
   /* ================= molecule builder modal (scoped, own look) ================= */
@@ -286,22 +308,36 @@
   }
 
   /* ================= answer-build area in the question panel ================= */
+  /* .submittedCard is a fixed constant size regardless of the underlying
+     molecule's proportions -- the svg fills a true square (aspect-ratio,
+     "contain"-scaled via max-width/max-height so nothing stretches or
+     distorts) and #submittedList's own height is derived from this same
+     constant, so a full card (svg + note + edit link) never gets clipped. */
+  :root { --submittedCardW: 160px; --submittedListH: 214px; }
   #submittedList { display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 10px; }
-  .submittedCard { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; position: relative; width: 150px; }
-  .submittedCard svg { width: 100%; height: 80px; display: block; }
+  .submittedCard { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 10px; position: relative; width: var(--submittedCardW); }
+  .submittedCard svg { width: 100%; aspect-ratio: 1 / 1; height: auto; display: block; }
+  .submittedCard .smallSpeciesBox { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; background: var(--bg); border-radius: 6px; }
+  .smallSpeciesLabel { font-weight: 700; font-size: 1.05rem; font-family: "SF Mono", Menlo, Consolas, monospace; letter-spacing: 0.02em; text-align: center; color: var(--text); }
   .submittedCard button { position: absolute; top: 4px; right: 4px; padding: 2px 7px; font-size: 0.75rem; }
   .submittedCard button.submittedEditBtn { right: auto; left: 4px; width: auto; }
   .submittedNote { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; }
   .submittedNote.submittedNoteWarn { color: var(--bad); font-family: inherit; }
-  .noReactionChip { display: inline-flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; }
+  .submittedWarnIcon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, var(--bad) 15%, transparent); cursor: help; font-size: 0.85rem; line-height: 1; }
+  .noReactionChip { display: inline-flex; align-items: center; gap: 8px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; white-space: nowrap; }
   /* per-card correctness marking, shown once the answer is revealed */
-  .submittedCard.cardCorrect { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
-  .submittedCard.cardWrong { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
-  .noReactionChip.chipCorrect { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
-  .noReactionChip.chipWrong { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+  .submittedCard.cardCorrect { border-color: var(--good);}
+  .submittedCard.cardWrong { border-color: var(--bad);}
+  .noReactionChip.chipCorrect { border-color: var(--good);}
+  .noReactionChip.chipWrong { border-color: var(--bad);}
   .submittedCardBadge { position: absolute; top: 4px; left: 6px; font-size: 0.9rem; font-weight: 700; line-height: 1; }
   .submittedCardBadge.badgeGood { color: var(--good); }
   .submittedCardBadge.badgeBad { color: var(--bad); }
+  /* a "ghost" card -- a correct-answer item the student never submitted,
+     merged straight into the submission list once revealed (see
+     renderGhostItems) instead of a separate answer box. Dashed + faded so
+     it reads as "you were missing this" without needing its own ✓/✗ badge. */
+  .submittedCard.ghostCard, .noReactionChip.ghostCard { border-style: dashed; opacity: 0.55; }
   .inlineBadge { font-weight: 700; }
   .inlineBadge.badgeGood { color: var(--good); }
   .inlineBadge.badgeBad { color: var(--bad); }
@@ -309,19 +345,19 @@
      question's own starting molecule is (see .molVisualBox) instead of as
      condensed text */
   .missingAnswerRow { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-  .missingAnswerCard { width: 150px; }
-  .missingAnswerCard .molVisualBox { margin-bottom: 4px; padding: 6px; }
-  .missingAnswerCard .molVisualBox svg { height: 80px; max-width: 100%; }
+  .missingAnswerCard { width: var(--submittedCardW); }
+  .missingAnswerCard .molVisualBox { width: 100%; aspect-ratio: 1 / 1; box-sizing: border-box; margin-bottom: 4px; padding: 8px; align-items: center; }
+  .missingAnswerCard .molVisualBox svg { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+  .missingAnswerCard .molVisualBox.smallSpeciesBox { align-items: center; justify-content: center; }
   .missingAnswerLabel { font-size: 0.72rem; color: var(--muted); text-align: center; font-family: "SF Mono", Menlo, Consolas, monospace; }
   .buildControlsRow { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
 
   /* ---- feedback / bug-report ---- */
   .reportMistakeBtn {
-    font-size: 0.85rem; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border);
-    background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap;
+    font-size: 0.85rem; padding: 9px 18px; border-radius: 999px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap; flex: 0 0 auto;
   }
   .reportMistakeBtn:hover { border-color: var(--accent); color: var(--accent); }
-  .reportRow { margin-top: 14px; text-align: center; }
   #statsSavedNote { color: var(--good); }
 
   .modalOverlay {
@@ -382,355 +418,471 @@
     100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
   }
 
-  /* ================= top nav bar ================= */
-  /* Full-bleed bar (own background/border, edge to edge) with its inner
-     content capped at the same max-width as .wrap so the brand/buttons
-     line up with the panels below -- deliberately OUTSIDE .wrap rather
-     than inside it, so it reads as a real app navbar, not just a page
-     header competing with the panels for the same narrow column. */
-  .topNav { background: var(--panel); border-bottom: 1px solid var(--border); }
-  .topNavInner {
-    max-width: 1200px; margin: 0 auto; padding: 18px 32px;
-    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  /* ================= app shell: sidebar + dark pane stage =================
+     Fixed to exactly 100vh -- the page itself never scrolls; each pane is
+     responsible for fitting (or, for the ones with more content than fits,
+     scrolling internally within .paneCard) its own vertical space. */
+  .appShell { display: flex; align-items: stretch; height: 100vh; }
+  .sideNav {
+    position: relative; width: 320px; flex: 0 0 320px; box-sizing: border-box;
+    padding: 44px 36px; overflow-y: auto;
+    transition: width 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
   }
-  .topNavBrand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
-  .topNavTitle { font-size: 1.35rem; font-weight: 700; margin: 0; white-space: nowrap; }
-  .topNavTagline { color: var(--muted); font-size: 0.88rem; margin: 0; }
-  .navControls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .navBtn { font-size: 0.9rem; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; white-space: nowrap; }
-  .navBtn:hover { border-color: var(--accent); color: var(--accent); }
-  .navBtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .zenExitBtn {
-    display: none; position: fixed; top: 16px; right: 16px; z-index: 950;
-    font-size: 0.85rem; padding: 9px 16px; border-radius: 20px; border: 1px solid var(--border);
-    background: var(--panel); color: var(--muted); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.12);
+  body.sidebarCollapsed .sideNav { width: 0; flex-basis: 0; padding: 44px 0; opacity: 0; overflow: hidden; pointer-events: none; }
+  .sideNavTop { margin-bottom: 30px; }
+  .brandTitle { font-size: 1.5rem; font-weight: 700; line-height: 1.25; margin: 0; }
+  .paneInfo { margin-bottom: 30px; }
+  .paneInfoTitle { font-size: 1.05rem; font-weight: 700; margin: 0 0 10px; }
+  .paneInfoDesc { color: var(--muted); font-size: 0.9rem; line-height: 1.55; margin: 0; }
+  .sideNavList { display: flex; flex-direction: column; gap: 3px; margin-top: 44px; }
+  .navItem {
+    display: block; width: 100%; text-align: left; background: none; border: none; padding: 7px 4px;
+    font-size: 0.95rem; color: var(--text); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration-color: var(--border); cursor: pointer; border-radius: 6px;
+    transition: transform 0.15s ease, color 0.15s ease, text-decoration-color 0.15s ease;
   }
-  .zenExitBtn:hover { color: var(--accent); border-color: var(--accent); }
+  .navItem:hover { color: var(--accent); text-decoration-color: var(--accent); transform: translateX(3px); }
+  .navItem:active { transform: translateX(3px) scale(0.97); }
+  .navItem.active { font-weight: 700; }
+  .navItem.active:before { content: '> '; }
+  @keyframes navPulse { 0% { transform: translateX(3px) scale(1); } 45% { transform: translateX(3px) scale(0.95); } 100% { transform: translateX(3px) scale(1); } }
+  .navItem.pulse { animation: navPulse 0.22s ease; }
 
-  /* ================= session / mode indicators ================= */
-  .modeIndicator {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600;
-    color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
-    border: 1px solid var(--accent); border-radius: 20px; padding: 5px 14px; margin: 24px 0 10px;
+  .sidebarToggleBtn {
+    position: fixed; bottom: 20px; left: 36px; transform: translateX(-50%);
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted); font-size: 15px; line-height: 1; padding: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 300;
+    transition: left 0.25s ease, transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
-  .sessionIndicator { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px; min-height: 1.1em; }
+  .sidebarToggleBtn:hover { color: var(--accent); border-color: var(--accent); }
+  .sidebarToggleBtn:active { transform: translateX(-50%) scale(0.9); }
+  body.sidebarCollapsed .sidebarToggleBtn { left: 16px; transform: translateX(0); }
+  body.sidebarCollapsed .sidebarToggleBtn:active { transform: scale(0.9); }
+
+  .sideNavScrim { display: none; }
+
+  .paneStage { flex: 1 1 auto; min-width: 0; padding: 44px 40px 56px 8px; box-sizing: border-box; overflow: hidden; }
+
+  .paneCard {
+    /* Dark-card palette -- redefines the shared tokens used throughout every
+       existing component (equation boxes, tag chips, tables, buttons...) so
+       the whole light-mode component library re-themes for free. Same
+       scoping trick #mbOverlay already uses for its own --mb-* palette. */
+    --bg: #1b1e21;
+    --panel: #24282c;
+    --border: #383d42;
+    --text: #f3f2ee;
+    --muted: #a4a9ac;
+    --accent: #5fcfb0;
+    --good: #5fcfb0;
+    --bad: #e2897f;
+    background: #131518;
+    color: var(--text);
+    border-radius: 28px;
+    padding: 40px 44px;
+    position: relative;
+    /* Exactly fills paneStage's content box (100vh minus paneStage's own
+       vertical padding) -- a fixed height, not a floor, so "prevent
+       scrolling" is the pane's job (see the Play-pane sizing rules below);
+       overflow-y stays as a safety net for whichever other pane has more
+       content than fits, not the normal case. */
+    height: 100%;
+    overflow-y: auto;
+    box-shadow: 0 30px 60px rgba(0,0,0,.18);
+  }
+  .pane { width: 100%; box-sizing: border-box; }
+
+  /* A handful of components render molecule SVGs baked for a light
+     background (dark ink strokes, see window.__renderStaticMolecule) --
+     rather than dark-theming those specific boxes, they're pinned back to
+     the original light "lab notebook" look regardless of the dark card
+     around them (re-scoping --text/--muted/--accent locally too, so their
+     OWN labels/badges stay legible against that light patch). */
+  .eqBox, .molVisualBox, .submittedCard, .distinguishMolCard {
+    background: #f6f4ee; border-color: #c9c4b4;
+    --bg: #f6f4ee; --panel: #fffefb; --border: #c9c4b4;
+    --text: #20241f; --muted: #5b6058; --accent: #2e6e62; --good: #2e6e62; --bad: #a43e3e;
+  }
+
+  /* ================= Play pane: strict 2-colour (#f6f4ee / #000) look =================
+     Everything sitting directly on the black card uses cream text/borders;
+     the "paper" surfaces (molecule tiles, the big answer rectangle) flip to
+     black-on-cream via a second nested scope, same custom-property trick as
+     above -- just black/cream instead of the rest of the app's teal/coral
+     accents, and with NO in-between tints (no color-mix, no muted grey) so
+     the only two hues in the whole pane are literally #f6f4ee and #000. */
+  #playPane {
+    --text: #f6f4ee; --muted: #f6f4ee; --border: #f6f4ee;
+    --accent: #f6f4ee; --good: #f6f4ee; --bad: #f6f4ee;
+    --bg: #000000; --panel: #000000;
+  }
+  #playPane .eqBox, #playPane .molVisualBox, #playPane .submittedCard,
+  #playPane .distinguishMolCard, #playPane .answerRect, #playPane .tagBox {
+    background: #f6f4ee; border-color: #000000;
+    --bg: #f6f4ee; --panel: #f6f4ee; --border: #000000;
+    --text: #000000; --muted: #000000; --accent: #000000; --good: #000000; --bad: #000000;
+  }
+
+  /* Outline buttons that fill solid on hover (bootstrap btn-outline-* style),
+     inverting whichever two colours are in scope -- cream-on-black directly
+     on the card, black-on-cream inside a paper box. */
+  #playPane button {
+    background: transparent; border: 1.5px solid var(--text); color: var(--text); font-weight: 600;
+  }
+  #playPane button:hover:not(:disabled) { background: var(--text); color: var(--bg); border-color: var(--text); }
+  #playPane button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #playPane .linkBtn {
+    background: none; border: none; padding: 4px 2px; border-radius: 0;
+    text-decoration: underline; text-underline-offset: 3px; font-weight: 600;
+  }
+  #playPane .linkBtn:hover:not(:disabled) { background: none; color: var(--text); opacity: 0.6; }
+
+  /* Grading feedback is the one deliberate exception to the black/cream
+     rule -- real red/green reads faster than fill-vs-outline for "was this
+     right or wrong", so correctness states get their own colours back here
+     (everything else in the pane -- buttons, un-graded tags, chrome --
+     stays strictly black/cream). A wrong/invalid tag also gets a dashed
+     border on top of the colour, so it doesn't rely on colour alone. */
+  #playPane { --good: #2f9e5b; --bad: #e05252; }
+  #playPane .eqBox, #playPane .molVisualBox, #playPane .submittedCard,
+  #playPane .distinguishMolCard, #playPane .answerRect, #playPane .tagBox {
+    --good: #2f9e5b; --bad: #e05252;
+  }
+  #playPane .verdictBadge { border: 1.5px solid var(--text); background: none; color: var(--text); }
+  #playPane .verdictBadge.verdictGood { background: var(--good); border-color: var(--good); color: #fff; }
+  #playPane .verdictBadge.verdictBad { background: none; border-color: var(--bad); color: var(--bad); }
+  #playPane .verdictBadge.verdictWarn { background: none; color: var(--text); border-style: dashed; }
+  #playPane .tagChip { background: none; border: 1.5px solid var(--text); color: var(--text); }
+  #playPane .tagChip.tagInvalid { border-color: var(--bad); border-style: dashed; color: var(--bad); }
+  #playPane .tagChip.tagCorrect { background: var(--good); border-color: var(--good); color: #fff; }
+  #playPane .tagChip.tagWrong { border-color: var(--bad); border-style: dashed; color: var(--bad); }
+  #playPane .submittedCard.cardCorrect { border-color: var(--good);}
+  #playPane .submittedCard.cardWrong { border-color: var(--bad);}
+  #playPane .noReactionChip.chipCorrect { border-color: var(--good);}
+  #playPane .noReactionChip.chipWrong { border-color: var(--bad);}
+  #playPane .submittedCardBadge.badgeGood, #playPane .inlineBadge.badgeGood { color: var(--good); }
+  #playPane .submittedCardBadge.badgeBad, #playPane .inlineBadge.badgeBad { color: var(--bad); }
+  #playPane .distinguishAnswerTable td, #playPane .distinguishExplanations {
+    background: none; border: 1px solid var(--border);
+  }
+  #playPane .modeIndicator { background: none; }
+  #playPane input[type="checkbox"], #playPane input[type="radio"] { accent-color: var(--text); }
+  #playPane .tagAutocompleteItem:hover, #playPane .tagAutocompleteItem.tagAcActive { background: var(--text); color: var(--bg); }
+  #playPane .distinguishCell:focus, #playPane .distinguishFreeField:focus { box-shadow: 0 0 0 2px var(--border) inset; }
+
+  /* ---- Play pane top row (reaction label + report button) ---- */
+  .playTopRow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+  .playMeta { color: var(--muted); font-size: 0.85rem; display: flex; flex-wrap: wrap; column-gap: 12px; row-gap: 2px; }
+  .playStatusRow { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  /* ---- mode indicator (now lives inside the dark card) ---- */
+  .modeIndicator {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600;
+    color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border: 1px solid var(--accent); border-radius: 20px; padding: 4px 12px;
+  }
   .modeDescription { font-size: 0.85rem; color: var(--muted); margin: 10px 0 0; line-height: 1.55; }
 
-  /* ================= topics/mode drawer ================= */
-  .drawerOverlay { display: none; position: fixed; inset: 0; background: rgba(20,22,18,.45); z-index: 900; }
-  .drawerOverlay.open { display: block; }
-  .drawerPanel {
-    position: fixed; top: 0; left: 0; bottom: 0; width: 360px; max-width: 88vw;
-    background: var(--panel); border-right: 1px solid var(--border); box-shadow: 10px 0 30px rgba(0,0,0,.25);
-    overflow-y: auto; padding: 18px 20px 32px; transform: translateX(-100%); transition: transform 0.2s ease;
-  }
-  .drawerOverlay.open .drawerPanel { transform: translateX(0); }
-  .drawerHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .drawerHead h2 { font-size: 1rem; margin: 0; }
+  /* ---- Topic and Question Selection pane ---- */
+  .paneHeading { font-size: 1.3rem; font-weight: 700; margin: 0 0 26px; }
+  .topicsGrid { display: grid; grid-template-columns: minmax(220px, 320px) 1fr; gap: 48px; align-items: start; }
+  .paneSectionLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 12px; }
+  .paneSectionLabel.modeLabel { margin-top: 30px; }
   .drawerSection { margin-bottom: 22px; }
-  .drawerSectionLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
-  .qtypeChecks { display: flex; flex-direction: column; gap: 8px; }
 
-  /* ================= stats screen ================= */
-  .statsScreenHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; }
-  .statsScreenHead h2 { margin: 0; font-size: 1.1rem; }
-  .streakSummary { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
-  .heatmapScroll { overflow-x: auto; padding-bottom: 8px; margin-bottom: 4px; }
-  .heatmapGrid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; width: max-content; }
-  .heatmapCell { width: 13px; height: 13px; border-radius: 3px; background: var(--bg); border: 1px solid var(--border); }
-  .heatmapCell[data-level="1"] { background: color-mix(in srgb, var(--accent) 28%, var(--bg)); border-color: transparent; }
-  .heatmapCell[data-level="2"] { background: color-mix(in srgb, var(--accent) 52%, var(--bg)); border-color: transparent; }
-  .heatmapCell[data-level="3"] { background: color-mix(in srgb, var(--accent) 76%, var(--bg)); border-color: transparent; }
-  .heatmapCell[data-level="4"] { background: var(--accent); border-color: transparent; }
-  .sessionHistoryList { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-  .sessionHistoryItem { display: flex; justify-content: space-between; gap: 10px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--bg); }
+  /* ---- Stats pane ---- */
+  .statsPaneBody { display: block; }
   .tableScroll { overflow-x: auto; }
 
-  /* ================= zen mode ================= */
-  body.zen .topNavTagline { display: none; }
-  body.zen .navControls { display: none; }
-  body.zen .modeIndicator { display: none; }
-  body.zen .sessionIndicator { display: none; }
-  body.zen .reportRow { display: none; }
-  body.zen .zenExitBtn { display: inline-flex; align-items: center; }
+  /* ---- Play pane: horizontal equation row + fill-remaining-space stack ----
+     The reactant(s)/arrow/product row sits at its natural height, above
+     everything else; the build controls / big answer rectangle (or the
+     reagent tag box) below it grows to soak up whatever's left in the pane
+     (see "prevent scrolling" above), so there's no dead space without
+     needing the equation itself to stretch. */
+  #playPane { display: flex; flex-direction: column; height: 100%; }
+  #playPane #distinguishPanel, #playPane #questionPanel {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+  }
+  #playPane .playTopRow, #playPane .playStatusRow, #playPane .guessLabel, #playPane .equationRow { flex: none; }
+
+  /* ---- big answer rectangle (product/reactant cards, or reagent tags) ----
+     Sized to fit exactly one row of cards -- scrolls sideways instead of
+     wrapping to a second row, so it never grows the pane past its fixed
+     height. The reagent-tag box (#tagBox) is the same "big rectangle" for
+     that mode, but keeps its own multi-row tag wrapping (with its own
+     vertical scroll) since a handful of short text tags reading top-to-
+     bottom is normal, unlike a wide grid of square molecule cards. */
+  .answerRect { border: 1.5px solid var(--border); border-radius: 20px; padding: 18px 22px; margin-bottom: 14px; flex: none; }
+  .answerRect #submittedList {
+    margin-bottom: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    height: var(--submittedListH); align-items: center;
+  }
+  .answerRect #submittedList .submittedCard, .answerRect #submittedList .noReactionChip { flex: 0 0 auto; }
+  #answerBuildArea { flex: none; display: flex; flex-direction: column; }
+  #answerBuildArea #submitAnswerBtn { display: block; margin: 0 0 0 auto; }
+
+  /* Reagent mode: a slim single-line input sits above the big tag
+     rectangle -- kept as its own element (not inside the rectangle) so the
+     autocomplete dropdown, positioned relative to just this row, appears
+     right under where the student is actually typing instead of under the
+     whole (much taller) box. */
+  #playPane #reagentGuessArea:not(.hidden) { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .tagInputRow { position: relative; flex: none; margin-bottom: 12px; }
+  #playPane .tagTextInput {
+    display: block; width: 100%; box-sizing: border-box; border: 1.5px solid var(--border);
+    border-radius: 999px; padding: 12px 18px; font-size: 1rem; background: none; color: var(--text);
+  }
+  #playPane .tagAutocompleteToggle { flex: none; }
+  #playPane .tagBox {
+    flex: 1; min-height: 0; overflow-y: auto; align-items: flex-start; align-content: flex-start;
+    padding: 22px; border-radius: 20px; border-width: 1.5px;
+  }
+  #playPane .submittedCard { text-align: center; }
+  #playPane .submittedCard button.submittedEditBtn {
+    position: static; display: inline-block; margin: 6px auto 0; background: none; border: none;
+    padding: 2px 4px; text-decoration: underline; text-underline-offset: 2px; font-weight: 600; font-size: 0.78rem;
+  }
+
+  /* ---- grading area: no longer a big box of its own -- missing/"ghost"
+     items are merged straight into #submittedList (see .ghostCard), and the
+     correct/wrong verdict is a compact pill sharing THIS SAME row with
+     "Next question" (see .verdictBadge) rather than a bordered paragraph
+     above it -- reveal never adds more than one row of height, so it can
+     never push the pane into needing to scroll. */
+  #playPane #answerBlock:not(.hidden) { flex: none; }
+  #playPane #nextRow { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #playPane #nextRow .linkBtn { flex: none; margin-left: auto; }
 
   /* ================= responsive ================= */
-  @media (max-width: 900px) {
-    .wrap { padding: 24px 20px 56px; }
-    .topNavInner { padding: 16px 20px; }
+  @media (max-width: 1080px) {
+    .topicsGrid { grid-template-columns: 1fr; gap: 30px; }
+    .statsPaneBody { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 860px) {
+    .sideNav {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 300px; max-width: 85vw; z-index: 200;
+      background: var(--bg); box-shadow: 12px 0 34px rgba(0,0,0,.25); padding: 32px 26px;
+      transform: translateX(0); transition: transform 0.25s ease; overflow-y: auto;
+    }
+    body.sidebarCollapsed .sideNav {
+      transform: translateX(-100%); width: 300px; flex-basis: 300px; padding: 32px 26px; opacity: 1; pointer-events: auto;
+    }
+    .sidebarToggleBtn { left: 16px; top: 16px; transform: none; }
+    body.sidebarCollapsed .sidebarToggleBtn { left: 16px; transform: none; }
+    .sideNavScrim { display: none; position: fixed; inset: 0; background: rgba(20,22,18,.5); z-index: 150; }
+    body:not(.sidebarCollapsed) .sideNavScrim { display: block; }
+    .paneStage { padding: 88px 16px 40px; }
+    .paneCard { padding: 26px 20px; border-radius: 20px; }
   }
   @media (max-width: 640px) {
-    .wrap { padding: 18px 14px 56px; }
-    .topNavInner { padding: 14px 16px; gap: 12px; }
-    .topNavTitle { font-size: 1.1rem; }
-    .drawerPanel { width: 100%; max-width: 100%; }
     .equationRow { gap: 8px; }
-    .eqArrowWrap { flex: 0 1 70px; min-width: 56px; }
+    .eqArrowWrap { flex: 1 1 70px; min-width: 56px; }
     .eqArrowLabel { font-size: 0.72rem; }
     .eqBox.eqBoxUnknown { font-size: 2.2rem; }
-    .panel { padding: 18px 16px; }
-  }
-  @media (max-width: 420px) {
-    .navBtn { padding: 8px 12px; font-size: 0.85rem; }
+    .paneCard { padding: 20px 16px; }
   }
 </style>
 </head>
 <body>
-<nav class="topNav">
-  <div class="topNavInner">
-    <div class="topNavBrand">
-      <h1 class="topNavTitle">H2 Chemistry Reaction Drill</h1>
-      <p class="topNavTagline">Procedurally generated organic reaction questions on random molecules — never the same one twice.</p>
+<div class="appShell">
+  <aside class="sideNav" id="sideNav">
+    <div class="sideNavTop">
+      <h1 class="brandTitle">H2 Chemistry<br>Reactions Drill</h1>
     </div>
-    <div class="navControls">
-      <button type="button" id="topicsDrawerBtn" class="navBtn">Topics</button>
-      <button type="button" id="zenToggleBtn" class="navBtn">Zen mode</button>
-      <button type="button" id="statsNavBtn" class="navBtn">Stats</button>
-      <button type="button" id="openFeedbackBtn" class="navBtn">Feedback</button>
+    <div class="paneInfo">
+      <h2 class="paneInfoTitle" id="paneInfoTitle">Play</h2>
+      <p class="paneInfoDesc" id="paneInfoDesc">Answer procedurally generated reaction questions — guess the product, the starting material, the reagents and conditions, or run a distinguishing test. Build a molecule, submit your answer, and reveal the correct one to see how you did.</p>
     </div>
-  </div>
-</nav>
-<div class="wrap">
-  <div id="modeIndicator" class="modeIndicator"></div>
-  <div id="sessionIndicator" class="sessionIndicator"></div>
+    <nav class="sideNavList">
+      <button type="button" class="navItem active" id="navPlayBtn" data-pane="play">Play</button>
+      <button type="button" class="navItem" id="navTopicsBtn" data-pane="topics">Topic and Question Selection</button>
+      <button type="button" class="navItem" id="navStatsBtn" data-pane="stats">Stats</button>
+      <button type="button" class="navItem" id="navQuizBtn">Quiz</button>
+      <button type="button" class="navItem" id="navFeedbackBtn" data-pane="feedback">Feedback</button>
+    </nav>
+  </aside>
 
-  <section class="panel hidden" id="statsScreen">
-    <div class="statsScreenHead">
-      <h2>Progress</h2>
-      <button type="button" id="statsBackBtn" class="navBtn">← Back to practice</button>
-    </div>
+  <button type="button" id="sidebarToggleBtn" class="sidebarToggleBtn" aria-label="Collapse menu" title="Collapse menu">‹</button>
+  <div class="sideNavScrim" id="sideNavScrim"></div>
 
-    <div class="drawerSection">
-      <div class="drawerSectionLabel">Activity</div>
-      <div id="streakSummary" class="streakSummary"></div>
-      <div id="streakHeatmap" class="heatmapScroll"></div>
-    </div>
+  <main class="paneStage">
+    <div class="paneCard" id="paneCard">
 
-    <div class="drawerSection">
-      <div class="drawerSectionLabel">Recent sessions</div>
-      <div id="sessionHistoryList" class="sessionHistoryList"></div>
-      <button type="button" id="endSessionBtn">End current session</button>
-    </div>
+      <section class="pane" id="playPane">
+        <div id="distinguishPanel" class="hidden">
+          <div class="playTopRow">
+            <div class="playMeta"><span>Distinguishing tests</span><span id="distinguishScenarioTitle"></span></div>
+            <button type="button" id="reportMistakeDistinguishBtn" class="reportMistakeBtn">Report question</button>
+          </div>
+          <p class="hintText" style="min-height:auto;">Three related compounds are shown below. In the table, add a row per test: name the reagent/conditions in the first column, then the observation for each compound that identifies it. (Or switch to free text and describe everything in one box.) Tip: type <code>_</code> then characters for subscript, <code>^</code> then characters for superscript — formatting ends automatically at a space. This is self-checked — there's no automated grading, just reveal the model answers and compare.</p>
 
-    <div class="drawerSection">
-      <div class="drawerSectionLabel">Per-reaction accuracy</div>
-      <div id="statsBlock">
-        <div class="tableScroll">
-          <table id="statsTable">
-            <thead><tr><th>Reaction</th><th>Attempts</th><th>Wrong</th><th>Accuracy</th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <div id="distinguishMolRow" class="distinguishMolRow"></div>
+
+          <div class="distinguishModeToggle">
+            <label><input type="radio" name="distinguishMode" id="distinguishModeTable" value="table" checked> Table</label>
+            <label><input type="radio" name="distinguishMode" id="distinguishModeFree" value="free"> Free text</label>
+          </div>
+
+          <div id="distinguishTableWrap">
+            <table id="distinguishTable" class="distinguishTable">
+              <thead><tr id="distinguishTableHead"></tr></thead>
+              <tbody id="distinguishTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="distinguishFreeWrap" class="hidden">
+            <div id="distinguishFreeField" class="distinguishFreeField" contenteditable="true" data-placeholder="Describe a test and observation for each compound…"></div>
+          </div>
+
+          <div id="distinguishAnswerArea"></div>
+
+          <button type="button" id="distinguishRevealBtn" class="linkBtn">Reveal answers</button>
+          <div id="distinguishNextRow" class="hidden">
+            <button type="button" id="distinguishNextBtn">New set of molecules</button>
+          </div>
         </div>
-        <p class="warnNote">Progress saves automatically in this browser (it stays on this device only — a different browser or device starts fresh). Export a backup file if you want to move it, or as insurance against clearing your browser data. <span id="statsSavedNote"></span></p>
-        <div class="ioBtns">
-          <button type="button" id="exportBtn">Export progress</button>
-          <label class="fileBtn">Import progress<input type="file" id="importInput" accept="application/json"></label>
+
+        <div id="questionPanel">
+          <div class="playTopRow">
+            <div class="playMeta">
+              <span id="qLabel"></span>
+            </div>
+            <button type="button" id="reportMistakeBtn" class="reportMistakeBtn">Report question</button>
+          </div>
+          <div class="playStatusRow">
+            <span id="modeIndicator" class="modeIndicator"></span>
+          </div>
+          <div id="guessLabel" class="guessLabel"></div>
+
+          <div class="equationRow" id="equationRow">
+            <div class="eqItem">
+              <div class="eqBox" id="eqReactant1Box"></div>
+              <div class="eqFormula" id="molFormula"></div>
+            </div>
+            <div class="eqPlus hidden" id="eqPlus2">+</div>
+            <div class="eqItem hidden" id="eqReactant2Item">
+              <div class="eqBox" id="reactantVisualBox"></div>
+              <div class="eqFormula" id="reactantFormula"></div>
+            </div>
+            <div class="eqArrowWrap">
+              <div class="eqArrowLabel" id="eqArrowLabel"></div>
+              <div class="eqArrow"></div>
+            </div>
+            <div class="eqItem">
+              <div id="productGivenArea"></div>
+            </div>
+          </div>
+
+          <div id="reagentGuessArea" class="hidden">
+            <div class="tagInputRow">
+              <input type="text" id="tagTextInput" class="tagTextInput" placeholder="Type a reagent/condition, press Enter&hellip;" autocomplete="off">
+              <div id="tagAutocompleteList" class="tagAutocompleteList hidden"></div>
+            </div>
+            <label class="tagAutocompleteToggle"><input type="checkbox" id="tagAutocompleteToggle" checked> Show autocomplete suggestions</label>
+            <div class="tagBox answerRect" id="tagBox"></div>
+          </div>
+
+          <div id="answerBuildArea">
+            <div class="buildControlsRow" id="buildControlsRow">
+              <button type="button" id="buildBtn">+ Build Molecule</button>
+              <button type="button" id="noReactionBtn">✕ No reaction</button>
+              <button type="button" id="co2h2oBtn">+ CO2 + H2O</button>
+              <button type="button" id="byproductBtn" class="hidden"></button>
+            </div>
+            <div class="answerRect" id="answerRectWrap">
+              <div id="submittedList"></div>
+            </div>
+            <button type="button" id="submitAnswerBtn" class="linkBtn" disabled>Submit</button>
+          </div>
+
+          <div id="answerBlock" class="hidden">
+            <div id="nextRow" class="hidden">
+              <span id="verdictBadge" class="verdictBadge"></span>
+              <button type="button" id="nextBtn" class="linkBtn">Next question</button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
 
-  <section class="panel hidden" id="distinguishPanel">
-    <div class="qMeta">
-      <span>Distinguishing tests</span>
-      <span id="distinguishScenarioTitle"></span>
-    </div>
-    <p class="hintText" style="min-height:auto;">Three related compounds are shown below. In the table, add a row per test: name the reagent/conditions in the first column, then the observation for each compound that identifies it. (Or switch to free text and describe everything in one box.) Tip: type <code>_</code> then characters for subscript, <code>^</code> then characters for superscript — formatting ends automatically at a space. This is self-checked — there's no automated grading, just reveal the model answers and compare.</p>
-
-    <div id="distinguishMolRow" class="distinguishMolRow"></div>
-
-    <div class="distinguishModeToggle">
-      <label><input type="radio" name="distinguishMode" id="distinguishModeTable" value="table" checked> Table</label>
-      <label><input type="radio" name="distinguishMode" id="distinguishModeFree" value="free"> Free text</label>
-    </div>
-
-    <div id="distinguishTableWrap">
-      <table id="distinguishTable" class="distinguishTable">
-        <thead><tr id="distinguishTableHead"></tr></thead>
-        <tbody id="distinguishTableBody"></tbody>
-      </table>
-      <button type="button" id="distinguishAddRowBtn">+ Add test</button>
-    </div>
-
-    <div id="distinguishFreeWrap" class="hidden">
-      <div id="distinguishFreeField" class="distinguishFreeField" contenteditable="true" data-placeholder="Describe a test and observation for each compound…"></div>
-    </div>
-
-    <div id="distinguishAnswerArea"></div>
-
-    <button type="button" id="distinguishRevealBtn">Reveal answers</button>
-    <div id="distinguishNextRow" class="hidden">
-      <button type="button" id="distinguishNextBtn">New set of molecules</button>
-    </div>
-    <div class="reportRow">
-      <button type="button" id="reportMistakeDistinguishBtn" class="reportMistakeBtn">Report a mistake with this set</button>
-    </div>
-  </section>
-
-  <section class="panel" id="questionPanel">
-    <div class="qMeta">
-      <span id="qLabel"></span>
-      <span id="qDifficulty"></span>
-      <label class="reactionNameToggle"><input type="checkbox" id="showReactionNameToggle" checked> Show reaction name</label>
-    </div>
-    <div id="guessLabel" class="guessLabel"></div>
-
-    <div class="equationRow" id="equationRow">
-      <div class="eqItem">
-        <div class="eqBox" id="eqReactant1Box"></div>
-        <div class="eqFormula" id="molFormula"></div>
-      </div>
-      <div class="eqPlus hidden" id="eqPlus2">+</div>
-      <div class="eqItem hidden" id="eqReactant2Item">
-        <div class="eqBox" id="reactantVisualBox"></div>
-        <div class="eqFormula" id="reactantFormula"></div>
-      </div>
-      <div class="eqArrowWrap">
-        <div class="eqArrowLabel" id="eqArrowLabel"></div>
-        <div class="eqArrow"></div>
-      </div>
-      <div class="eqItem">
-        <div id="productGivenArea"></div>
-      </div>
-    </div>
-
-    <div id="reagentGuessArea" class="hidden">
-      <div class="tagInputWrap">
-        <div class="tagBox" id="tagBox">
-          <input type="text" id="tagTextInput" class="tagTextInput" placeholder="Type a reagent/condition, press Enter&hellip;" autocomplete="off">
+      <section class="pane hidden" id="topicsPane">
+        <h2 class="paneHeading">Topic and Question Selection</h2>
+        <div class="topicsGrid">
+          <div class="topicsCol">
+            <div class="paneSectionLabel">Question Types</div>
+            <div class="qtypeChecks">
+              <label class="checkLabel"><input type="checkbox" id="qtypeProduct"> Guess Product</label>
+              <label class="checkLabel"><input type="checkbox" id="qtypeReactant"> Guess Reactant</label>
+              <label class="checkLabel"><input type="checkbox" id="qtypeReagent"> Guess Reagents & Conditions</label>
+              <label class="checkLabel"><input type="checkbox" id="qtypeDistinguish"> Distinguishing Test</label>
+            </div>
+            <div class="paneSectionLabel modeLabel">Mode</div>
+            <label class="checkLabel"><input type="checkbox" id="practiceModeCb"> Practice</label>
+            <p class="modeDescription" id="modeDescription"></p>
+            <div class="paneSectionLabel">Display</div>
+            <label class="checkLabel"><input type="checkbox" id="showReactionNameToggle" checked> Show reaction name</label>
+            <label class="checkLabel"><input type="checkbox" id="includeByproductsToggle"> Include non-organic byproducts (HCl, H2O, CO2) for condensation reactions</label>
+          </div>
+          <div class="topicsCol">
+            <div class="paneSectionLabel">Topics</div>
+            <div id="pickerBlock"></div>
+          </div>
         </div>
-        <div id="tagAutocompleteList" class="tagAutocompleteList hidden"></div>
-      </div>
-      <label class="tagAutocompleteToggle"><input type="checkbox" id="tagAutocompleteToggle" checked> Show autocomplete suggestions</label>
-    </div>
-    <div id="hintText" class="hintText"></div>
+      </section>
 
-    <div id="answerBuildArea">
-      <div id="submittedList"></div>
-      <div class="buildControlsRow" id="buildControlsRow">
-        <button type="button" id="buildBtn">+ Build Molecule</button>
-        <button type="button" id="noReactionBtn">No reaction</button>
-        <button type="button" id="co2h2oBtn">+ CO2 + H2O byproduct</button>
-      </div>
-      <button type="button" id="submitAnswerBtn" disabled>Submit Answer</button>
-    </div>
+      <section class="pane hidden" id="statsPane">
+        <h2 class="paneHeading">Statistics</h2>
+        <div class="statsPaneBody">
+          <div class="statsMain">
+            <div class="tableScroll">
+              <table id="statsTable">
+                <thead><tr><th>Reaction</th><th>Attempts</th><th>Wrong</th><th>Accuracy</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="warnNote">Progress saves automatically in this browser (it stays on this device only — a different browser or device starts fresh). Export a backup file if you want to move it, or as insurance against clearing your browser data. <span id="statsSavedNote"></span></p>
+            <div class="ioBtns">
+              <button type="button" id="exportBtn">Export progress</button>
+              <label class="fileBtn">Import progress<input type="file" id="importInput" accept="application/json"></label>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <div id="answerBlock" class="hidden">
-      <h3 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);margin:14px 0 6px;">Answer</h3>
-      <div class="molBox" id="answerBox"></div>
-      <div id="verdictBox" class="verdictBox hidden"></div>
-      <div id="nextRow" class="hidden">
-        <button type="button" id="nextBtn">Next question</button>
-      </div>
+      <section class="pane hidden" id="feedbackPane">
+        <h2 class="paneHeading">Feedback</h2>
+        <div id="feedbackFormFields">
+          <div id="feedbackContextBox" class="feedbackContextBox hidden"></div>
+          <label class="feedbackFieldLabel" for="feedbackMessage">What's wrong, or your feedback</label>
+          <textarea id="feedbackMessage" class="feedbackTextarea" placeholder="Describe what you saw and what you expected instead…"></textarea>
+          <label class="feedbackFieldLabel" for="feedbackContactEmail">Your email (optional, only if you'd like a reply)</label>
+          <input type="email" id="feedbackContactEmail" class="feedbackInput" placeholder="you@example.com">
+          <div id="feedbackStatus" class="feedbackStatus hidden"></div>
+          <div class="feedbackActions">
+            <button type="button" id="feedbackSubmitBtn" class="primary">Send</button>
+          </div>
+        </div>
+        <div id="feedbackSuccessOverlay" class="feedbackSuccessOverlay hidden">
+          <div class="feedbackCheckCircle">
+            <svg viewBox="0 0 24 24"><path d="M4 12.5 L9.5 18 L20 5.5"/></svg>
+            <span class="feedbackSpark" style="--dx:-42px;--dy:-42px;"></span>
+            <span class="feedbackSpark" style="--dx:0px;--dy:-58px;"></span>
+            <span class="feedbackSpark" style="--dx:42px;--dy:-42px;"></span>
+            <span class="feedbackSpark" style="--dx:58px;--dy:0px;"></span>
+            <span class="feedbackSpark" style="--dx:42px;--dy:42px;"></span>
+            <span class="feedbackSpark" style="--dx:0px;--dy:58px;"></span>
+            <span class="feedbackSpark" style="--dx:-42px;--dy:42px;"></span>
+            <span class="feedbackSpark" style="--dx:-58px;--dy:0px;"></span>
+          </div>
+          <div class="feedbackSuccessText">Sent — thank you!</div>
+        </div>
+      </section>
+
     </div>
-    <div class="reportRow">
-      <button type="button" id="reportMistakeBtn" class="reportMistakeBtn">Report a mistake with this question</button>
-    </div>
-  </section>
+  </main>
 </div>
 
-<!-- ============================================================
-     Topics & question-type drawer -- slides in from the left, holds
-     practice mode (all reactions / weak spots), the 4 question-type
-     toggles, and the per-reaction topic tree (#pickerBlock, rendered by
-     renderPicker()). Kept entirely separate from the practice screen so
-     picking what to practice never interrupts actually practicing.
-     ============================================================ -->
-<div class="drawerOverlay" id="topicsDrawerOverlay">
-  <div class="drawerPanel" id="topicsDrawerPanel">
-    <div class="drawerHead">
-      <h2>Topics & question types</h2>
-      <button type="button" class="modalCloseX" id="topicsDrawerCloseBtn" aria-label="Close">✕</button>
-    </div>
-
-    <div class="drawerSection">
-      <div class="drawerSectionLabel">Practice mode</div>
-      <div class="modeToggle">
-        <button type="button" class="modeBtn active" id="modeABtn">All reactions</button>
-        <button type="button" class="modeBtn" id="modeBBtn">Practice weak spots</button>
-      </div>
-      <p class="modeDescription" id="modeDescription"></p>
-    </div>
-
-    <div class="drawerSection">
-      <div class="drawerSectionLabel">Question types</div>
-      <div class="qtypeChecks">
-        <label class="checkLabel"><input type="checkbox" id="qtypeProduct"> Guess product</label>
-        <label class="checkLabel"><input type="checkbox" id="qtypeReactant"> Guess starting material</label>
-        <label class="checkLabel"><input type="checkbox" id="qtypeReagent"> Guess reagents & conditions</label>
-        <label class="checkLabel"><input type="checkbox" id="qtypeDistinguish"> Distinguishing tests</label>
-      </div>
-    </div>
-
-    <div class="drawerSection">
-      <div class="drawerSectionLabel">Topics</div>
-      <p class="warnNote" style="margin-top:0;">Applies to "All reactions" mode. "Practice weak spots" draws from every topic, weighted toward reactions you've gotten wrong more often.</p>
-      <div id="pickerBlock"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================================
-     Session summary modal -- shown when a session ends (explicitly via
-     "End current session" in Stats, or automatically detected on return
-     after a break long enough that the previous session had clearly
-     wrapped up).
-     ============================================================ -->
-<div class="modalOverlay" id="sessionSummaryOverlay">
-  <div class="modalBox">
-    <div class="modalHead">
-      <h2>Session summary</h2>
-      <button type="button" class="modalCloseX" id="sessionSummaryCloseBtn" aria-label="Close">✕</button>
-    </div>
-    <div id="sessionSummaryBody"></div>
-    <div class="feedbackActions">
-      <button type="button" id="sessionSummaryContinueBtn" class="primary">Keep practicing</button>
-    </div>
-  </div>
-</div>
-
-<button type="button" id="zenExitBtn" class="zenExitBtn">Exit zen mode</button>
-
-<!-- ============================================================
-     Feedback / bug-report modal -- shared by the header "Feedback"
-     button (general feedback, no context) and the per-question/per-
-     distinguish-set "Report a mistake" buttons (auto-attaches a compact
-     summary of what was on screen so the report is reproducible).
-     ============================================================ -->
-<div class="modalOverlay" id="feedbackOverlay">
-  <div class="modalBox">
-    <div class="modalHead">
-      <h2 id="feedbackModalTitle">Feedback</h2>
-      <button type="button" class="modalCloseX" id="feedbackCloseBtn" aria-label="Close">✕</button>
-    </div>
-    <div id="feedbackFormFields">
-      <div id="feedbackContextBox" class="feedbackContextBox hidden"></div>
-      <label class="feedbackFieldLabel" for="feedbackMessage">What's wrong, or your feedback</label>
-      <textarea id="feedbackMessage" class="feedbackTextarea" placeholder="Describe what you saw and what you expected instead…"></textarea>
-      <label class="feedbackFieldLabel" for="feedbackContactEmail">Your email (optional, only if you'd like a reply)</label>
-      <input type="email" id="feedbackContactEmail" class="feedbackInput" placeholder="you@example.com">
-      <div id="feedbackStatus" class="feedbackStatus hidden"></div>
-      <div class="feedbackActions">
-        <button type="button" id="feedbackCancelBtn">Cancel</button>
-        <button type="button" id="feedbackSubmitBtn" class="primary">Send</button>
-      </div>
-    </div>
-    <div id="feedbackSuccessOverlay" class="feedbackSuccessOverlay hidden">
-      <div class="feedbackCheckCircle">
-        <svg viewBox="0 0 24 24"><path d="M4 12.5 L9.5 18 L20 5.5"/></svg>
-        <span class="feedbackSpark" style="--dx:-42px;--dy:-42px;"></span>
-        <span class="feedbackSpark" style="--dx:0px;--dy:-58px;"></span>
-        <span class="feedbackSpark" style="--dx:42px;--dy:-42px;"></span>
-        <span class="feedbackSpark" style="--dx:58px;--dy:0px;"></span>
-        <span class="feedbackSpark" style="--dx:42px;--dy:42px;"></span>
-        <span class="feedbackSpark" style="--dx:0px;--dy:58px;"></span>
-        <span class="feedbackSpark" style="--dx:-42px;--dy:42px;"></span>
-        <span class="feedbackSpark" style="--dx:-58px;--dy:0px;"></span>
-      </div>
-      <div class="feedbackSuccessText">Sent — thank you!</div>
-    </div>
-  </div>
-</div>
 
 <!-- ============================================================
      Molecule builder modal — visual answer builder. Free-form
@@ -1849,6 +2001,38 @@ function hydrolyzeAmide(mol, target){
   return { occurs:true, product:v };
 }
 
+// CH3-CO-R + I2/NaOH(aq), warm -> CHI3 + RCOONa (iodoform reaction).
+// Methyl ketones only -- finds the carbonyl carbon (oxo, no group) and, of
+// its neighbours, the one that's a genuinely terminal, unsubstituted methyl
+// (a plain carbon bonded to nothing else at all, exactly one neighbour: the
+// carbonyl carbon itself) -- if there isn't one, the ketone has no methyl
+// arm to trigger the test and this correctly refuses, same "look for the
+// shape, refuse if absent" style as every other operator here. The methyl
+// carbon's own 3 H's become CHI3 (built fresh, not derived from it, since
+// the 3 I substituents replace those H's); the carbonyl carbon closes up
+// into a carboxylate salt exactly like hydrolyzeEster's alkaline branch.
+function iodoformCleavage(mol){
+  const v = cloneMol(mol);
+  const c = v.nodes.find(n=>!n.ring && n.oxo && !n.group);
+  if(!c) return { occurs:false };
+  const methylNb = neighborsOf(v, c.id).find(nb=>{
+    const n = findNode(v, nb.to);
+    if(!n || n.ring || n.oxo || n.group || (n.subs && n.subs.length)) return false;
+    return neighborsOf(v, n.id).length===1;
+  });
+  if(!methylNb) return { occurs:false };
+  c.oxo = false;
+  c.group = 'COONa';
+  v.nodes = v.nodes.filter(n=>n.id!==methylNb.to);
+  v.edges = v.edges.filter(e=>e.a!==methylNb.to && e.b!==methylNb.to);
+  const chi3Carbon = newNode();
+  chi3Carbon.subs = ['I','I','I'];
+  const chi3 = { nodes:[chi3Carbon], edges:[] };
+  const products = connectedComponents(v).map(f=>({ kind:'chain', mol:{nodes:f.nodes, edges:f.edges} }));
+  products.push({ kind:'chain', mol: chi3 });
+  return { occurs:true, products };
+}
+
 /* =========================================================================
    NITROGEN COMPOUND OPERATORS
    The diazonium group (-N2Cl) is a CLOSED group node, same family as
@@ -1957,7 +2141,7 @@ module.exports = {
   oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, combustion,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, connectedComponents,
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, iodoformCleavage, connectedComponents,
   diazotisation, azoCoupling, protonateAmine
 };
 
@@ -2931,6 +3115,17 @@ function collectGenericCycle(startId, cameFromId){
 // reads this instead of trusting .ring tags, so ANY cycle gets proper
 // ring-aware layout, not just tool-built benzene rings.
 var layoutCycleSet = null;
+// Snapshot of every edge id that existed as of the END of the previous
+// layoutAll() pass (see the bottom of layoutAll) -- lets layoutChildren's
+// ring branch tell "this bond is brand new this edit" apart from "this
+// bond is old, we're just reaching it via a different traversal path than
+// last time" (prevAngle can't make that distinction on its own: a new edge
+// between two atoms that were BOTH already laid out -- e.g. Connect-ing an
+// existing atom onto an existing ring -- still gets a prevAngle entry,
+// computed from wherever those atoms' stale pre-edit positions happened to
+// be, which is not the same thing as this specific bond having a real
+// prior orientation to stay stable about).
+var lastLayoutEdgeIds = new Set();
 
 function layoutChildren(nodeId, parentId, incomingAngle, visited, parity, prevAngle){
   if(parity==null) parity = 0;
@@ -2940,7 +3135,22 @@ function layoutChildren(nodeId, parentId, incomingAngle, visited, parity, prevAn
   }) : [];
   if(unvisitedRing.length>0){
     var cycle = collectGenericCycle(nodeId, parentId);
-    layoutRingCycle(cycle, incomingAngle, visited, prevAngle);
+    // Whether the bond we just arrived on (parentId -> nodeId, i.e. R0) is
+    // brand new this edit -- if so, the ring's remembered orientation (see
+    // layoutRingCycle's own prevAngle-reuse below) has nothing to do with
+    // THIS attachment and must not be trusted, or the ring renders at its
+    // old rotation while the new exocyclic bond points wherever that old
+    // rotation happens to leave R0 facing -- not necessarily anywhere near
+    // R0's actual exterior bisector. Checked against lastLayoutEdgeIds, not
+    // prevAngle -- prevAngle would say this bond has a "prior orientation"
+    // even when it's brand new, as long as both endpoints (e.g. an existing
+    // atom Connect-ed onto an existing ring) already had positions from
+    // before, which is exactly the case that needs catching here. A
+    // pre-existing bond (some unrelated edit elsewhere just triggered a
+    // fresh layout pass) still prefers the remembered orientation.
+    var enteringEdge = parentId!=null ? edgeBetween(nodeId, parentId) : null;
+    var enteringEdgeIsNew = parentId!=null && (!enteringEdge || !lastLayoutEdgeIds.has(enteringEdge.id));
+    layoutRingCycle(cycle, incomingAngle, visited, prevAngle, enteringEdgeIsNew);
     return;
   }
 
@@ -3209,7 +3419,7 @@ function getGhostSlots(nodeId, cursorSvgPoint){
   return [{ parent:nodeId, x:p.x, y:p.y, angle:drawAngle, slotIndex:resolved.slotIndex, baseAngle:targetAngle }];
 }
 
-function layoutRingCycle(cycle, incomingAngleAtR0, visited, prevAngle){
+function layoutRingCycle(cycle, incomingAngleAtR0, visited, prevAngle, enteringEdgeIsNew){
   var R0 = cycle[0];
   visited.add(R0);
   var incoming = incomingAngleAtR0!=null ? incomingAngleAtR0 : ROOT_BASE;
@@ -3224,12 +3434,25 @@ function layoutRingCycle(cycle, incomingAngleAtR0, visited, prevAngle){
   // `incoming` whenever this exact ring edge was already laid out before --
   // `incoming` can point a different way than last time purely from DFS/
   // traversal-order details elsewhere on the canvas (e.g. after an
-  // unrelated edit, or a new bond changing which node the ring gets
-  // entered from), which would otherwise silently rotate an already-built
+  // unrelated edit), which would otherwise silently rotate an already-built
   // ring for no structural reason. Reuses the same prevAngle snapshot every
-  // other stability-minimizing branch of layoutChildren already relies on.
-  if(ringEdge0 && prevAngle && prevAngle[ringEdge0.id]!=null){
-    edgeDir = prevAngle[ringEdge0.id];
+  // other stability-minimizing branch of layoutChildren already relies on --
+  // via prevAngleFromTo, not a raw prevAngle[id] lookup, since the snapshot
+  // is stored a-to-b per the edge's OWN fixed endpoints, which don't
+  // necessarily match the cycle[0]->cycle[1] direction this traversal
+  // needs; skipping that flip silently fed in the reverse (180 degrees
+  // off) angle whenever they didn't line up.
+  // Skipped entirely when the bond that produced `incoming` is itself
+  // brand new (enteringEdgeIsNew, set by the caller) -- the ring's
+  // remembered rotation has no relationship to a connection that didn't
+  // exist a moment ago, so trusting it here left R0's exocyclic bond
+  // pointing wherever the old rotation happened to leave R0 facing,
+  // instead of at its actual exterior bisector (visible as a too-short/
+  // wrong-angle bond, sometimes overlapping the ring, right after using
+  // Connect to attach an existing atom to a ring already on the canvas).
+  var staleEdgeDir = ringEdge0 && prevAngle ? prevAngleFromTo(prevAngle, R0, ringEdge0.id) : null;
+  if(!enteringEdgeIsNew && staleEdgeDir!=null){
+    edgeDir = staleEdgeDir;
   }
   var pos = { x:nodes[R0].x, y:nodes[R0].y };
   // A ring's sides are always drawn the same length as each other -- one
@@ -3368,6 +3591,9 @@ function layoutAll(){
     nodes[id].laidOut = true;
     if(isActive(nodes[id])) nodes[id].everReal = true;
   });
+  // Refreshed last (every layoutChildren/layoutRingCycle call above reads
+  // the PREVIOUS pass's snapshot, not this one) -- see its own declaration.
+  lastLayoutEdgeIds = new Set(Object.keys(edges));
 }
 
 /* ============================= EDITS ============================= */
@@ -3883,7 +4109,16 @@ function render(){
   // Live, not sticky -- re-checked on every render, so the warning appears
   // the instant an edit creates a collision and disappears the instant an
   // edit (anywhere, including undo) resolves it.
-  document.getElementById("mbOverlapWarning").style.display = hasLayoutOverlap() ? "" : "none";
+  var overlapNow = hasLayoutOverlap();
+  document.getElementById("mbOverlapWarning").style.display = overlapNow ? "" : "none";
+  // Diagnostic-only (no behavior change): whenever the overlap warning
+  // first fires, stash the raw graph so a reported "weird angle"/overlap
+  // can be inspected after the fact via window.__lastOverlapDebug instead
+  // of needing to reproduce the exact click sequence live.
+  if(overlapNow && !window.__lastOverlapWasOn){
+    window.__lastOverlapDebug = { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)), at: new Date().toISOString() };
+  }
+  window.__lastOverlapWasOn = overlapNow;
 }
 
 /* ============================= CATALOG ============================= */
@@ -4714,77 +4949,87 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
     return { ok:false, reason:'disconnected structure -- submit one connected molecule per card' };
   }
 
-  // 2. rings -- found by real cycle detection (not by trusting a `.ring`
-  // tag), since a ring can now be built either with the dedicated tool or
-  // by hand via the Connect gesture. For a connected graph, cyclomatic number
-  // (edges - nodes + 1) is 0 for a pure tree or 1 for exactly one cycle;
-  // a DFS from any node finds the single back-edge in the latter case, and
-  // walking parent pointers back from it reconstructs the cycle's members
-  // regardless of how those edges were created.
+  // 2. rings -- found by grouping the .ring-tagged edges the dedicated
+  // Benzene ring tool leaves behind (see attachRingNodes) into connected
+  // components, rather than generic whole-graph cycle detection -- so
+  // multiple SEPARATE rings in the same molecule (e.g. azobenzene's two
+  // phenyl rings, joined by -N=N- with no atoms shared between them) are
+  // each found and validated independently, not just a single ring for the
+  // whole graph. Two rings sharing an atom/edge (fused rings) still land in
+  // the SAME component and get correctly rejected below (a genuine 6-ring
+  // component has exactly 6 members; a fused pair doesn't). A hand-
+  // connected 6-cycle (built by placing 6 loose carbons and Connect-moding
+  // them into alternating bonds) never gets a .ring-tagged edge in the
+  // first place, so it's invisible here and falls through to the generic
+  // "must be plain carbon chain" validation below, same as before.
   var edgeIds = Object.keys(gEdges);
-  var cyclomatic = edgeIds.length - nodeIds.length + 1;
+  var ringAdj = {};
+  edgeIds.forEach(function(eid){
+    var e = gEdges[eid];
+    if(!e.ring) return;
+    (ringAdj[e.a] = ringAdj[e.a] || []).push(e.b);
+    (ringAdj[e.b] = ringAdj[e.b] || []).push(e.a);
+  });
   var excludedRingIds = new Set();
-  // ringIdsArr[i] is the builder-graph id of the ring atom at position i
-  // (0-5) -- this becomes engine.js's ring-node position ordering directly,
-  // since the DFS-reconstructed cycle path already walks the ring's real
-  // adjacency in order. ringPositionOutside[i] is that position's outside
-  // neighbour's id, if it has one.
-  var ringIdsArr = null;
-  var ringPositionOutside = {};
+  // Each entry: { ids: [ring atom id at position 0..5, in cycle order],
+  // positionOutside: {posIdx: outside neighbour id}, flatSubs: {posIdx: sub},
+  // nodeId: this group's own engine ring-node id }. ringPosOfAtom maps a
+  // ring atom's id to {group: index into ringGroups, pos: 0-5}.
+  var ringGroups = [];
+  var ringPosOfAtom = {};
+  var seenRingAtom = new Set();
+  var ringSetupError = null;
+  Object.keys(ringAdj).forEach(function(startId){
+    if(seenRingAtom.has(startId) || ringSetupError) return;
+    var compIds = []; var stack = [startId]; var localSeen = new Set();
+    while(stack.length){
+      var cur = stack.pop();
+      if(localSeen.has(cur)) continue;
+      localSeen.add(cur); compIds.push(cur);
+      (ringAdj[cur]||[]).forEach(function(nb){ if(!localSeen.has(nb)) stack.push(nb); });
+    }
+    compIds.forEach(function(id){ seenRingAtom.add(id); });
+    if(compIds.length!==6){ ringSetupError = 'unsupported ring (only a plain 6-membered ring is supported, and fused/shared-atom rings aren\'t)'; return; }
+    // Order the 6 members into their actual cycle path by walking from one
+    // atom to whichever ring-neighbour isn't where we just came from.
+    var orderedIds = [compIds[0]];
+    var prev = null, cur = compIds[0];
+    for(var step=0; step<5; step++){
+      var nextNbs = (ringAdj[cur]||[]).filter(function(n){ return n!==prev; });
+      if(nextNbs.length!==1){ ringSetupError = 'ring member with the wrong number of ring bonds'; return; }
+      prev = cur; cur = nextNbs[0];
+      orderedIds.push(cur);
+    }
+    if(ringSetupError) return;
+    if((ringAdj[cur]||[]).indexOf(orderedIds[0])===-1){ ringSetupError = 'ring member with the wrong number of ring bonds'; return; }
 
-  if(cyclomatic===1){
-    var parentOf = {}, visitedDfs = {}, cycleMembers = null;
-    (function dfs(u, p){
-      visitedDfs[u] = true; parentOf[u] = p;
-      var nbs = neighborsOfG(u);
-      for(var i=0; i<nbs.length && !cycleMembers; i++){
-        var v = nbs[i].id;
-        if(v===p) continue;
-        if(visitedDfs[v]){
-          var path = [u], cur = u;
-          while(cur!==v){ cur = parentOf[cur]; path.push(cur); }
-          cycleMembers = path;
-        } else {
-          dfs(v, u);
-        }
-      }
-    })(nodeIds[0], null);
-
-    if(!cycleMembers || cycleMembers.length!==6) return { ok:false, reason:'unsupported ring (only a plain 6-membered ring is supported)' };
-    ringIdsArr = cycleMembers;
-    var ringMemberSet = new Set(ringIdsArr);
-    var ringReject = null;
-    ringIdsArr.forEach(function(rid, idx){
-      if(ringReject) return;
+    var groupIdx = ringGroups.length;
+    var flatSubs = {}, positionOutside = {};
+    var ringMemberSet = new Set(orderedIds);
+    var groupError = null;
+    orderedIds.forEach(function(rid, idx){
+      if(groupError) return;
+      ringPosOfAtom[rid] = { group: groupIdx, pos: idx };
       var allNbs = neighborsOfG(rid);
       var ringNbs = allNbs.filter(function(nb){ return ringMemberSet.has(nb.id); });
-      if(ringNbs.length!==2){ ringReject = 'ring member with the wrong number of ring bonds'; return; }
-      // Only a ring actually built with the dedicated Benzene ring tool
-      // (tagged .ring on creation -- see attachRingNodes) counts as
-      // benzene here. A hand-connected 6-cycle (built by placing 6 loose
-      // carbons and Connect-moding them into alternating bonds) is
-      // deliberately NOT recognized as benzene, even if its bond pattern
-      // happens to alternate correctly -- it never went through the tool
-      // that actually locks the ring's geometry and bonds in place.
-      if(!ringNbs[0].edge.ring || !ringNbs[1].edge.ring){ ringReject = 'a ring must be built with the dedicated Benzene ring tool -- a hand-connected ring isn\'t graded as benzene'; return; }
+      if(ringNbs.length!==2){ groupError = 'ring member with the wrong number of ring bonds'; return; }
+      if(!ringNbs[0].edge.ring || !ringNbs[1].edge.ring){ groupError = 'a ring must be built with the dedicated Benzene ring tool -- a hand-connected ring isn\'t graded as benzene'; return; }
       var orders = ringNbs.map(function(nb){ return nb.edge.order; }).sort();
-      if(orders[0]!==1 || orders[1]!==2){ ringReject = 'ring bonds must alternate single/double (Kekule pattern) -- a plain all-single ring is cyclohexane, not benzene'; return; }
-      if(!isPlainCarbon(rid)){ ringReject = 'a ring atom must be a plain carbon'; return; }
+      if(orders[0]!==1 || orders[1]!==2){ groupError = 'ring bonds must alternate single/double (Kekule pattern) -- a plain all-single ring is cyclohexane, not benzene'; return; }
+      if(!isPlainCarbon(rid)){ groupError = 'a ring atom must be a plain carbon'; return; }
       // A real aromatic carbon only has room for ONE outside attachment per
       // position (2 ring bonds + 1 outside = the aromatic sp2 carbon's 3
-      // connections) -- that's still enforced per-position here. What's
-      // relaxed from the old single-substituent model is that EACH of the
-      // 6 positions can independently have its own attachment now, not
-      // just a single one total across the whole ring.
+      // connections) -- each of the 6 positions can independently have its
+      // own attachment, not just a single one total across the whole ring.
       var nonRingNbs = allNbs.filter(function(nb){ return !ringMemberSet.has(nb.id); });
-      if(nonRingNbs.length>1){ ringReject = 'a ring atom has more than one outside attachment'; return; }
-      if(nonRingNbs.length===1){ ringPositionOutside[idx] = nonRingNbs[0].id; }
+      if(nonRingNbs.length>1){ groupError = 'a ring atom has more than one outside attachment'; return; }
+      if(nonRingNbs.length===1) positionOutside[idx] = nonRingNbs[0].id;
     });
-    if(ringReject) return { ok:false, reason:ringReject };
-    ringIdsArr.forEach(function(rid){ excludedRingIds.add(rid); });
-  } else if(cyclomatic!==0){
-    return { ok:false, reason:'unsupported structure (multiple or fused rings)' };
-  }
+    if(groupError){ ringSetupError = groupError; return; }
+    orderedIds.forEach(function(rid){ excludedRingIds.add(rid); });
+    ringGroups.push({ ids: orderedIds, positionOutside: positionOutside, flatSubs: flatSubs, nodeId: 'ring:'+orderedIds[0] });
+  });
+  if(ringSetupError) return { ok:false, reason: ringSetupError };
 
   // Ring atoms are legitimate neighbours for validation/folding purposes
   // now (a substituent can attach directly to one, e.g. chlorobenzene's Cl)
@@ -4796,8 +5041,6 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
     var sym = gNodes[id].symbol;
     return !sym || sym==='C';
   }
-  var ringPosOfAtom = {}; // ring atom id -> its position index, if there's a ring
-  if(ringIdsArr) ringIdsArr.forEach(function(rid, idx){ ringPosOfAtom[rid] = idx; });
 
   var treeNodeIds = nodeIds.filter(function(id){ return !excludedRingIds.has(id); });
   var engineNodeMeta = {};
@@ -4827,7 +5070,7 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
     // Magnitude is capped at 1 regardless of element -- the builder itself
     // never produces anything else, this is just defense in depth.
     if(charge && Math.abs(charge)>1){ reject('an atom\'s charge must be -1, 0, or +1'); return; }
-    if(charge && sym && sym!=='N'){ reject('a "'+sym+'" atom can\'t carry a charge in this model'); return; }
+    if(charge && sym && sym!=='N' && sym!=='O'){ reject('a "'+sym+'" atom can\'t carry a charge in this model'); return; }
     if(!sym || sym==='C' || sym==='H') return; // plain carbon (charge already allowed above) and bare H handled separately below
     var nbs = liveNeighbors(id);
     if(UNSUPPORTED_GROUPS.indexOf(sym)!==-1){
@@ -4846,12 +5089,33 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
       return;
     }
     if(sym==='O'){
+      // A charged O is an alkoxide (-1, e.g. R-O- as the conjugate base of
+      // an alcohol/phenol) -- stays a real node (like a charged N) rather
+      // than folding into a flat sub, since there's no flat-sub equivalent
+      // of a charge. Only the single-bonded shape is supported (mirrors how
+      // 'ONa' -- the same anion, just paired with Na+ -- is always drawn as
+      // one bond too).
+      if(charge){
+        if(charge!==-1){ reject('an "O" atom can only carry a -1 charge (an alkoxide) in this model'); return; }
+        if(nbs.length!==1){ reject('a charged "O" atom (alkoxide) must have exactly one bond'); return; }
+        if(!isPlainCarbon(nbs[0].id)){ reject('substituents must attach to a plain carbon, not to another substituent or group'); return; }
+        if(nbs[0].edge.order!==1){ reject('a charged "O" atom must attach with a single bond'); return; }
+        return;
+      }
       // Usually a 1-bonded O (C=O via a double bond, or C-OH via a single
-      // bond, exactly as before) -- but a 2-bonded O is a real ether/ester
-      // oxygen (R-O-R', e.g. an ester's -C(=O)-O-R' link), kept as its own
-      // node (engine.js's element:'O'/nodeValence) rather than folded away,
-      // mirroring how a 2-3-bonded 'N' stays a real node above.
+      // bond, exactly as before) -- but a 2-bonded O is either a real
+      // ether/ester oxygen (R-O-R', both neighbours plain carbon, e.g. an
+      // ester's -C(=O)-O-R' link) or a hydroxyl spelled out atom-by-atom
+      // (C-O-H, one neighbour plain carbon and one a bare H, instead of
+      // using the OH chip) -- both kept distinct here, but grade the same
+      // as their chip-built equivalents (see step 4's folding below).
       if(nbs.length===2){
+        var oCarbonNbs = nbs.filter(function(nb){ return isPlainCarbon(nb.id); });
+        var oHNbs = nbs.filter(function(nb){ return gNodes[nb.id].symbol==='H'; });
+        if(oCarbonNbs.length===1 && oHNbs.length===1){
+          if(!nbs.every(function(nb){ return nb.edge.order===1; })){ reject('a hydroxyl oxygen must use single bonds only'); return; }
+          return;
+        }
         if(!nbs.every(function(nb){ return isPlainCarbon(nb.id); })){ reject('an ether/ester oxygen must bond only to plain carbon'); return; }
         if(!nbs.every(function(nb){ return nb.edge.order===1; })){ reject('an ether/ester oxygen must use single bonds only'); return; }
         return;
@@ -4892,15 +5156,21 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
   if(reason) return { ok:false, reason:reason };
 
   // 4. fold validated leaves into their parent's subs/oxo/group -- OR, if
-  // the parent is a RING atom rather than a regular chain carbon, into
-  // that ring position's flat substituent label instead (ringFlatSubs;
-  // ring atoms never get their own engineNodeMeta entry -- they're all
-  // represented together by the single ring node built at the end).
-  var ringFlatSubs = {}; // ring position (0-5) -> substituent string
+  // the parent is a RING atom rather than a regular chain carbon, into that
+  // ring's OWN flat substituent label at that position instead (each ring
+  // group carries its own flatSubs now, so a substituent lands on the
+  // correct ring when the molecule has more than one -- e.g. azobenzene's
+  // two independently-substitutable phenyl rings); ring atoms never get
+  // their own engineNodeMeta entry -- they're all represented together by
+  // their own ring node built at the end.
   var handledAsLeaf = new Set();
   function addSimpleSub(parentId, sym){
-    if(ringPosOfAtom.hasOwnProperty(parentId)) ringFlatSubs[ringPosOfAtom[parentId]] = sym;
-    else engineNodeMeta[parentId].subs.push(sym);
+    if(ringPosOfAtom.hasOwnProperty(parentId)){
+      var rp = ringPosOfAtom[parentId];
+      ringGroups[rp.group].flatSubs[rp.pos] = sym;
+    } else {
+      engineNodeMeta[parentId].subs.push(sym);
+    }
   }
   treeNodeIds.forEach(function(id){
     if(reason) return;
@@ -4926,10 +5196,26 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
     } else if(sym==='ONa'){
       addSimpleSub(nbs[0].id, 'ONa');
       handledAsLeaf.add(id);
-    } else if(sym==='O' && nbs.length===2){
-      // Ether/ester oxygen -- stays as its own node (like COOH/CHO/CN
-      // below), never folded away.
+    } else if(sym==='O' && gNodes[id].charge){
+      // Charged alkoxide (-1) -- stays a real node (charge already carried
+      // via engineNodeMeta[id].charge from initialization), the same way a
+      // charged N does, since there's no flat-sub equivalent of a charge.
       engineNodeMeta[id].element = 'O';
+    } else if(sym==='O' && nbs.length===2){
+      var oCarbonNb = nbs.find(function(nb){ return isPlainCarbon(nb.id); });
+      var oHNb = nbs.find(function(nb){ return gNodes[nb.id].symbol==='H'; });
+      if(oCarbonNb && oHNb){
+        // A hydroxyl spelled out atom-by-atom (C-O-H) -- folds to the exact
+        // same subs:['OH'] the OH chip produces; the explicit H node is
+        // dropped (already handled as a leaf above, redundant with
+        // implicit-H counting) along with this O.
+        addSimpleSub(oCarbonNb.id, 'OH');
+        handledAsLeaf.add(id);
+      } else {
+        // Ether/ester oxygen -- stays as its own node (like COOH/CHO/CN
+        // below), never folded away.
+        engineNodeMeta[id].element = 'O';
+      }
     } else if(sym==='O'){
       if(ringPosOfAtom.hasOwnProperty(nbs[0].id)){
         // No aromatic-ring-ketone concept exists here -- a double-bonded O
@@ -5017,43 +5303,48 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
   // silently stop matching. Only genuinely NEW shapes (zero outside
   // attachments, 2+ occupied positions, or any flat substituent directly on
   // the ring) fall through to the real new ring:true representation below.
+  // Checked per RING GROUP independently now (a molecule can have more than
+  // one ring, e.g. azobenzene) -- each ring only folds to phenyl on its own
+  // merits, never because some OTHER ring in the same molecule qualifies.
   //
   // Only safe to apply when that one outside attachment is a PLAIN CARBON
   // chain root, matching what phenyl:true has always meant (a plain alkyl
   // chain hanging off a spectator ring) -- a group node (benzaldehyde's
   // CHO, benzoic acid's COOH, a diazonium's N2Cl, ...) or an element node
-  // (a phenylammonium/phenylamine's N) is a GENUINELY new ring:true shape
-  // and must NOT be squashed into this flag: nodeLabel keys group nodes
-  // off `group` alone (ignoring phenyl entirely) so the corruption is
-  // silent -- the ring simply vanishes from the answer (this was a real,
-  // previously-undetected bug: it corrupted every "ring + a single group
-  // attached via one edge" answer, e.g. benzaldehyde/benzoic acid, not
-  // just the new charge-bearing cases that surfaced it).
-  if(ringIdsArr && Object.keys(ringFlatSubs).length===0 && Object.keys(ringPositionOutside).length===1){
-    var onlyOutsideId = ringPositionOutside[Object.keys(ringPositionOutside)[0]];
-    var onlyOutsideMeta = engineNodeMeta[onlyOutsideId];
-    if(onlyOutsideMeta && !onlyOutsideMeta.group && !onlyOutsideMeta.element){
-      onlyOutsideMeta.phenyl = true;
-      ringIdsArr = null; // nothing left for step 6 to do -- ring atoms just vanish, matching the old behaviour exactly
+  // (a phenylammonium/phenylamine's N, or azobenzene's azo N) is a GENUINELY
+  // new ring:true shape and must NOT be squashed into this flag: nodeLabel
+  // keys group nodes off `group` alone (ignoring phenyl entirely) so the
+  // corruption is silent -- the ring simply vanishes from the answer (this
+  // was a real, previously-undetected bug: it corrupted every "ring + a
+  // single group attached via one edge" answer, e.g. benzaldehyde/benzoic
+  // acid, not just the new charge-bearing cases that surfaced it).
+  var survivingRingGroups = ringGroups.filter(function(group){
+    if(Object.keys(group.flatSubs).length===0 && Object.keys(group.positionOutside).length===1){
+      var onlyOutsideId = group.positionOutside[Object.keys(group.positionOutside)[0]];
+      var onlyOutsideMeta = engineNodeMeta[onlyOutsideId];
+      if(onlyOutsideMeta && !onlyOutsideMeta.group && !onlyOutsideMeta.element){
+        onlyOutsideMeta.phenyl = true;
+        return false; // folded away -- doesn't survive into step 6
+      }
     }
-  }
+    return true;
+  });
 
-  // 6. the ring node itself (if any) and its position edges to whatever
+  // 6. each surviving ring's own node and its position edges to whatever
   // real subtree is attached at each position -- a position captured in
-  // ringFlatSubs above (a simple substituent, already folded away) gets no
-  // edge at all; anything else attached there (a plain-carbon chain, or
-  // even a COOH/CHO node -- kept as its own node per step 3/4 above) keeps
-  // its full subtree and just needs one ringPos-tagged edge connecting it
-  // to the ring instead of a regular one.
-  var ringNodeId = ringIdsArr ? ('ring:'+ringIdsArr[0]) : null;
+  // that ring's flatSubs above (a simple substituent, already folded away)
+  // gets no edge at all; anything else attached there (a plain-carbon
+  // chain, or even a COOH/CHO node -- kept as its own node per step 3/4
+  // above) keeps its full subtree and just needs one ringPos-tagged edge
+  // connecting it to ITS OWN ring instead of a regular one.
   var ringPositionEdges = [];
-  if(ringNodeId){
-    Object.keys(ringPositionOutside).forEach(function(posStr){
-      var outsideId = ringPositionOutside[posStr];
-      if(handledAsLeaf.has(outsideId)) return; // already captured in ringFlatSubs
-      ringPositionEdges.push({ a:ringNodeId, b:outsideId, type:'S', ringPos:Number(posStr) });
+  survivingRingGroups.forEach(function(group){
+    Object.keys(group.positionOutside).forEach(function(posStr){
+      var outsideId = group.positionOutside[posStr];
+      if(handledAsLeaf.has(outsideId)) return; // already captured in flatSubs
+      ringPositionEdges.push({ a:group.nodeId, b:outsideId, type:'S', ringPos:Number(posStr) });
     });
-  }
+  });
 
   var finalEdges = ringPositionEdges.slice();
   var badOrder = null;
@@ -5078,11 +5369,11 @@ window.__normalizeMoleculeForGrading = function(builderGraph){
     if(m.charge) node.charge = m.charge;
     return node;
   });
-  if(ringNodeId){
+  survivingRingGroups.forEach(function(group){
     var ringSubs = new Array(6).fill(null);
-    Object.keys(ringFlatSubs).forEach(function(posStr){ ringSubs[Number(posStr)] = ringFlatSubs[posStr]; });
-    engineNodes.push({ id:ringNodeId, subs:ringSubs, oxo:false, group:null, phenyl:false, ring:true });
-  }
+    Object.keys(group.flatSubs).forEach(function(posStr){ ringSubs[Number(posStr)] = group.flatSubs[posStr]; });
+    engineNodes.push({ id:group.nodeId, subs:ringSubs, oxo:false, group:null, phenyl:false, ring:true });
+  });
   var mol = { nodes:engineNodes, edges:finalEdges };
   if(engineNodes.length===0) return { ok:false, reason:'nothing left to grade after removing substituents -- build at least one real carbon' };
 
@@ -5491,22 +5782,22 @@ var POOL = [
     gen:function(d){ return generatePhenol(); },
     run:function(mol){ return { occurs:false }; } },
   { id:'esterificationAlcoholAcid', label:'Condensation of alcohols with carboxylic acids', topic:'Hydroxy Compounds',
-    reagentText:'few drops conc H2SO4, heat', tags: ['few drops conc H2SO4', 'heat'], mode:'single',
+    reagentText:'few drops conc H2SO4, heat', tags: ['few drops conc H2SO4', 'heat'], mode:'single', byproductSpecies:['H2O'],
     gen:function(d){ return anyAlcohol(); },
     genReactant:function(d){ return { mol:generateCarboxylicAcid(shortHalideChainLen()) }; },
     run:function(mol, reactant){ return op.esterifyAcid(reactant.mol, mol); } },
   { id:'esterificationPhenolNoReaction', label:'Condensation of phenols with carboxylic acids', topic:'Hydroxy Compounds',
-    reagentText:'few drops conc H2SO4, heat', tags: ['few drops conc H2SO4', 'heat'], mode:'single',
+    reagentText:'few drops conc H2SO4, heat', tags: ['few drops conc H2SO4', 'heat'], mode:'single', byproductSpecies:['H2O'],
     gen:function(d){ return generatePhenol(); },
     genReactant:function(d){ return { mol:generateCarboxylicAcid(shortHalideChainLen()) }; },
     run:function(mol, reactant){ return op.esterifyAcid(reactant.mol, mol); } },
   { id:'acylationAlcoholAcylChloride', label:'Condensation of alcohols with acyl chlorides', topic:'Hydroxy Compounds',
-    reagentText:'room temperature', tags: ['room temperature'], mode:'single',
+    reagentText:'room temperature', tags: ['room temperature'], mode:'single', byproductSpecies:['HCl'],
     gen:function(d){ return anyAlcohol(); },
     genReactant:function(d){ return { mol:generateAcylChloride(shortHalideChainLen()) }; },
     run:function(mol, reactant){ return op.esterifyAcylChloride(reactant.mol, mol); } },
   { id:'acylationPhenolAcylChloride', label:'Condensation of phenols with acyl chlorides', topic:'Hydroxy Compounds',
-    reagentText:'room temperature', tags: ['room temperature'], mode:'single',
+    reagentText:'room temperature', tags: ['room temperature'], mode:'single', byproductSpecies:['HCl'],
     gen:function(d){ return generatePhenol(); },
     genReactant:function(d){ return { mol:generateAcylChloride(shortHalideChainLen()) }; },
     run:function(mol, reactant){ return op.esterifyAcylChloride(reactant.mol, mol); } },
@@ -5566,6 +5857,10 @@ var POOL = [
     reagentText:'LiAlH4, dry ether, room temperature (or H2, Ni catalyst)', tags: ['LiAlH4', 'dry ether', 'room temperature'], tagAlternates: [['H2', 'Ni catalyst']], mode:'single',
     gen:function(d){ return anyKetone(); },
     run:function(mol){ return op.reduceCarbonyl(mol); } },
+  { id:'iodoformTestMethylKetone', label:'Iodoform test (methyl ketone)', topic:'Carbonyl Compounds',
+    reagentText:'I2(aq), NaOH(aq), warm', tags: ['I2(aq)', 'NaOH(aq)', 'warm'], mode:'fragments',
+    gen:function(d){ return generateKetone(1, shortHalideChainLen()); },
+    run:function(mol){ return op.iodoformCleavage(mol); } },
   { id:'oxidationAldehydeToCarboxylicAcid', label:'Oxidation of aldehyde to carboxylic acid', topic:'Carbonyl Compounds',
     reagentText:'K2Cr2O7 (or KMnO4), dilute H2SO4, heat under reflux', tags: ['K2Cr2O7', 'dilute H2SO4', 'heat under reflux'], tagAlternates: [['KMnO4', 'dilute H2SO4', 'heat under reflux']], mode:'single',
     gen:function(d){ return anyAldehyde(); },
@@ -5684,16 +5979,16 @@ var POOL = [
     gen:function(d){ return anyAcylChloride(); },
     run:function(mol){ return op.hydrolyzeAcylChloride(mol); } },
   { id:'acylChloridePlusAmmonia', label:'Reaction of acyl chloride with ammonia', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'excess NH3(aq)', tags: ['excess NH3(aq)'], mode:'single',
+    reagentText:'excess NH3(aq)', tags: ['excess NH3(aq)'], mode:'single', byproductSpecies:['HCl'],
     gen:function(d){ return anyAcylChloride(); },
     run:function(mol){ return op.acylChlorideToAmide(mol, null); } },
   { id:'acylChloridePlusPrimaryAmine', label:'Reaction of acyl chloride with primary amine', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'excess primary amine', tags: ['excess primary amine'], mode:'single',
+    reagentText:'excess primary amine', tags: ['excess primary amine'], mode:'single', byproductSpecies:['HCl'],
     gen:function(d){ return anyAcylChloride(); },
     genReactant:function(d){ return { mol:generateAminoAlkane(d) }; },
     run:function(mol, reactant){ return op.acylChlorideToAmide(mol, reactant.mol); } },
   { id:'acylChloridePlusSecondaryAmine', label:'Reaction of acyl chloride with secondary amine', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'excess secondary amine', tags: ['excess secondary amine'], mode:'single',
+    reagentText:'excess secondary amine', tags: ['excess secondary amine'], mode:'single', byproductSpecies:['HCl'],
     gen:function(d){ return anyAcylChloride(); },
     genReactant:function(d){ return { mol:generateAmine([shortHalideChainLen(), shortHalideChainLen()]) }; },
     run:function(mol, reactant){ return op.acylChlorideToAmide(mol, reactant.mol); } },
@@ -5800,9 +6095,13 @@ loadStats();
 var selected = {}; POOL.forEach(function(p){ selected[p.id] = true; });
 var mode = 'A'; // 'A' = manual picker, 'B' = weak-spot weighted
 var current = null;
-var userAnswer = { molecules: [], noReaction: false, co2h2o: false };
+var userAnswer = { molecules: [], noReaction: false, co2h2o: false, byproduct: false };
 var revealed = false; // true once the current question's answer has been revealed -- hides edit controls
 var revealMatch = null; // {matchForSubmitted:[...]} once a valid item-level match could be computed, for per-card correct/wrong marking
+var revealGhosts = null; // correct-answer items the student never submitted -- rendered as dashed "ghost" cards appended to #submittedList (see renderGhostItems), null when there's nothing missing or before reveal
+var revealMissingTags = null; // reagent-mode equivalent of revealGhosts -- missing tag strings appended to #tagBox as ghost chips
+var revealNoReactionCorrect = null; // true/false once revealed AND userAnswer.noReaction was submitted, for marking the "No reaction" chip itself -- null otherwise (chip isn't shown, or nothing to mark yet)
+var revealGhostNoReaction = false; // true when the correct answer was "No reaction" but the student submitted something else instead -- shows a ghost "No reaction" chip in #submittedList so the correct answer is never invisible (there's no molecule to ghost, since correct is literally nothing)
 
 // Full known-tag vocabulary, built once from every POOL entry's own tags --
 // this is both the autocomplete source AND the sole definition of
@@ -5920,20 +6219,22 @@ function getReagentAcceptableCombos(){
 // mode (ester/amide/anhydride hydrolysis, combustion, oxidative cleavage
 // alternatives bundled as multiple separate correct-answer molecules),
 // since "the" starting material isn't a single unambiguous target there
-// the same way it is for 'single'/'variants'. 'reagent' is additionally
-// excluded whenever THIS instance's reaction doesn't occur (occurs:false) --
-// with the reactant and given "product" shown as the same unchanged
-// molecule, there's no way to deduce which one specific reagent was tried
-// and failed (infinitely many wouldn't react); 'product' still legitimately
-// asks for "No reaction" as the answer, and 'reactant' already has its own
-// no-reaction handling (see revealReactantAnswer), so only 'reagent' needs
-// this exclusion. Checked dynamically per-instance rather than via a
-// hand-flagged list of "no reaction" specs, so it automatically covers every
-// current and future such entry with no bookkeeping.
+// the same way it is for 'single'/'variants'. Both 'reagent' and 'reactant'
+// are additionally excluded whenever THIS instance's reaction doesn't occur
+// (occurs:false) -- with the reactant and given "product" shown as the same
+// unchanged molecule, there's no legitimate reagent to deduce (infinitely
+// many wouldn't react) and no legitimate "starting material" to build
+// either (literally anything unreactive under these exact conditions would
+// do); only 'product' meaningfully asks for "No reaction" as the answer.
+// Checked dynamically per-instance rather than via a hand-flagged list of
+// "no reaction" specs, so it automatically covers every current and future
+// such entry with no bookkeeping.
 function guessModeOptions(spec, occurs){
   var opts = ['product'];
-  if(occurs) opts.push('reagent');
-  if(spec.mode!=='fragments') opts.push('reactant');
+  if(occurs){
+    opts.push('reagent');
+    if(spec.mode!=='fragments') opts.push('reactant');
+  }
   return opts;
 }
 // Picks among whichever of this spec's valid guessModeOptions are also
@@ -5984,8 +6285,10 @@ function resetTagInput(){
 // part of the correct set (tagCorrect/tagWrong), the same per-item
 // correctness marking the molecule-card path already does.
 function renderTagBox(){
+  // The text input is its own element above #tagBox now (see the reagent-
+  // guess markup), not a child of it, so chips just append in order rather
+  // than being inserted before an in-box input reference.
   var box = document.getElementById('tagBox');
-  var input = document.getElementById('tagTextInput');
   Array.from(box.querySelectorAll('.tagChip')).forEach(function(el){ el.remove(); });
   var matchedCombo = current ? bestMatchingTagCombo(reagentGuessTags, getReagentAcceptableCombos()) : [];
   reagentGuessTags.forEach(function(tag, idx){
@@ -6012,8 +6315,21 @@ function renderTagBox(){
       x.addEventListener('click', function(){ removeTagAt(idx); });
       chip.appendChild(x);
     }
-    box.insertBefore(chip, input);
+    box.appendChild(chip);
   });
+  // Missing tags -- the reagent-mode equivalent of the ghost molecule cards
+  // in #submittedList -- get appended right after the student's own chips,
+  // dashed/faded, once revealed.
+  if(revealed && revealMissingTags && revealMissingTags.length){
+    revealMissingTags.forEach(function(tag){
+      var chip = document.createElement('span');
+      chip.className = 'tagChip tagGhost';
+      var label = document.createElement('span');
+      label.textContent = tag;
+      chip.appendChild(label);
+      box.appendChild(chip);
+    });
+  }
   updateSubmitEnabled();
 }
 
@@ -6115,23 +6431,9 @@ function revealTagAnswer(){
   var submittedLower = new Set(reagentGuessTags.map(function(t){ return t.toLowerCase(); }));
   var missing = matchedCombo.filter(function(t){ return !submittedLower.has(t.toLowerCase()); });
 
-  var answerBox = document.getElementById('answerBox');
-  answerBox.innerHTML = '';
-  if(isCorrect){
-    answerBox.textContent = 'Nothing missing.';
-  } else {
-    var row = document.createElement('div');
-    row.className = 'tagMissingRow';
-    (missing.length ? missing : matchedCombo).forEach(function(t){
-      var chip = document.createElement('span');
-      chip.className = 'tagChip';
-      chip.textContent = t;
-      row.appendChild(chip);
-    });
-    answerBox.appendChild(row);
-  }
+  revealMissingTags = isCorrect ? [] : (missing.length ? missing : matchedCombo);
 
-  renderTagBox(); // `revealed` is already true by now -- repaints every submitted chip with tagCorrect/tagWrong instead of tagInvalid
+  renderTagBox(); // `revealed` is already true by now -- repaints every submitted chip with tagCorrect/tagWrong instead of tagInvalid, and appends revealMissingTags as ghost chips
   document.getElementById('tagTextInput').classList.add('hidden');
   var toggleLabel = document.querySelector('.tagAutocompleteToggle');
   if(toggleLabel) toggleLabel.classList.add('hidden');
@@ -6141,6 +6443,7 @@ function revealTagAnswer(){
   document.getElementById('submitAnswerBtn').classList.add('hidden');
 
   finishReveal({ correct: isCorrect, ungradable: null });
+  sizeEquationBoxes(); // re-fit AFTER finishReveal -- it's the one that un-hides #nextRow (verdict badge + Next button), so fitting any earlier would measure the layout before that row's height ever gets counted
 }
 
 function weightedPick(entries, weightFn){
@@ -6244,11 +6547,88 @@ function renderQLabel(){
     : '';
 }
 
+// Every box in the equation row -- reactant(s) AND product(s) together --
+// shares ONE size, computed from the total column count so the row keeps
+// filling the available width as that count changes, rather than each side
+// dividing its own slot independently (which used to make a 2-product
+// answer render smaller than a single reactant right next to it). 3+
+// products on one side wrap into a 2-column grid instead of shrinking
+// further; reactants never reach 3 in this app's data model, so only the
+// product side ever needs the grid.
+function eqBoxSizeFor(totalUnits, narrow){
+  if(narrow){
+    if(totalUnits<=2) return 130;
+    if(totalUnits===3) return 100;
+    return 82;
+  }
+  if(totalUnits<=2) return 300;
+  if(totalUnits===3) return 240;
+  if(totalUnits===4) return 190;
+  return 160;
+}
+function sizeEquationBoxes(){
+  var row = document.getElementById('equationRow');
+  var reactantCount = document.getElementById('eqReactant2Item').classList.contains('hidden') ? 1 : 2;
+  var pga = document.getElementById('productGivenArea');
+  var productCount = pga.querySelectorAll('.missingAnswerCard').length || 1;
+  var productCols = Math.min(productCount, 2);
+  var totalUnits = reactantCount + productCols;
+  var narrow = window.innerWidth <= 760;
+  var size = eqBoxSizeFor(totalUnits, narrow);
+  row.style.setProperty('--eqBoxSize', size + 'px');
+  pga.querySelectorAll('.missingAnswerRow').forEach(function(r){
+    r.classList.toggle('eqGrid', productCount>=3);
+  });
+
+  // Reset the built-molecule card size back to its default before
+  // re-measuring below -- otherwise a previous, tighter question's shrink
+  // would incorrectly carry over and never grow back once there's room
+  // again (see #submittedCardW/#submittedListH defaults in the CSS).
+  var root = document.documentElement;
+  root.style.setProperty('--submittedCardW', '160px');
+  root.style.setProperty('--submittedListH', '214px');
+
+  // Whatever's actually rendered -- equation box size, a 3+-product grid
+  // (multiple rows, which the column-based size above doesn't account for),
+  // build controls vs tag box, the answer block once revealed, how much the
+  // question label itself wraps -- can still add up to more than the pane
+  // has room for. Rather than hand-tune yet another constant for every one
+  // of those combinations (fragile -- shrinking a box can also let the
+  // arrow label rewrap onto fewer lines, moving the target again), just
+  // measure the REAL rendered overflow and shrink until it's gone, since
+  // the whole point (see .paneCard's overflow-y safety net) is that the
+  // pane should never actually need to use it. Equation boxes shrink first
+  // (least disruptive -- they're just the GIVEN molecules); the built-
+  // molecule card size only shrinks as a last resort, since that's what
+  // the student is actively building or reading.
+  var panel = document.getElementById('questionPanel');
+  for(var attempt=0; attempt<60; attempt++){
+    var overflowNow = panel.scrollHeight - panel.clientHeight;
+    if(overflowNow<=0) break;
+    var curEq = parseFloat(getComputedStyle(row).getPropertyValue('--eqBoxSize')) || size;
+    if(curEq>72){
+      // Shrink by the FULL measured overflow (plus a margin), not half --
+      // a 3+-product grid means 1px off the box is 2px off the total (two
+      // stacked rows), so an undershoot here just costs another cheap
+      // iteration while an overshoot risks never converging within the cap.
+      row.style.setProperty('--eqBoxSize', Math.max(72, curEq - overflowNow - 6) + 'px');
+      continue;
+    }
+    var curCard = parseFloat(getComputedStyle(root).getPropertyValue('--submittedCardW')) || 160;
+    if(curCard>96){
+      var newCard = Math.max(96, curCard - overflowNow - 6);
+      root.style.setProperty('--submittedCardW', newCard + 'px');
+      root.style.setProperty('--submittedListH', Math.round(newCard * 1.34) + 'px');
+      continue;
+    }
+    break; // hit both floors -- nothing left to shrink
+  }
+}
+
 function showQuestion(){
   var gm = current.guessMode;
-  revealed = false; revealMatch = null;
+  revealed = false; revealMatch = null; revealGhosts = null; revealMissingTags = null; revealNoReactionCorrect = null; revealGhostNoReaction = false;
   renderQLabel();
-  document.getElementById('qDifficulty').textContent = 'Difficulty ' + current.difficulty;
   document.getElementById('guessLabel').textContent = GUESS_LABELS[gm];
 
   // The equation row: Reactant(s) --[reagents/conditions]--> Product, with
@@ -6310,25 +6690,97 @@ function showQuestion(){
   document.getElementById('reagentGuessArea').classList.toggle('hidden', gm!=='reagent');
   resetTagInput();
 
-  document.getElementById('hintText').textContent = '';
   document.getElementById('answerBlock').classList.add('hidden');
   document.getElementById('nextRow').classList.add('hidden');
-  document.getElementById('verdictBox').classList.add('hidden');
-  userAnswer = { molecules: [], noReaction: false, co2h2o: false };
+  var verdictBadgeReset = document.getElementById('verdictBadge');
+  verdictBadgeReset.textContent = ''; verdictBadgeReset.removeAttribute('title');
+  verdictBadgeReset.classList.remove('verdictGood', 'verdictBad', 'verdictWarn');
+  userAnswer = { molecules: [], noReaction: false, co2h2o: false, byproduct: false };
 
   // The molecule-building controls only make sense for 'product'/'reactant'
   // modes, not 'reagent' mode (no molecule at all is being built there).
-  // 'No reaction' and '+CO2+H2O' stay available in BOTH: in 'product' mode
-  // they describe the product's shape as usual, and in 'reactant' mode
-  // 'No reaction' doubles as shorthand for "the reactant is unchanged"
-  // (see revealReactantAnswer) so the student doesn't have to rebuild an
-  // identical copy of the given product atom-by-atom.
-  document.getElementById('submittedList').classList.toggle('hidden', gm==='reagent');
+  // 'No reaction' only makes sense in 'product' mode now -- guessModeOptions
+  // already excludes 'reactant' entirely whenever this instance's reaction
+  // doesn't occur, so by the time we're in 'reactant' mode the reaction is
+  // guaranteed to actually happen and "No reaction" could never be correct;
+  // offering the button there would just be a trap with no honest use.
+  document.getElementById('answerRectWrap').classList.toggle('hidden', gm==='reagent');
   document.getElementById('buildControlsRow').classList.toggle('hidden', gm==='reagent');
+  document.getElementById('noReactionBtn').classList.toggle('hidden', gm!=='product');
   document.getElementById('submitAnswerBtn').classList.remove('hidden');
+
+  // The byproduct button only appears when the student has opted in (Topics
+  // pane) AND this specific reaction declares a byproduct via
+  // spec.byproductSpecies -- see computeCorrectAnswerSet/renderSmallSpeciesCard.
+  var byproductBtn = document.getElementById('byproductBtn');
+  var byproductSpecies = current.spec.byproductSpecies;
+  byproductBtn.classList.toggle('hidden', !(includeInorganicByproducts && byproductSpecies));
+  if(byproductSpecies) byproductBtn.textContent = '+ ' + byproductSpecies.join(' + ');
+
   renderSubmittedList();
+  sizeEquationBoxes();
 }
 
+// A non-organic byproduct (CO2, H2O, HCl...) is graded as one combined
+// 'small' item (see computeSubmittedAnswerSet/matchAnswers) but is shown as
+// one square box PER species -- same visual language as a real molecule
+// card (.submittedCard), just with bold text standing in for an svg.
+// `matched` is true/false once revealed, or null before that.
+function renderSubmittedSmallGroup(list, species, matched, onRemove){
+  species.forEach(function(sp, i){
+    var card = document.createElement('div');
+    card.className = 'submittedCard';
+    var box = document.createElement('div');
+    box.className = 'smallSpeciesBox';
+    box.innerHTML = '<span class="smallSpeciesLabel">' + escapeHtml(sp) + '</span>';
+    card.appendChild(box);
+    if(matched !== null){
+      card.classList.add(matched ? 'cardCorrect' : 'cardWrong');
+      var badge = document.createElement('div');
+      badge.className = 'submittedCardBadge ' + (matched ? 'badgeGood' : 'badgeBad');
+      badge.textContent = matched ? '✓' : '✗';
+      card.appendChild(badge);
+    }
+    if(!revealed && i===species.length-1){
+      var x = document.createElement('button');
+      x.type = 'button'; x.textContent = '✕';
+      x.addEventListener('click', onRemove);
+      card.appendChild(x);
+    }
+    list.appendChild(card);
+  });
+}
+// Correct-answer items the student never submitted, appended to the END of
+// #submittedList as dashed/faded "ghost" cards once revealed -- replaces
+// the old separate "Answer" box entirely, so there's one list showing both
+// what was submitted (marked ✓/✗) and what was missing (ghosted), instead
+// of two. Reuses the same rendering as a real molecule/small-species card,
+// just without a badge, edit button, or remove button.
+function renderGhostItems(list, items){
+  items.forEach(function(item){
+    if(item.kind==='small'){
+      item.species.forEach(function(sp){
+        var card = document.createElement('div');
+        card.className = 'submittedCard ghostCard';
+        var box = document.createElement('div');
+        box.className = 'smallSpeciesBox';
+        box.innerHTML = '<span class="smallSpeciesLabel">' + escapeHtml(sp) + '</span>';
+        card.appendChild(box);
+        list.appendChild(card);
+      });
+    } else {
+      var visual = window.__renderStaticMolecule(item.mol);
+      var card = document.createElement('div');
+      card.className = 'submittedCard ghostCard';
+      card.innerHTML = visual ? visual.svg : '';
+      var note = document.createElement('div');
+      note.className = 'submittedNote';
+      note.textContent = visual ? visual.formula : '';
+      card.appendChild(note);
+      list.appendChild(card);
+    }
+  });
+}
 function renderSubmittedList(){
   var list = document.getElementById('submittedList');
   list.innerHTML = '';
@@ -6336,6 +6788,9 @@ function renderSubmittedList(){
     var chip = document.createElement('div');
     chip.className = 'noReactionChip';
     chip.innerHTML = '<span>No reaction</span>';
+    if(revealed && revealNoReactionCorrect!==null){
+      chip.classList.add(revealNoReactionCorrect ? 'chipCorrect' : 'chipWrong');
+    }
     if(!revealed){
       var x = document.createElement('button');
       x.type = 'button'; x.textContent = '✕';
@@ -6345,30 +6800,20 @@ function renderSubmittedList(){
     list.appendChild(chip);
   }
   if(userAnswer.co2h2o){
-    var chip2 = document.createElement('div');
-    chip2.className = 'noReactionChip';
-    chip2.innerHTML = '<span>+ CO2 + H2O</span>';
     // The CO2+H2O byproduct is just another item in the submitted set (see
-    // computeSubmittedAnswerSet -- it's always appended last), so it's
-    // matched against the correct set the exact same way every molecule
-    // card is; only its display is special-cased here since it isn't a
-    // molecule card.
-    if(revealMatch){
-      var co2Idx = userAnswer.molecules.length;
-      var co2Matched = co2Idx < revealMatch.matchForSubmitted.length && revealMatch.matchForSubmitted[co2Idx] !== -1;
-      chip2.classList.add(co2Matched ? 'chipCorrect' : 'chipWrong');
-      var co2Badge = document.createElement('span');
-      co2Badge.className = 'inlineBadge ' + (co2Matched ? 'badgeGood' : 'badgeBad');
-      co2Badge.textContent = co2Matched ? '✓' : '✗';
-      chip2.insertBefore(co2Badge, chip2.firstChild);
-    }
-    if(!revealed){
-      var x2 = document.createElement('button');
-      x2.type = 'button'; x2.textContent = '✕';
-      x2.addEventListener('click', function(){ userAnswer.co2h2o = false; updateSubmitEnabled(); renderSubmittedList(); });
-      chip2.appendChild(x2);
-    }
-    list.appendChild(chip2);
+    // computeSubmittedAnswerSet -- it's always appended last) matched
+    // against the correct set the same way every molecule card is, but it's
+    // rendered as one small square box PER species (not a molecule graph,
+    // so no svg -- just the formula as bold text) rather than one combined
+    // text chip.
+    var co2Idx = userAnswer.molecules.length;
+    var co2Matched = revealMatch ? (co2Idx < revealMatch.matchForSubmitted.length && revealMatch.matchForSubmitted[co2Idx] !== -1) : null;
+    renderSubmittedSmallGroup(list, ['CO2','H2O'], co2Matched, function(){ userAnswer.co2h2o = false; updateSubmitEnabled(); renderSubmittedList(); });
+  }
+  if(userAnswer.byproduct){
+    var bpIdx = userAnswer.molecules.length + (userAnswer.co2h2o?1:0);
+    var bpMatched = revealMatch ? (bpIdx < revealMatch.matchForSubmitted.length && revealMatch.matchForSubmitted[bpIdx] !== -1) : null;
+    renderSubmittedSmallGroup(list, current.spec.byproductSpecies || [], bpMatched, function(){ userAnswer.byproduct = false; updateSubmitEnabled(); renderSubmittedList(); });
   }
   userAnswer.molecules.forEach(function(m, idx){
     var card = document.createElement('div');
@@ -6378,7 +6823,14 @@ function renderSubmittedList(){
     var note = document.createElement('div');
     note.className = 'submittedNote';
     if(norm.ok){ note.textContent = norm.formula; }
-    else { note.textContent = 'Unrecognized: ' + norm.reason; note.classList.add('submittedNoteWarn'); }
+    else {
+      note.classList.add('submittedNoteWarn');
+      var warnIcon = document.createElement('span');
+      warnIcon.className = 'submittedWarnIcon';
+      warnIcon.textContent = '⚠';
+      warnIcon.title = 'Unrecognized: ' + norm.reason;
+      note.appendChild(warnIcon);
+    }
     card.appendChild(note);
     if(revealMatch){
       // Per-card correct/wrong marking, once the answer's been revealed and
@@ -6429,13 +6881,20 @@ function renderSubmittedList(){
     }
     list.appendChild(card);
   });
+  if(revealed && revealGhosts && revealGhosts.length) renderGhostItems(list, revealGhosts);
+  if(revealed && revealGhostNoReaction){
+    var ghostNoRxn = document.createElement('div');
+    ghostNoRxn.className = 'noReactionChip ghostCard';
+    ghostNoRxn.innerHTML = '<span>No reaction</span>';
+    list.appendChild(ghostNoRxn);
+  }
   updateSubmitEnabled();
 }
 
 function updateSubmitEnabled(){
   var enabled = current && current.guessMode==='reagent'
     ? reagentGuessTags.length>0
-    : (userAnswer.noReaction || userAnswer.molecules.length>0 || userAnswer.co2h2o);
+    : (userAnswer.noReaction || userAnswer.molecules.length>0 || userAnswer.co2h2o || userAnswer.byproduct);
   document.getElementById('submitAnswerBtn').disabled = !enabled;
 }
 
@@ -6459,19 +6918,28 @@ function matchAnswers(submittedItems, correctItems){
 }
 // One "missing answer" card -- a real molecule renders visually via the
 // exact same builder-based SVG the question's own starting molecule uses
-// (window.__renderStaticMolecule), not condensed text; a 'small' item
-// (e.g. the CO2+H2O byproduct) has no molecule graph to draw, so it's
-// just a labeled chip.
+// (window.__renderStaticMolecule), not condensed text. A 'small' item (e.g.
+// the CO2+H2O byproduct) has no molecule graph to draw, so it gets a square
+// box too (same size/shape as a real molecule box), just with its formula
+// as bold text where the svg would be -- see renderSmallSpeciesCard, called
+// once per species by renderAnswerItems below (NOT here, since one 'small'
+// item can expand to several boxes).
+function renderSmallSpeciesCard(label){
+  var card = document.createElement('div');
+  card.className = 'missingAnswerCard';
+  var box = document.createElement('div');
+  box.className = 'molVisualBox smallSpeciesBox';
+  box.innerHTML = '<span class="smallSpeciesLabel">' + escapeHtml(label) + '</span>';
+  card.appendChild(box);
+  var caption = document.createElement('div');
+  caption.className = 'missingAnswerLabel';
+  caption.textContent = label;
+  card.appendChild(caption);
+  return card;
+}
 function renderAnswerItemCard(item){
   var card = document.createElement('div');
   card.className = 'missingAnswerCard';
-  if(item.kind==='small'){
-    var chip = document.createElement('div');
-    chip.className = 'noReactionChip';
-    chip.innerHTML = '<span>' + escapeHtml(item.species.join(' + ')) + '</span>';
-    card.appendChild(chip);
-    return card;
-  }
   var visual = window.__renderStaticMolecule(item.mol);
   var box = document.createElement('div');
   box.className = 'molVisualBox';
@@ -6486,7 +6954,10 @@ function renderAnswerItemCard(item){
 function renderAnswerItems(container, items){
   var row = document.createElement('div');
   row.className = 'missingAnswerRow';
-  items.forEach(function(item){ row.appendChild(renderAnswerItemCard(item)); });
+  items.forEach(function(item){
+    if(item.kind==='small') item.species.forEach(function(sp){ row.appendChild(renderSmallSpeciesCard(sp)); });
+    else row.appendChild(renderAnswerItemCard(item));
+  });
   container.appendChild(row);
 }
 
@@ -6502,19 +6973,25 @@ function finishReveal(verdict){
   s.attempts++;
   if(!verdict.correct) s.wrong++;
   renderStats();
-  recordAttempt(current.guessMode, !!verdict.correct);
 
-  var box = document.getElementById('verdictBox');
-  box.classList.remove('hidden', 'verdictGood', 'verdictBad', 'verdictWarn');
+  // A compact pill sharing the row with "Next question" -- see .verdictBadge
+  // -- rather than a bordered paragraph of its own above it, so revealing an
+  // answer never adds enough height to push the pane into scrolling. The
+  // ungradable reason can run long, so it goes in `title` (a hover tooltip)
+  // instead of the pill's own text.
+  var badge = document.getElementById('verdictBadge');
+  badge.classList.remove('verdictGood', 'verdictBad', 'verdictWarn');
+  badge.removeAttribute('title');
   if(verdict.ungradable){
-    box.classList.add('verdictWarn');
-    box.textContent = "Couldn't grade one of your molecules (" + verdict.ungradable + ") — marked incorrect.";
+    badge.classList.add('verdictWarn');
+    badge.textContent = '⚠ Ungradable';
+    badge.title = "Couldn't grade one of your molecules (" + verdict.ungradable + ") — marked incorrect.";
   } else if(verdict.correct){
-    box.classList.add('verdictGood');
-    box.textContent = '✓ Correct!';
+    badge.classList.add('verdictGood');
+    badge.textContent = '✓ Correct';
   } else {
-    box.classList.add('verdictBad');
-    box.textContent = '✗ Not quite — compare against the answer above.';
+    badge.classList.add('verdictBad');
+    badge.textContent = '✗ Not quite';
   }
   document.getElementById('nextRow').classList.remove('hidden');
 }
@@ -6529,39 +7006,39 @@ function revealAnswer(){
   var correct = getGuessTargetAnswerSet(spec, result);
   var submitted = computeSubmittedAnswerSet(userAnswer);
   revealMatch = null;
+  revealGhosts = null;
+  revealNoReactionCorrect = userAnswer.noReaction ? (correct.noReaction===true) : null;
 
-  var answerBox = document.getElementById('answerBox');
-  answerBox.innerHTML = '';
   if(correct.noReaction){
-    answerBox.textContent = 'No reaction.';
-    // the true answer is "nothing happens" -- any real molecule the
-    // student submitted instead is inherently wrong, mark it as such
-    if(!submitted.noReaction && userAnswer.molecules.length>0){
-      revealMatch = { matchForSubmitted: userAnswer.molecules.map(function(){ return -1; }) };
+    // the true answer is "nothing happens" -- any real molecule OR
+    // byproduct (CO2+H2O, HCl...) the student submitted instead is
+    // inherently wrong, mark it as such. submitted.items already lines up
+    // molecules-then-co2h2o-then-byproduct in the same order renderSubmittedList
+    // indexes into, so this covers every submitted card, not just molecules.
+    if(!submitted.noReaction && submitted.items && submitted.items.length>0){
+      revealMatch = { matchForSubmitted: submitted.items.map(function(){ return -1; }) };
+      // There's no molecule to ghost (the correct answer is literally
+      // nothing), so without this the student would just see their own
+      // wrong card(s) marked ✗ with no indication of what WAS right --
+      // a ghost "No reaction" chip fills that gap the same way a ghost
+      // molecule card does everywhere else.
+      revealGhostNoReaction = true;
     }
   } else if(submitted.ungradable){
-    // couldn't verify individual matches -- show the full correct set
-    renderAnswerItems(answerBox, correct.items);
+    // couldn't verify individual matches -- show the full correct set as ghosts
+    revealGhosts = correct.items;
   } else {
     var match = matchAnswers(submitted.noReaction ? [] : submitted.items, correct.items);
     revealMatch = match;
-    if(match.missingCorrect.length===0){
-      answerBox.textContent = 'Nothing missing.';
-    } else {
-      renderAnswerItems(answerBox, match.missingCorrect);
-    }
+    if(match.missingCorrect.length>0) revealGhosts = match.missingCorrect;
   }
-  if(current.guessMode==='product' && spec.mode==='variants' && result.occurs && result.variants && result.variants.length>1){
-    document.getElementById('hintText').textContent =
-      result.variants.length + ' constitutionally distinct products are possible (different C-H sites reacted) — all must be named to count as correct.';
-  }
-
   document.getElementById('answerBlock').classList.remove('hidden');
   document.getElementById('buildControlsRow').classList.add('hidden');
   document.getElementById('submitAnswerBtn').classList.add('hidden');
-  renderSubmittedList(); // re-render to apply the per-card marking now that revealed/revealMatch are set
+  renderSubmittedList(); // re-render to apply the per-card marking + append ghost cards now that revealed/revealMatch/revealGhosts are set
 
   finishReveal(gradeAnswer(spec, result, userAnswer));
+  sizeEquationBoxes(); // re-fit AFTER finishReveal -- it's the one that un-hides #nextRow (verdict badge + Next button), so fitting any earlier would measure the layout before that row's height ever gets counted
 }
 
 // The PRODUCT side's answer shape, in the same generic form engine.js's
@@ -6574,16 +7051,27 @@ function revealAnswer(){
 // getGuessTargetAnswerSet) is the reactant instead.
 function computeCorrectAnswerSet(spec, result){
   if(!result.occurs) return { noReaction:true, items:null };
-  if(spec.mode==='single') return { noReaction:false, items:[{kind:'chain', mol:result.product}] };
-  if(spec.mode==='variants'){
+  var out;
+  if(spec.mode==='single') out = { noReaction:false, items:[{kind:'chain', mol:result.product}] };
+  else if(spec.mode==='variants'){
     // A variants-mode operator collapses to {occurs:true, product:...} (no
     // `variants` array) whenever there's only one regiochemistry outcome --
     // e.g. a ring with just one open position -- so this falls back to the
     // singular product exactly like mode:'single' does in that case.
     var vs = result.variants || [result.product];
-    return { noReaction:false, items: vs.map(function(v){ return {kind:'chain', mol:v}; }) };
+    out = { noReaction:false, items: vs.map(function(v){ return {kind:'chain', mol:v}; }) };
+  } else {
+    return { noReaction:false, items: result.products }; // fragments -- already the right shape, own byproducts (if any) already included
   }
-  return { noReaction:false, items: result.products }; // fragments -- already the right shape
+  // Non-organic byproducts (HCl from acyl chloride reactions, H2O from
+  // esterification, etc.) for single/variants-mode specs are opt-in and
+  // purely declarative (spec.byproductSpecies) -- this never touches the
+  // underlying operator/run(), so existing behaviour is unchanged unless
+  // the student has turned the setting on in the Topics pane.
+  if(includeInorganicByproducts && spec.byproductSpecies){
+    out.items = out.items.concat([{ kind:'small', species: spec.byproductSpecies }]);
+  }
+  return out;
 }
 
 // What the student is ACTUALLY being asked to build right now -- only ever
@@ -6605,6 +7093,7 @@ function computeSubmittedAnswerSet(ua){
   if(bad) return { noReaction:false, items:null, ungradable:bad.reason };
   var items = results.map(function(r){ return r.answer; });
   if(ua.co2h2o) items.push({ kind:'small', species:['CO2','H2O'] });
+  if(ua.byproduct && current && current.spec.byproductSpecies) items.push({ kind:'small', species: current.spec.byproductSpecies });
   return { noReaction:false, items:items, ungradable:null };
 }
 
@@ -6652,9 +7141,9 @@ function reactantCandidateMatchesGiven(candidateMol){
 
 function revealReactantAnswer(){
   var result = current.result;
-  var answerBox = document.getElementById('answerBox');
-  answerBox.innerHTML = '';
   revealMatch = null;
+  revealGhosts = null;
+  revealNoReactionCorrect = null;
   var verdict;
   var exampleAnswer = [{ kind:'chain', mol: current.mol }];
 
@@ -6663,38 +7152,35 @@ function revealReactantAnswer(){
     // question's own reaction genuinely didn't occur, sparing the student
     // from rebuilding an identical copy of the given product atom-by-atom.
     var noRxnOk = !result.occurs;
+    revealNoReactionCorrect = noRxnOk;
     verdict = { correct: noRxnOk, ungradable: null };
-    if(noRxnOk) answerBox.textContent = 'Nothing missing.';
-    else renderAnswerItems(answerBox, exampleAnswer);
-  } else if(userAnswer.co2h2o || userAnswer.molecules.length!==1){
-    // CO2+H2O and multi-molecule submissions never describe a single
-    // starting material, so they're always wrong here -- shown, per the
-    // "always include the options" request, but harmless since selecting
-    // them just can't match.
+    if(!noRxnOk) revealGhosts = exampleAnswer;
+  } else if(userAnswer.co2h2o || userAnswer.byproduct || userAnswer.molecules.length!==1){
+    // CO2+H2O, other byproducts, and multi-molecule submissions never
+    // describe a single starting material, so they're always wrong here --
+    // shown, per the "always include the options" request, but harmless
+    // since selecting them just can't match.
     verdict = { correct:false, ungradable:null };
-    renderAnswerItems(answerBox, exampleAnswer);
+    revealGhosts = exampleAnswer;
   } else {
     var norm = window.__normalizeMoleculeForGrading(userAnswer.molecules[0].data);
     if(!norm.ok){
       verdict = { correct:false, ungradable:norm.reason };
-      renderAnswerItems(answerBox, exampleAnswer);
+      revealGhosts = exampleAnswer;
     } else {
       var ok = reactantCandidateMatchesGiven(norm.answer.mol);
       revealMatch = { matchForSubmitted: [ ok ? 0 : -1 ] };
       verdict = { correct: ok, ungradable:null };
-      if(ok) answerBox.textContent = 'Nothing missing.';
-      else renderAnswerItems(answerBox, exampleAnswer);
+      if(!ok) revealGhosts = exampleAnswer;
     }
   }
-
-  document.getElementById('hintText').textContent = verdict.correct ? '' :
-    'Shown above is ONE valid starting material -- other structures that would react the same way under these conditions to give the same product are also accepted.';
 
   document.getElementById('answerBlock').classList.remove('hidden');
   document.getElementById('buildControlsRow').classList.add('hidden');
   document.getElementById('submitAnswerBtn').classList.add('hidden');
   renderSubmittedList();
   finishReveal(verdict);
+  sizeEquationBoxes(); // re-fit AFTER finishReveal -- it's the one that un-hides #nextRow (verdict badge + Next button), so fitting any earlier would measure the layout before that row's height ever gets counted
 }
 
 function renderStats(){
@@ -6793,18 +7279,24 @@ function renderPicker(){
   });
 }
 
-// ---- settings persistence (topics, practice mode, question types, zen) ----
+// ---- settings persistence (topics, practice mode, question types) ----
 // Everything the student would otherwise have to re-set every visit --
 // loaded once at startup (before the first question is generated) and
 // saved on every change, so reopening the app drops straight back into
 // practicing with the same setup, no settings screen in the way.
 var SETTINGS_STORAGE_KEY = 'h2ChemDrill.settings.v1';
 var questionTypes = { product:true, reactant:true, reagent:true, distinguish:true };
-var zenEnabled = false;
+// Opt-in, default off: tracks non-organic byproducts (HCl, H2O...) for
+// condensation-type reactions that don't otherwise model them -- see
+// spec.byproductSpecies and computeCorrectAnswerSet. Off by default so
+// existing question difficulty/behaviour is unchanged unless turned on.
+var includeInorganicByproducts = false;
+var showReactionName = true;
 function saveSettings(){
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
-      selected: selected, mode: mode, questionTypes: questionTypes, zenEnabled: zenEnabled
+      selected: selected, mode: mode, questionTypes: questionTypes,
+      includeInorganicByproducts: includeInorganicByproducts, showReactionName: showReactionName
     }));
   } catch(e){ /* storage unavailable -- settings just won't persist this session */ }
 }
@@ -6825,108 +7317,9 @@ function loadSettings(){
         if(typeof parsed.questionTypes[k]==='boolean') questionTypes[k] = parsed.questionTypes[k];
       });
     }
-    if(typeof parsed.zenEnabled==='boolean') zenEnabled = parsed.zenEnabled;
+    if(typeof parsed.includeInorganicByproducts==='boolean') includeInorganicByproducts = parsed.includeInorganicByproducts;
+    if(typeof parsed.showReactionName==='boolean') showReactionName = parsed.showReactionName;
   } catch(e){ /* corrupt or unavailable -- just start with defaults */ }
-}
-
-// ---- sessions (a continuous block of practicing) + GitHub-style streak ----
-// A session is bounded by either an explicit "End current session" click, or
-// by the app noticing on load that too much time passed since the last
-// recorded answer (IDLE_TIMEOUT_MS) to still be "the same sitting" -- in
-// that case the stale session is silently closed out and folded into
-// history right away, and its summary is shown once (a "welcome back, here's
-// how that went" moment) without blocking the next question from already
-// being ready underneath it.
-var ACTIVE_SESSION_KEY = 'h2ChemDrill.activeSession.v1';
-var SESSIONS_HISTORY_KEY = 'h2ChemDrill.sessions.v1';
-var IDLE_TIMEOUT_MS = 20*60*1000;
-var MAX_SESSION_HISTORY = 60;
-var QTYPE_LABELS = { product:'Guess product', reactant:'Guess starting material', reagent:'Guess reagents & conditions', distinguish:'Distinguishing tests' };
-
-var sessionsHistory = [];
-var activeSession = null; // { startedAt, lastActivity, log:[{ts,type,correct}] } -- correct is null for ungraded (distinguish) entries
-
-function loadSessionsHistory(){
-  try {
-    var raw = localStorage.getItem(SESSIONS_HISTORY_KEY);
-    sessionsHistory = raw ? (JSON.parse(raw) || []) : [];
-  } catch(e){ sessionsHistory = []; }
-}
-function saveSessionsHistory(){
-  try { localStorage.setItem(SESSIONS_HISTORY_KEY, JSON.stringify(sessionsHistory)); } catch(e){}
-}
-function saveActiveSession(){
-  try { localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(activeSession)); } catch(e){}
-}
-function summarizeSession(s){
-  var byType = {};
-  ['product','reactant','reagent','distinguish'].forEach(function(t){ byType[t] = { n:0, correct:0 }; });
-  s.log.forEach(function(entry){
-    if(!byType[entry.type]) return;
-    byType[entry.type].n++;
-    if(entry.correct===true) byType[entry.type].correct++;
-  });
-  var graded = s.log.filter(function(e){ return e.correct!==null; });
-  return {
-    id: s.startedAt, startedAt: s.startedAt, endedAt: s.lastActivity, total: s.log.length,
-    correct: graded.filter(function(e){ return e.correct; }).length,
-    graded: graded.length, byType: byType
-  };
-}
-function finalizeActiveSession(){
-  if(!activeSession || activeSession.log.length===0){
-    activeSession = null;
-    try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch(e){}
-    return null;
-  }
-  var summary = summarizeSession(activeSession);
-  sessionsHistory.unshift(summary);
-  if(sessionsHistory.length>MAX_SESSION_HISTORY) sessionsHistory.length = MAX_SESSION_HISTORY;
-  saveSessionsHistory();
-  try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch(e){}
-  activeSession = null;
-  return summary;
-}
-function startNewSession(){
-  var now = new Date().toISOString();
-  activeSession = { startedAt: now, lastActivity: now, log: [] };
-  saveActiveSession();
-}
-// Reads whatever session was active last time the app was open. If it's
-// still within the idle window, resumes it silently (same session
-// continues). If too much time has passed, closes it out into history and
-// returns its summary so the caller can show a "here's how that went" modal
-// once the next question is already on screen.
-function initSession(){
-  loadSessionsHistory();
-  var resumedSummaryToShow = null;
-  try {
-    var raw = localStorage.getItem(ACTIVE_SESSION_KEY);
-    if(raw){
-      var parsed = JSON.parse(raw);
-      if(parsed && parsed.startedAt && Array.isArray(parsed.log)){
-        var gapMs = Date.now() - new Date(parsed.lastActivity).getTime();
-        activeSession = parsed;
-        if(gapMs >= IDLE_TIMEOUT_MS) resumedSummaryToShow = finalizeActiveSession();
-      }
-    }
-  } catch(e){ /* corrupt -- just start fresh below */ }
-  if(!activeSession) startNewSession();
-  return resumedSummaryToShow;
-}
-function recordAttempt(type, correct){
-  if(!activeSession) startNewSession();
-  activeSession.log.push({ ts: new Date().toISOString(), type: type, correct: (correct===undefined ? null : correct) });
-  activeSession.lastActivity = new Date().toISOString();
-  saveActiveSession();
-  renderSessionIndicator();
-}
-function renderSessionIndicator(){
-  var el = document.getElementById('sessionIndicator');
-  if(!activeSession || activeSession.log.length===0){ el.textContent = ''; return; }
-  var s = summarizeSession(activeSession);
-  var accTxt = s.graded>0 ? Math.round(100*s.correct/s.graded)+'% correct' : 'self-checked so far';
-  el.textContent = 'This session: ' + s.total + ' question' + (s.total===1?'':'s') + ' · ' + accTxt;
 }
 
 // Practice mode (see the drawer's "Practice mode" section) picks WHICH
@@ -6946,130 +7339,11 @@ function renderModeIndicator(){
   if(desc) desc.textContent = PRACTICE_MODE_DESCRIPTIONS[mode];
 }
 
-function sessionSummaryHtml(summary){
-  var pct = summary.graded>0 ? Math.round(100*summary.correct/summary.graded) : null;
-  var lines = '<p><strong>' + summary.total + '</strong> question' + (summary.total===1?'':'s') + ' this session'
-    + (pct!==null ? ', <strong>' + pct + '%</strong> correct' : '') + '.</p>';
-  var rows = Object.keys(QTYPE_LABELS).filter(function(t){ return summary.byType[t] && summary.byType[t].n>0; }).map(function(t){
-    var bt = summary.byType[t];
-    var accTxt = t==='distinguish' ? bt.n + ' done (self-checked)' : bt.correct + '/' + bt.n + ' correct';
-    return '<div class="sessionHistoryItem"><span>' + escapeHtml(QTYPE_LABELS[t]) + '</span><span>' + escapeHtml(accTxt) + '</span></div>';
-  }).join('');
-  return lines + rows;
-}
-function showSessionSummary(summary){
-  document.getElementById('sessionSummaryBody').innerHTML = sessionSummaryHtml(summary);
-  document.getElementById('sessionSummaryOverlay').classList.add('open');
-}
-
-function dateKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-function computeDailyCounts(){
-  var counts = {};
-  sessionsHistory.forEach(function(s){
-    var k = dateKey(new Date(s.startedAt));
-    counts[k] = (counts[k]||0) + s.total;
-  });
-  if(activeSession && activeSession.log.length){
-    activeSession.log.forEach(function(entry){
-      var k = dateKey(new Date(entry.ts));
-      counts[k] = (counts[k]||0) + 1;
-    });
-  }
-  return counts;
-}
-function heatLevel(n){
-  if(!n) return 0;
-  if(n<3) return 1;
-  if(n<6) return 2;
-  if(n<12) return 3;
-  return 4;
-}
-// GitHub-contribution-graph-style grid: columns are weeks, rows are days
-// Sun-Sat, most recent week on the right. Padded with invisible cells at
-// the start so the first real day lands in its correct weekday row.
-function renderStreakHeatmap(){
-  var counts = computeDailyCounts();
-  var container = document.getElementById('streakHeatmap');
-  container.innerHTML = '';
-  var grid = document.createElement('div');
-  grid.className = 'heatmapGrid';
-  var today = new Date(); today.setHours(0,0,0,0);
-  var days = 7*18;
-  var cells = [];
-  for(var i=days-1;i>=0;i--){
-    var d = new Date(today.getTime() - i*86400000);
-    var k = dateKey(d);
-    cells.push({ date:k, count: counts[k]||0, dow:d.getDay() });
-  }
-  var startDow = cells[0].dow;
-  for(var p=0;p<startDow;p++) cells.unshift(null);
-  cells.forEach(function(c){
-    var cell = document.createElement('div');
-    cell.className = 'heatmapCell';
-    if(c){
-      cell.setAttribute('data-level', heatLevel(c.count));
-      cell.title = c.date + ': ' + c.count + ' question' + (c.count===1?'':'s');
-    } else {
-      cell.style.visibility = 'hidden';
-    }
-    grid.appendChild(cell);
-  });
-  container.appendChild(grid);
-
-  var activeDays = Object.keys(counts).filter(function(k){ return counts[k]>0; });
-  var streak = 0;
-  var cursor = new Date(today);
-  while(counts[dateKey(cursor)] > 0){ streak++; cursor.setDate(cursor.getDate()-1); }
-  document.getElementById('streakSummary').textContent =
-    streak + ' day' + (streak===1?'':'s') + ' current streak · ' + activeDays.length + ' active day' + (activeDays.length===1?'':'s') + ' total';
-}
-
-function renderSessionHistoryList(){
-  var list = document.getElementById('sessionHistoryList');
-  list.innerHTML = '';
-  if(sessionsHistory.length===0){
-    var p = document.createElement('p');
-    p.className = 'warnNote';
-    p.style.marginTop = '0';
-    p.textContent = "No completed sessions yet — they're saved when you end one, or automatically when you come back after a break.";
-    list.appendChild(p);
-    return;
-  }
-  sessionsHistory.slice(0, 15).forEach(function(s){
-    var row = document.createElement('div');
-    row.className = 'sessionHistoryItem';
-    var d = new Date(s.startedAt);
-    var accTxt = s.graded>0 ? Math.round(100*s.correct/s.graded)+'% correct' : 'self-checked';
-    row.innerHTML = '<span>' + escapeHtml(d.toLocaleDateString(undefined,{month:'short',day:'numeric'})) + '</span><span>' + s.total + ' q · ' + escapeHtml(accTxt) + '</span>';
-    list.appendChild(row);
-  });
-}
-
-function renderStatsScreen(){
-  renderStreakHeatmap();
-  renderSessionHistoryList();
-  renderStats();
-}
-
-var currentPracticeMode = 'reaction'; // 'reaction' | 'distinguish' -- which of the two practice panels is showing, so Stats can restore it on close
+var currentPracticeMode = 'reaction'; // 'reaction' | 'distinguish' -- which of the two practice panels is showing
 function showPracticeMode(which){
   currentPracticeMode = which;
   document.getElementById('questionPanel').classList.toggle('hidden', which!=='reaction');
   document.getElementById('distinguishPanel').classList.toggle('hidden', which!=='distinguish');
-}
-function openStatsScreen(){
-  document.getElementById('questionPanel').classList.add('hidden');
-  document.getElementById('distinguishPanel').classList.add('hidden');
-  document.getElementById('sessionIndicator').classList.add('hidden');
-  document.getElementById('modeIndicator').classList.add('hidden');
-  document.getElementById('statsScreen').classList.remove('hidden');
-  renderStatsScreen();
-}
-function closeStatsScreen(){
-  document.getElementById('statsScreen').classList.add('hidden');
-  document.getElementById('sessionIndicator').classList.remove('hidden');
-  document.getElementById('modeIndicator').classList.remove('hidden');
-  showPracticeMode(currentPracticeMode);
 }
 
 // ---- distinguishing tests (separate practice mode, own panel) ----
@@ -7401,6 +7675,11 @@ function renderDistinguishSet(){
 
   document.getElementById('distinguishTableBody').innerHTML = '';
   distinguishRows = [];
+  // Two rows by default -- with 3 compounds shown, 2 well-chosen tests are
+  // always enough to tell all three apart (each test can group them at
+  // most into "matches"/"doesn't", so 2 tests already distinguish up to 4
+  // outcomes), so there's no "+ Add test" button anymore either.
+  addDistinguishRow();
   addDistinguishRow();
 
   var freeField = document.getElementById('distinguishFreeField');
@@ -7426,14 +7705,12 @@ function renderDistinguishSet(){
 // the table rather than crammed into cells.
 function revealDistinguishAnswers(){
   distinguishRevealed = true;
-  recordAttempt('distinguish', null);
 
   distinguishRows.forEach(function(row){
     row.testEl.contentEditable = 'false';
     row.obsEls.forEach(function(el){ el.contentEditable = 'false'; });
   });
   document.getElementById('distinguishFreeField').contentEditable = 'false';
-  document.getElementById('distinguishAddRowBtn').classList.add('hidden');
 
   var answerArea = document.getElementById('distinguishAnswerArea');
   answerArea.innerHTML = '';
@@ -7493,7 +7770,6 @@ function revealDistinguishAnswers(){
 
 document.getElementById('distinguishRevealBtn').addEventListener('click', revealDistinguishAnswers);
 document.getElementById('distinguishNextBtn').addEventListener('click', nextQuestion);
-document.getElementById('distinguishAddRowBtn').addEventListener('click', addDistinguishRow);
 document.getElementById('distinguishModeTable').addEventListener('change', function(){
   if(this.checked){
     document.getElementById('distinguishTableWrap').classList.remove('hidden');
@@ -7508,17 +7784,12 @@ document.getElementById('distinguishModeFree').addEventListener('change', functi
 });
 
 // ---- wiring ----
-document.getElementById('modeABtn').addEventListener('click', function(){
-  mode = 'A';
-  document.getElementById('modeABtn').classList.add('active');
-  document.getElementById('modeBBtn').classList.remove('active');
-  renderModeIndicator();
-  saveSettings();
-});
-document.getElementById('modeBBtn').addEventListener('click', function(){
-  mode = 'B';
-  document.getElementById('modeBBtn').classList.add('active');
-  document.getElementById('modeABtn').classList.remove('active');
+// Practice mode is a single checkbox here (checked = 'B', weighted toward
+// weak spots; unchecked = 'A', all enabled reactions) rather than the pair
+// of buttons this used to be -- same two-state `mode` setting underneath,
+// just a plainer control.
+document.getElementById('practiceModeCb').addEventListener('change', function(){
+  mode = this.checked ? 'B' : 'A';
   renderModeIndicator();
   saveSettings();
 });
@@ -7541,42 +7812,117 @@ wireQtypeCheckbox('reactant', 'qtypeReactant');
 wireQtypeCheckbox('reagent', 'qtypeReagent');
 wireQtypeCheckbox('distinguish', 'qtypeDistinguish');
 
-function closeDrawer(){ document.getElementById('topicsDrawerOverlay').classList.remove('open'); }
-document.getElementById('topicsDrawerBtn').addEventListener('click', function(){
-  document.getElementById('topicsDrawerOverlay').classList.add('open');
-});
-document.getElementById('topicsDrawerCloseBtn').addEventListener('click', closeDrawer);
-document.getElementById('topicsDrawerOverlay').addEventListener('click', function(ev){
-  if(ev.target===this) closeDrawer();
-});
+// ---- pane switching (Play / Topic and Question Selection / Stats / Feedback) ----
+// Every top-level screen is a sibling <section class="pane"> inside the one
+// dark card (#paneCard); switching just slides the outgoing pane away and
+// the incoming one into place (see the transform/opacity choreography
+// below) instead of navigating anywhere. Quiz deliberately has no
+// data-pane / entry here -- see its own no-op listener further down.
+var PANE_ORDER = ['play', 'topics', 'stats', 'feedback'];
+var PANE_EL = {
+  play: document.getElementById('playPane'),
+  topics: document.getElementById('topicsPane'),
+  stats: document.getElementById('statsPane'),
+  feedback: document.getElementById('feedbackPane')
+};
+var PANE_INFO = {
+  play: {
+    title: 'Play',
+    desc: 'Answer procedurally generated reaction questions — guess the product, the starting material, the reagents and conditions, or run a distinguishing test. Build a molecule, submit your answer, and reveal the correct one to see how you did.'
+  },
+  topics: {
+    title: 'Topic and Question Selection',
+    desc: 'Choose which question types show up, and which topics and reactions they’re drawn from. Turn on Practice to weight questions toward the ones you’ve gotten wrong most often, regardless of the Topics selection.'
+  },
+  stats: {
+    title: 'Stats',
+    desc: 'Track your accuracy per reaction.'
+  },
+  feedback: {
+    title: 'Feedback',
+    desc: 'Spot a mistake in a question, or have a suggestion? Let us know here — reports sent from a question automatically include its details.'
+  }
+};
+var activePane = 'play';
+function switchPane(name){
+  if(!PANE_EL[name] || name===activePane) return;
+  var fromEl = PANE_EL[activePane];
+  var toEl = PANE_EL[name];
+  var goingForward = PANE_ORDER.indexOf(name) > PANE_ORDER.indexOf(activePane);
+  var dist = 26;
 
-document.getElementById('statsNavBtn').addEventListener('click', openStatsScreen);
-document.getElementById('statsBackBtn').addEventListener('click', closeStatsScreen);
-document.getElementById('endSessionBtn').addEventListener('click', function(){
-  var summary = finalizeActiveSession();
-  startNewSession();
-  renderSessionIndicator();
-  renderStatsScreen();
-  if(summary) showSessionSummary(summary);
-});
+  document.querySelectorAll('.navItem[data-pane]').forEach(function(btn){
+    btn.classList.toggle('active', btn.dataset.pane===name);
+  });
+  var info = PANE_INFO[name];
+  document.getElementById('paneInfoTitle').textContent = info.title;
+  document.getElementById('paneInfoDesc').textContent = info.desc;
 
-function setZen(on){
-  zenEnabled = on;
-  document.body.classList.toggle('zen', on);
-  saveSettings();
+  if(name==='stats') renderStats();
+
+  // Incoming pane starts absolutely positioned on top of the outgoing one
+  // (still in normal flow, so it keeps defining the card's height while
+  // both are visible), offset off-screen and invisible.
+  toEl.classList.remove('hidden');
+  toEl.style.position = 'absolute';
+  toEl.style.top = '0'; toEl.style.left = '0'; toEl.style.right = '0';
+  toEl.style.transform = 'translateY(' + (goingForward ? dist : -dist) + 'px)';
+  toEl.style.opacity = '0';
+  toEl.style.transition = 'none';
+  void toEl.offsetWidth; // force a reflow so the transition below actually animates from this start state
+
+  fromEl.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+  toEl.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+  requestAnimationFrame(function(){
+    fromEl.style.transform = 'translateY(' + (goingForward ? -dist : dist) + 'px)';
+    fromEl.style.opacity = '0';
+    toEl.style.transform = 'translateY(0)';
+    toEl.style.opacity = '1';
+  });
+
+  setTimeout(function(){
+    fromEl.classList.add('hidden');
+    fromEl.style.transition = ''; fromEl.style.transform = ''; fromEl.style.opacity = '';
+    toEl.style.position = ''; toEl.style.top = ''; toEl.style.left = ''; toEl.style.right = '';
+    toEl.style.transition = ''; toEl.style.transform = ''; toEl.style.opacity = '';
+  }, 320);
+
+  activePane = name;
 }
-document.getElementById('zenToggleBtn').addEventListener('click', function(){ setZen(true); });
-document.getElementById('zenExitBtn').addEventListener('click', function(){ setZen(false); });
+document.querySelectorAll('.navItem').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    btn.classList.remove('pulse'); void btn.offsetWidth; btn.classList.add('pulse');
+    if(btn.dataset.pane) switchPane(btn.dataset.pane);
+    // Quiz (no data-pane) intentionally does nothing beyond the click
+    // animation above -- not built yet, see the plan.
+  });
+});
 
-document.getElementById('sessionSummaryCloseBtn').addEventListener('click', function(){
-  document.getElementById('sessionSummaryOverlay').classList.remove('open');
+// ---- collapsible sidebar ----
+var SIDEBAR_STORAGE_KEY = 'h2ChemDrill.sidebarCollapsed.v1';
+function loadSidebarPref(){
+  // On narrow screens the menu is always a tap-to-open overlay -- it never
+  // starts open on its own, regardless of what was left expanded/collapsed
+  // last time on a wider screen.
+  if(window.innerWidth <= 860) return true;
+  try {
+    var raw = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if(raw!==null) return raw==='1';
+  } catch(e){ /* fall through to the default below */ }
+  return false; // open by default on wide screens
+}
+function setSidebarCollapsed(on){
+  document.body.classList.toggle('sidebarCollapsed', on);
+  var btn = document.getElementById('sidebarToggleBtn');
+  btn.textContent = on ? '›' : '‹';
+  btn.setAttribute('aria-label', on ? 'Expand menu' : 'Collapse menu');
+  try { localStorage.setItem(SIDEBAR_STORAGE_KEY, on ? '1' : '0'); } catch(e){}
+}
+document.getElementById('sidebarToggleBtn').addEventListener('click', function(){
+  setSidebarCollapsed(!document.body.classList.contains('sidebarCollapsed'));
 });
-document.getElementById('sessionSummaryContinueBtn').addEventListener('click', function(){
-  document.getElementById('sessionSummaryOverlay').classList.remove('open');
-});
-document.getElementById('sessionSummaryOverlay').addEventListener('click', function(ev){
-  if(ev.target===this) this.classList.remove('open');
-});
+document.getElementById('sideNavScrim').addEventListener('click', function(){ setSidebarCollapsed(true); });
+
 // What the builder opens seeded with -- the GIVEN side of the reaction, so
 // the student edits what's already there instead of drawing from scratch.
 // 'product'/'reagent' modes give the reactant(s) (unchanged); 'reactant'
@@ -7608,6 +7954,7 @@ document.getElementById('buildBtn').addEventListener('click', function(){
 document.getElementById('noReactionBtn').addEventListener('click', function(){
   userAnswer.noReaction = true;
   userAnswer.co2h2o = false;
+  userAnswer.byproduct = false;
   userAnswer.molecules = [];
   renderSubmittedList();
 });
@@ -7616,13 +7963,24 @@ document.getElementById('co2h2oBtn').addEventListener('click', function(){
   userAnswer.co2h2o = true;
   renderSubmittedList();
 });
+document.getElementById('byproductBtn').addEventListener('click', function(){
+  userAnswer.noReaction = false;
+  userAnswer.byproduct = true;
+  renderSubmittedList();
+});
 document.getElementById('submitAnswerBtn').addEventListener('click', function(){
   if(current.guessMode==='reagent'){ if(reagentGuessTags.length>0) revealAnswer(); return; }
-  if(userAnswer.noReaction || userAnswer.molecules.length>0 || userAnswer.co2h2o) revealAnswer();
+  if(userAnswer.noReaction || userAnswer.molecules.length>0 || userAnswer.co2h2o || userAnswer.byproduct) revealAnswer();
 });
 document.getElementById('nextBtn').addEventListener('click', nextQuestion);
 document.getElementById('showReactionNameToggle').addEventListener('change', function(){
+  showReactionName = this.checked;
+  saveSettings();
   if(current) renderQLabel();
+});
+document.getElementById('includeByproductsToggle').addEventListener('change', function(){
+  includeInorganicByproducts = this.checked;
+  saveSettings();
 });
 
 document.getElementById('exportBtn').addEventListener('click', function(){
@@ -7715,9 +8073,13 @@ function buildDistinguishContext(){
 }
 
 var feedbackContext = null;
-function openFeedbackModal(type, contextObj){
+// Feedback used to be a modal; it's now just another pane (see
+// PANE_INFO.feedback / switchPane), reached from the sidebar or from either
+// "Report question" button -- contextObj (see buildQuestionContext/
+// buildDistinguishContext) is attached automatically when arriving via a
+// report button, left null for a plain sidebar visit.
+function openFeedbackPane(contextObj){
   feedbackContext = contextObj || null;
-  document.getElementById('feedbackModalTitle').textContent = type==='bug-report' ? 'Report a mistake' : 'Feedback';
   var ctxBox = document.getElementById('feedbackContextBox');
   if(contextObj){
     ctxBox.classList.remove('hidden');
@@ -7734,35 +8096,27 @@ function openFeedbackModal(type, contextObj){
   document.getElementById('feedbackSubmitBtn').disabled = false;
   document.getElementById('feedbackFormFields').classList.remove('hidden');
   document.getElementById('feedbackSuccessOverlay').classList.add('hidden');
-  document.getElementById('feedbackOverlay').classList.add('open');
+  switchPane('feedback');
   document.getElementById('feedbackMessage').focus();
 }
-function closeFeedbackModal(){
-  document.getElementById('feedbackOverlay').classList.remove('open');
-}
 // Swaps the form for a brief animated checkmark + "firework" burst, then
-// closes on its own -- much clearer confirmation that a silent background
-// POST (see sendFeedback) actually went through than the modal just
-// vanishing with no acknowledgment at all.
+// returns to Play on its own -- much clearer confirmation that a silent
+// background POST (see sendFeedback) actually went through than the form
+// just quietly resetting with no acknowledgment at all.
 function showFeedbackSuccess(){
   document.getElementById('feedbackFormFields').classList.add('hidden');
   document.getElementById('feedbackSuccessOverlay').classList.remove('hidden');
-  setTimeout(closeFeedbackModal, 1300);
+  setTimeout(function(){ switchPane('play'); }, 1300);
 }
 
-document.getElementById('openFeedbackBtn').addEventListener('click', function(){ openFeedbackModal('feedback', null); });
+document.getElementById('navFeedbackBtn').addEventListener('click', function(){ openFeedbackPane(null); });
 document.getElementById('reportMistakeBtn').addEventListener('click', function(){
   if(!current) return;
-  openFeedbackModal('bug-report', buildQuestionContext());
+  openFeedbackPane(buildQuestionContext());
 });
 document.getElementById('reportMistakeDistinguishBtn').addEventListener('click', function(){
   if(!distinguishCurrent) return;
-  openFeedbackModal('bug-report', buildDistinguishContext());
-});
-document.getElementById('feedbackCancelBtn').addEventListener('click', closeFeedbackModal);
-document.getElementById('feedbackCloseBtn').addEventListener('click', closeFeedbackModal);
-document.getElementById('feedbackOverlay').addEventListener('click', function(ev){
-  if(ev.target===document.getElementById('feedbackOverlay')) closeFeedbackModal();
+  openFeedbackPane(buildDistinguishContext());
 });
 document.getElementById('feedbackSubmitBtn').addEventListener('click', function(){
   var message = document.getElementById('feedbackMessage').value.trim();
@@ -7792,20 +8146,19 @@ document.getElementById('feedbackSubmitBtn').addEventListener('click', function(
 });
 
 loadSettings();
-document.body.classList.toggle('zen', zenEnabled);
-document.getElementById('modeABtn').classList.toggle('active', mode==='A');
-document.getElementById('modeBBtn').classList.toggle('active', mode==='B');
+setSidebarCollapsed(loadSidebarPref());
+document.getElementById('practiceModeCb').checked = mode==='B';
 renderModeIndicator();
 document.getElementById('qtypeProduct').checked = questionTypes.product;
 document.getElementById('qtypeReactant').checked = questionTypes.reactant;
 document.getElementById('qtypeReagent').checked = questionTypes.reagent;
 document.getElementById('qtypeDistinguish').checked = questionTypes.distinguish;
+document.getElementById('showReactionNameToggle').checked = showReactionName;
+document.getElementById('includeByproductsToggle').checked = includeInorganicByproducts;
+window.addEventListener('resize', function(){ if(current) sizeEquationBoxes(); });
 renderPicker();
 renderStats();
-var __resumedSummary = initSession();
-renderSessionIndicator();
 nextQuestion();
-if(__resumedSummary) showSessionSummary(__resumedSummary);
 })();
 </script>
 </body>
