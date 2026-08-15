@@ -37,18 +37,27 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     line-height: 1.5;
   }
+  /* A native <details>/<summary> disclosure -- clicking anywhere on the
+     header row (except the checkbox itself, which stops its own click from
+     bubbling up to summary -- see renderPicker) reliably opens/closes it,
+     with no custom click-state bookkeeping to get out of sync: the browser
+     IS the state (the `open` attribute), so there's nothing here for a
+     stray extra event to silently undo. */
   .topicGroup { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
-  .topicHeader { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg); }
+  .topicHeader {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg);
+    cursor: pointer; list-style: none;
+  }
+  .topicHeader::-webkit-details-marker { display: none; }
+  .topicHeader::marker { display: none; content: ''; }
   .topicHeader input[type=checkbox] { flex: 0 0 auto; }
   .topicToggle {
     flex: 1; display: flex; align-items: center; gap: 6px; text-align: left;
-    border: none; background: transparent; padding: 0; margin: 0;
     font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
-    cursor: pointer;
   }
-  .topicToggle:hover { border-color: transparent; color: var(--text); }
+  .topicGroup:hover .topicToggle { color: var(--text); }
   .topicChevron { display: inline-block; width: 0.9em; transition: transform 0.15s ease; }
-  .topicGroup.open .topicChevron { transform: rotate(90deg); }
+  .topicGroup[open] .topicChevron { transform: rotate(90deg); }
   .topicCount { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); }
   .checks { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px 30px; }
   .checkLabel { font-size: 0.92rem; display: flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -169,7 +178,6 @@
      revealed -- the tag-mode equivalent of .ghostCard above. */
   .tagChip.tagGhost { border-style: dashed; opacity: 0.55; }
   .tagTextInput { flex: 1; min-width: 120px; border: none; outline: none; background: transparent; color: var(--text); font-size: 0.88rem; padding: 4px 2px; }
-  .tagAutocompleteToggle { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; cursor: pointer; user-select: none; }
   .tagAutocompleteList { position: absolute; left: 0; right: 0; top: 100%; margin-top: 3px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); max-height: 220px; overflow-y: auto; z-index: 20; }
   .tagAutocompleteItem { padding: 7px 10px; font-size: 0.85rem; cursor: pointer; }
   .tagAutocompleteItem:hover, .tagAutocompleteItem.tagAcActive { background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -462,6 +470,13 @@
 
   .sideNavScrim { display: none; }
 
+  /* Stretches to the real viewport's top/right/bottom edges (flex child of
+     100vh-tall .appShell); its own padding is what visually insets the card
+     from those edges at rest. overflow:hidden here (not on .paneCard --
+     see its own comment) is what actually clips a pane sliding out/in (see
+     switchPane): the clip boundary sits at this box's outer edge, i.e. the
+     true screen edge, so the slide plays through the padding gutter too
+     instead of vanishing early at the card's own (inset) edge. */
   .paneStage { flex: 1 1 auto; min-width: 0; padding: 44px 40px 56px 8px; box-sizing: border-box; overflow: hidden; }
 
   .paneCard {
@@ -477,21 +492,35 @@
     --accent: #5fcfb0;
     --good: #5fcfb0;
     --bad: #e2897f;
-    background: #131518;
     color: var(--text);
-    border-radius: 28px;
-    padding: 40px 44px;
     position: relative;
-    /* Exactly fills paneStage's content box (100vh minus paneStage's own
-       vertical padding) -- a fixed height, not a floor, so "prevent
-       scrolling" is the pane's job (see the Play-pane sizing rules below);
-       overflow-y stays as a safety net for whichever other pane has more
-       content than fits, not the normal case. */
+    /* A plain positioning reference now, not the visible card itself -- see
+       .pane for why. Exactly fills paneStage's content box (100vh minus
+       paneStage's own vertical padding). Deliberately NOT overflow:hidden
+       -- a sliding pane (see switchPane) needs to keep travelling through
+       paneStage's own padding gutter and only disappear at the real
+       viewport edge, not vanish the instant it crosses this box's own
+       (inset) edge. .paneStage's own overflow:hidden, below, is what
+       actually clips it, at the right boundary. */
     height: 100%;
-    overflow-y: auto;
-    box-shadow: 0 30px 60px rgba(0,0,0,.18);
   }
-  .pane { width: 100%; box-sizing: border-box; }
+  /* THE visible black rounded card, not just its content -- background,
+     radius and shadow all live here (not on .paneCard) specifically so
+     that sliding a pane (see switchPane) carries its own black background
+     and rounded corners along with it, like a physical slide, rather than
+     leaving a stationary black box behind while only the text/controls
+     drawn on top of it move. Always fills the (now invisible) .paneCard
+     viewport exactly, at every position along its slide -- with the card's
+     own padding gone, `inset: 0` really does mean "this pane IS the card"
+     at rest, and "this pane is fully off past the viewport's own edge"
+     mid-slide, with nothing in between that could read as a resize. Own
+     scrollbar (not the viewport's) so switching pane never leaves the
+     wrong one's scroll position applied to the new content. */
+  .pane {
+    position: absolute; inset: 0; box-sizing: border-box;
+    background: #131518; border-radius: 28px; box-shadow: 0 30px 60px rgba(0,0,0,.18);
+    padding: 40px 44px; overflow-y: auto;
+  }
 
   /* A handful of components render molecule SVGs baked for a light
      background (dark ink strokes, see window.__renderStaticMolecule) --
@@ -590,6 +619,29 @@
   .paneSectionLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 12px; }
   .paneSectionLabel.modeLabel { margin-top: 30px; }
   .drawerSection { margin-bottom: 22px; }
+  /* Custom checkbox: replaces the browser-default (blue on most platforms)
+     with the pane's own beige-on-black "ink on paper" look -- --text is the
+     cream/beige tone and --bg the near-black one in this dark-scoped card
+     (see .paneCard's own --bg/--text redefinition), so this reads as beige
+     everywhere this pane's tokens apply without hardcoding a color here. */
+  #topicsPane input[type=checkbox] {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
+    width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px;
+    background: transparent; cursor: pointer; position: relative;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  #topicsPane input[type=checkbox]:hover { border-color: var(--text); }
+  #topicsPane input[type=checkbox]:checked,
+  #topicsPane input[type=checkbox]:indeterminate {
+    background: var(--text); border-color: var(--text);
+  }
+  #topicsPane input[type=checkbox]:checked::after {
+    content: ''; position: absolute; left: 5px; top: 1px; width: 5px; height: 9px;
+    border: solid var(--bg); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  #topicsPane input[type=checkbox]:indeterminate::after {
+    content: ''; position: absolute; left: 3px; top: 7px; width: 10px; height: 2px; background: var(--bg);
+  }
 
   /* ---- Stats pane ---- */
   .statsPaneBody { display: block; }
@@ -634,7 +686,6 @@
     display: block; width: 100%; box-sizing: border-box; border: 1.5px solid var(--border);
     border-radius: 999px; padding: 12px 18px; font-size: 1rem; background: none; color: var(--text);
   }
-  #playPane .tagAutocompleteToggle { flex: none; }
   #playPane .tagBox {
     flex: 1; min-height: 0; overflow-y: auto; align-items: flex-start; align-content: flex-start;
     padding: 22px; border-radius: 20px; border-width: 1.5px;
@@ -674,14 +725,14 @@
     .sideNavScrim { display: none; position: fixed; inset: 0; background: rgba(20,22,18,.5); z-index: 150; }
     body:not(.sidebarCollapsed) .sideNavScrim { display: block; }
     .paneStage { padding: 88px 16px 40px; }
-    .paneCard { padding: 26px 20px; border-radius: 20px; }
+    .pane { padding: 26px 20px; border-radius: 20px; }
   }
   @media (max-width: 640px) {
     .equationRow { gap: 8px; }
     .eqArrowWrap { flex: 1 1 70px; min-width: 56px; }
     .eqArrowLabel { font-size: 0.72rem; }
     .eqBox.eqBoxUnknown { font-size: 2.2rem; }
-    .paneCard { padding: 20px 16px; }
+    .pane { padding: 20px 16px; }
   }
 </style>
 </head>
@@ -780,7 +831,6 @@
               <input type="text" id="tagTextInput" class="tagTextInput" placeholder="Type a reagent/condition, press Enter&hellip;" autocomplete="off">
               <div id="tagAutocompleteList" class="tagAutocompleteList hidden"></div>
             </div>
-            <label class="tagAutocompleteToggle"><input type="checkbox" id="tagAutocompleteToggle" checked> Show autocomplete suggestions</label>
             <div class="tagBox answerRect" id="tagBox"></div>
           </div>
 
@@ -823,6 +873,7 @@
             <div class="paneSectionLabel">Display</div>
             <label class="checkLabel"><input type="checkbox" id="showReactionNameToggle" checked> Show reaction name</label>
             <label class="checkLabel"><input type="checkbox" id="includeByproductsToggle"> Include non-organic byproducts (HCl, H2O, CO2) for condensation reactions</label>
+            <label class="checkLabel"><input type="checkbox" id="tagAutocompleteToggle" checked> Show autocomplete suggestions for reagent/condition guesses</label>
           </div>
           <div class="topicsCol">
             <div class="paneSectionLabel">Topics</div>
@@ -6272,8 +6323,6 @@ function resetTagInput(){
   var input = document.getElementById('tagTextInput');
   input.value = '';
   input.classList.remove('hidden');
-  var toggleLabel = document.querySelector('.tagAutocompleteToggle');
-  if(toggleLabel) toggleLabel.classList.remove('hidden');
   renderTagBox();
   hideTagAutocomplete();
 }
@@ -6421,6 +6470,8 @@ function moveAutocompleteHighlight(delta){
   input.addEventListener('blur', function(){ setTimeout(hideTagAutocomplete, 120); });
   document.getElementById('tagAutocompleteToggle').addEventListener('change', function(ev){
     if(!ev.target.checked) hideTagAutocomplete();
+    showAutocompleteSuggestions = ev.target.checked;
+    saveSettings();
   });
 })();
 
@@ -6435,8 +6486,6 @@ function revealTagAnswer(){
 
   renderTagBox(); // `revealed` is already true by now -- repaints every submitted chip with tagCorrect/tagWrong instead of tagInvalid, and appends revealMissingTags as ghost chips
   document.getElementById('tagTextInput').classList.add('hidden');
-  var toggleLabel = document.querySelector('.tagAutocompleteToggle');
-  if(toggleLabel) toggleLabel.classList.add('hidden');
   hideTagAutocomplete();
 
   document.getElementById('answerBlock').classList.remove('hidden');
@@ -7213,34 +7262,42 @@ function renderPicker(){
   });
   topicOrder.forEach(function(topic){
     var entries = byTopic[topic];
-    var group = document.createElement('div');
+    // <details>/<summary> IS the open/closed state -- clicking the header
+    // natively toggles it, no click listener or class bookkeeping needed
+    // for that part at all.
+    var group = document.createElement('details');
     group.className = 'topicGroup';
 
-    var header = document.createElement('div');
+    var header = document.createElement('summary');
     header.className = 'topicHeader';
 
     var selectAllCb = document.createElement('input');
     selectAllCb.type = 'checkbox';
     selectAllCb.title = 'Toggle all reactions in ' + topic;
+    // Stops its own click from also reaching <summary> -- otherwise every
+    // click on the checkbox would (correctly) toggle the checkbox AND
+    // (incorrectly) toggle the whole disclosure open/closed at the same
+    // time, since a click anywhere in <summary> is what a browser uses to
+    // drive <details>.
+    selectAllCb.addEventListener('click', function(ev){ ev.stopPropagation(); });
 
-    var toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.className = 'topicToggle';
+    var toggleLabel = document.createElement('span');
+    toggleLabel.className = 'topicToggle';
     var chevron = document.createElement('span');
     chevron.className = 'topicChevron';
     chevron.innerHTML = '&#9656;';
     var countSpan = document.createElement('span');
     countSpan.className = 'topicCount';
-    toggleBtn.appendChild(chevron);
-    toggleBtn.appendChild(document.createTextNode(topic));
-    toggleBtn.appendChild(countSpan);
+    toggleLabel.appendChild(chevron);
+    toggleLabel.appendChild(document.createTextNode(topic));
+    toggleLabel.appendChild(countSpan);
 
     header.appendChild(selectAllCb);
-    header.appendChild(toggleBtn);
+    header.appendChild(toggleLabel);
     group.appendChild(header);
 
     var body = document.createElement('div');
-    body.className = 'checks hidden';
+    body.className = 'checks';
 
     var rows = entries.map(function(p){
       var label = document.createElement('label');
@@ -7270,10 +7327,6 @@ function renderPicker(){
       syncSelectAllState();
       saveSettings();
     });
-    toggleBtn.addEventListener('click', function(){
-      var open = body.classList.toggle('hidden')===false;
-      group.classList.toggle('open', open);
-    });
 
     pickerRoot.appendChild(group);
   });
@@ -7292,11 +7345,13 @@ var questionTypes = { product:true, reactant:true, reagent:true, distinguish:tru
 // existing question difficulty/behaviour is unchanged unless turned on.
 var includeInorganicByproducts = false;
 var showReactionName = true;
+var showAutocompleteSuggestions = true;
 function saveSettings(){
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
       selected: selected, mode: mode, questionTypes: questionTypes,
-      includeInorganicByproducts: includeInorganicByproducts, showReactionName: showReactionName
+      includeInorganicByproducts: includeInorganicByproducts, showReactionName: showReactionName,
+      showAutocompleteSuggestions: showAutocompleteSuggestions
     }));
   } catch(e){ /* storage unavailable -- settings just won't persist this session */ }
 }
@@ -7319,6 +7374,7 @@ function loadSettings(){
     }
     if(typeof parsed.includeInorganicByproducts==='boolean') includeInorganicByproducts = parsed.includeInorganicByproducts;
     if(typeof parsed.showReactionName==='boolean') showReactionName = parsed.showReactionName;
+    if(typeof parsed.showAutocompleteSuggestions==='boolean') showAutocompleteSuggestions = parsed.showAutocompleteSuggestions;
   } catch(e){ /* corrupt or unavailable -- just start with defaults */ }
 }
 
@@ -7844,12 +7900,30 @@ var PANE_INFO = {
   }
 };
 var activePane = 'play';
+// Every .pane is ALWAYS position:absolute, inset:0 (fills the card exactly
+// -- see .pane's own CSS), so a switch is a pure slide: the outgoing pane
+// moves up (or down) and off, the incoming one moves in from the opposite
+// edge -- like a slide projector, not a resize. Neither pane's box ever
+// changes size mid-transition, only its position, so there's nothing here
+// that could produce the old crossfade version's brief "wrong size" flash.
+//
+// Distances are computed from real geometry, not a flat 100% -- a pane's
+// own height is .paneStage's content box (viewport height minus its
+// padding), always a bit SHORTER than the true screen edge that .paneStage
+// itself actually clips against (see its own CSS comment). Translating by
+// a plain 100%/-100% only ever moved a pane exactly to its own edge, which
+// left a sliver still on-screen (as wide as that padding) right up until
+// classList.add('hidden') made it vanish outright -- the "spawn/despawn"
+// pop this is fixing. PANE_SLIDE_GAP is extra travel on top of "fully
+// clear the screen edge", so the outgoing and incoming panes are never
+// touching even at the midpoint, and the incoming one is never partially
+// on-screen the instant it's un-hidden.
+var PANE_SLIDE_GAP = 56;
 function switchPane(name){
   if(!PANE_EL[name] || name===activePane) return;
   var fromEl = PANE_EL[activePane];
   var toEl = PANE_EL[name];
   var goingForward = PANE_ORDER.indexOf(name) > PANE_ORDER.indexOf(activePane);
-  var dist = 26;
 
   document.querySelectorAll('.navItem[data-pane]').forEach(function(btn){
     btn.classList.toggle('active', btn.dataset.pane===name);
@@ -7860,32 +7934,35 @@ function switchPane(name){
 
   if(name==='stats') renderStats();
 
-  // Incoming pane starts absolutely positioned on top of the outgoing one
-  // (still in normal flow, so it keeps defining the card's height while
-  // both are visible), offset off-screen and invisible.
+  // fromEl is still sitting at its untransformed resting position right
+  // now, so its rect IS the canonical "pane box" every pane shares --
+  // measured fresh each call since it varies by viewport width/breakpoint.
+  var stageRect = document.querySelector('.paneStage').getBoundingClientRect();
+  var paneRect = fromEl.getBoundingClientRect();
+  // Distance to travel UP so the pane's bottom edge clears the stage's
+  // true top edge by PANE_SLIDE_GAP, and DOWN so its top edge clears the
+  // stage's true bottom edge by the same -- asymmetric on purpose, since
+  // the pane's own top/bottom padding (see .paneStage) isn't equal.
+  var upDist = (paneRect.bottom - stageRect.top) + PANE_SLIDE_GAP;
+  var downDist = (stageRect.bottom - paneRect.top) + PANE_SLIDE_GAP;
+
   toEl.classList.remove('hidden');
-  toEl.style.position = 'absolute';
-  toEl.style.top = '0'; toEl.style.left = '0'; toEl.style.right = '0';
-  toEl.style.transform = 'translateY(' + (goingForward ? dist : -dist) + 'px)';
-  toEl.style.opacity = '0';
   toEl.style.transition = 'none';
+  toEl.style.transform = 'translateY(' + (goingForward ? downDist : -upDist) + 'px)';
   void toEl.offsetWidth; // force a reflow so the transition below actually animates from this start state
 
-  fromEl.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-  toEl.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+  fromEl.style.transition = 'transform 0.35s ease';
+  toEl.style.transition = 'transform 0.35s ease';
   requestAnimationFrame(function(){
-    fromEl.style.transform = 'translateY(' + (goingForward ? -dist : dist) + 'px)';
-    fromEl.style.opacity = '0';
+    fromEl.style.transform = 'translateY(' + (goingForward ? -upDist : downDist) + 'px)';
     toEl.style.transform = 'translateY(0)';
-    toEl.style.opacity = '1';
   });
 
   setTimeout(function(){
     fromEl.classList.add('hidden');
-    fromEl.style.transition = ''; fromEl.style.transform = ''; fromEl.style.opacity = '';
-    toEl.style.position = ''; toEl.style.top = ''; toEl.style.left = ''; toEl.style.right = '';
-    toEl.style.transition = ''; toEl.style.transform = ''; toEl.style.opacity = '';
-  }, 320);
+    fromEl.style.transition = ''; fromEl.style.transform = '';
+    toEl.style.transition = ''; toEl.style.transform = '';
+  }, 370);
 
   activePane = name;
 }
@@ -8155,6 +8232,7 @@ document.getElementById('qtypeReagent').checked = questionTypes.reagent;
 document.getElementById('qtypeDistinguish').checked = questionTypes.distinguish;
 document.getElementById('showReactionNameToggle').checked = showReactionName;
 document.getElementById('includeByproductsToggle').checked = includeInorganicByproducts;
+document.getElementById('tagAutocompleteToggle').checked = showAutocompleteSuggestions;
 window.addEventListener('resize', function(){ if(current) sizeEquationBoxes(); });
 renderPicker();
 renderStats();
