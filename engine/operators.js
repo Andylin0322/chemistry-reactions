@@ -145,6 +145,36 @@ function downgradeRingIfMono(mol){
   findNode(v, outsideId).phenyl = true;
   return v;
 }
+// The exact inverse of downgradeRingIfMono above -- reconstructs the real
+// ring:true node a phenyl:true flag stands in for (lossless: phenyl:true
+// only ever MEANS "an unsubstituted benzene ring attached at exactly one
+// position", so there's nothing else it could have been). Needed because
+// app.html's __normalizeMoleculeForGrading's own "fold to phenyl:true" step
+// (its own step 5.5) runs unconditionally on every hand-built ring-plus-
+// one-plain-chain shape, regardless of which reaction it's about to be
+// graded against -- correct for a 'product'/'reagent' answer compared
+// directly by productSetEqual (same shape the correct answer would fold to
+// too), but wrong for a 'reactant' candidate that's about to be
+// RE-SIMULATED (see reactantCandidateMatchesGiven in app.html):
+// ringSubstitutionPositions and friends all key off `n.ring`, which the
+// phenyl fold just erased, so a perfectly correct hand-built reactant
+// (e.g. plain ethylbenzene, answering a ring-chlorination question)
+// silently re-simulated to occurs:false and was marked wrong. Only called
+// where re-simulation needs it -- never touches the shared normalizer
+// itself, so every other phenyl:true consumer (radicalSubstitution,
+// sideChainOxidationToBenzoicAcid, ...) is unaffected.
+function upgradePhenylToRing(mol){
+  const phenylNode = mol.nodes.find(n=>n.phenyl);
+  if(!phenylNode) return mol;
+  const v = cloneMol(mol);
+  const ring = newNode();
+  ring.ring = true;
+  ring.subs = new Array(6).fill(null);
+  v.nodes.push(ring);
+  v.edges.push({a:ring.id, b:phenylNode.id, type:'S', ringPos:0});
+  findNode(v, phenylNode.id).phenyl = false;
+  return v;
+}
 
 // What kind of director sits at ring position `pos` (null if unoccupied):
 // 'op' (ortho/para director -- alkyl, OH, NH2, or a halogen, whether given
@@ -929,7 +959,7 @@ function protonateAmine(mol){
 
 module.exports = {
   radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage, doubleBondEdges,
-  ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono,
+  ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
   oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, combustion,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,

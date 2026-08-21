@@ -1,7 +1,7 @@
 'use strict';
 const { canonicalForm, answerEqual, productSetEqual, newNode, newRingNode, newAmineNode, cloneMol, implicitH, nodeValence } = require('./engine');
 const { radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage,
-  ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid,
+  ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
   oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, combustion,
   diazotisation, azoCoupling, protonateAmine,
@@ -626,6 +626,34 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
     !!saltProduct && saltProduct.mol.nodes.some(n=>n.group==='COONa'));
   t('iodoform reaction refuses a non-methyl ketone (no terminal CH3 arm)', iodoformCleavage(generateKetone(2,2)).occurs===false);
   t('iodoform reaction refuses a non-ketone input', iodoformCleavage(generateAldehyde(2)).occurs===false);
+
+  // Regression for the "hand-built ethylbenzene marked wrong on a ring-
+  // chlorination reactant question" bug: __normalizeMoleculeForGrading
+  // folds any hand-built "ring + exactly one plain chain" shape down to
+  // the old opaque phenyl:true flag (see downgradeRingIfMono), which
+  // silently strips the ring:true node ringElectrophilicSubstitution needs
+  // -- upgradePhenylToRing has to restore an equivalent ring so the SAME
+  // reaction, re-run on the round-tripped molecule, gives back the SAME
+  // ortho/para product set it would have from the un-folded original.
+  // generateArene (not generateAlkylbenzene, which starts pre-folded to
+  // phenyl:true natively -- see downgradeRingIfMono's own comment) is the
+  // one that actually builds a real ring:true node, matching what a
+  // ring-substitution question's own reactant looks like before a
+  // student's hand-built answer gets folded down to compare against it.
+  const ethylbenzene = generateArene(2);
+  const folded = downgradeRingIfMono(ethylbenzene);
+  t('downgradeRingIfMono folds a plain monosubstituted ring to phenyl:true (no ring:true node left)',
+    !folded.nodes.some(n=>n.ring) && folded.nodes.some(n=>n.phenyl));
+  const restored = upgradePhenylToRing(folded);
+  t('upgradePhenylToRing restores a real ring:true node from that phenyl:true flag',
+    restored.nodes.some(n=>n.ring) && !restored.nodes.some(n=>n.phenyl));
+  const originalResult = ringElectrophilicSubstitution(ethylbenzene, 'Cl');
+  const restoredResult = ringElectrophilicSubstitution(restored, 'Cl');
+  const keySet = r => new Set((r.variants || [r.product]).map(canonicalForm));
+  const sameKeys = (a,b) => a.size===b.size && [...a].every(k=>b.has(k));
+  t('re-running the SAME ring reaction on the round-tripped molecule gives the SAME product set as the original',
+    originalResult.occurs===true && restoredResult.occurs===true &&
+    sameKeys(keySet(originalResult), keySet(restoredResult)));
 }
 
 console.log('\\n'+pass+' passed, '+fail+' failed');
