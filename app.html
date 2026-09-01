@@ -560,6 +560,83 @@
   .mb-tutorialNav { display: flex; gap: 8px; }
   .mb-tutorialNav .mb-btn { padding: 7px 16px; font-size: 0.78rem; }
   .mb-tutorialNav .mb-btn.hidden { display: none; }
+  /* Generic interactive tutorial engine -- drives every per-pane "?" tour
+     and the molecule builder's own tutorial (see runTutorial() in the
+     app-logic script for the step runner, and MB_TUTORIAL_STEPS for the
+     builder's own step list run through the same engine). A precise
+     pulsing OUTLINE around whatever DOM element the current step targets
+     (#tutorialSpotlight, positioned/sized by JS from that element's own
+     getBoundingClientRect() every step) -- deliberately NOT a dimmed
+     cutout over the rest of the page. A full-page dim (the previous
+     design) reads as "you can't touch anything else right now", which is
+     the opposite of what a `waitForClick` step needs -- the real element
+     is always fully live and clickable, dim or no dim, so the dim was
+     pure visual noise that also had to be pixel-perfect against every
+     target's own corner radius to avoid looking misaligned. A plain ring
+     has no such alignment burden: it just needs to sit on the target's
+     own box, which getBoundingClientRect() already gives exactly. No
+     target (an intro/closing step) simply means no ring at all --
+     .visible toggles it, no separate "dim with no ring" state to keep in
+     sync. Real clicks pass through regardless either way
+     (pointer-events:none), same as before. */
+  /* z-index 1001+ -- above #mb-overlay's own 1000, since the SAME engine
+     also drives the molecule builder's tutorial (see MB_TUTORIAL_STEPS)
+     and has to be able to spotlight elements inside that modal too. */
+  #tutorialOverlay { position: fixed; inset: 0; z-index: 1001; display: none; pointer-events: none; }
+  #tutorialOverlay.active { display: block; }
+  #tutorialSpotlight {
+    position: fixed; pointer-events: none; border-radius: 10px; opacity: 0;
+    box-shadow: 0 0 0 3px var(--accent), 0 0 14px 1px color-mix(in srgb, var(--accent) 50%, transparent);
+    transition: top 0.22s ease, left 0.22s ease, width 0.22s ease, height 0.22s ease, opacity 0.15s ease;
+  }
+  #tutorialSpotlight.visible { opacity: 1; animation: tutorialRingPulse 1.6s ease-in-out infinite; }
+  @keyframes tutorialRingPulse {
+    0%, 100% { box-shadow: 0 0 0 3px var(--accent), 0 0 14px 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+    50% { box-shadow: 0 0 0 4px var(--accent), 0 0 20px 3px color-mix(in srgb, var(--accent) 70%, transparent); }
+  }
+  .tutorialCard {
+    position: fixed; z-index: 1002; pointer-events: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.35); padding: 22px 22px 16px; width: min(360px, calc(100vw - 32px));
+  }
+  .tutorialActionHint {
+    display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 12px;
+    border-top: 1px dashed var(--border); font-size: 0.78rem; font-weight: 700; color: var(--accent);
+  }
+  /* Two little "screenshots" of the real answer+verdict area (see the Play
+     tour's "How grading works" step) -- a small molecule snapshot next to
+     a real .verdictBadge, one row green/solid for a correct answer, one
+     row red/dashed for a wrong one, each captioned underneath in a couple
+     of words. Reuses the exact same badge classes the live UI uses so
+     these read as authentic previews, not an abstract diagram. */
+  .tutorialGradingPreview { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+  .tutorialGradingRow {
+    display: flex; align-items: center; gap: 10px; border-radius: 10px; padding: 7px 10px;
+    background: var(--bg); border: 1.5px solid var(--good);
+  }
+  .tutorialGradingRow.wrong { border-color: var(--bad); border-style: dashed; opacity: 0.9; }
+  .tutorialGradingMol { flex: none; width: 84px; height: 60px; }
+  .tutorialGradingMol svg { width: 100%; height: 100%; display: block; }
+  /* moleculeSnapshotSvg's own stroke-width (2.2, tuned for the builder's
+     own ~150-200px canvas) reads as a barely-visible hairline once shrunk
+     to this mockup's small box -- CSS stroke-width on the line/rect
+     elements themselves wins over their own stroke-width attribute (same
+     presentation-attribute-vs-CSS precedence as fill/stroke color), so
+     this is enough to make the shape read clearly without touching the
+     snapshot generator itself. */
+  .tutorialGradingMol svg line, .tutorialGradingMol svg polygon, .tutorialGradingMol svg circle { stroke-width: 3.6; }
+  .tutorialGradingCaption { font-size: 0.74rem; font-weight: 700; text-align: center; color: var(--good); margin-bottom: 6px; }
+  .tutorialGradingCaption.wrong { color: var(--bad); }
+  /* A little keycap for keyboard-shortcut mentions in tutorial body text
+     (Backspace, 1/2/3, C, Shift...) -- reads at a glance as "a key to
+     press", not just an arbitrary bolded word. */
+  .tutorialKey {
+    display: inline-block; padding: 1px 6px; margin: 0 1px; border: 1px solid var(--border); border-radius: 5px;
+    background: var(--bg); color: var(--text); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.85em;
+    font-weight: 700; box-shadow: 0 1.5px 0 var(--border); line-height: 1.5;
+  }
+  .tutorialActionHint .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: tutorialPulse 1.1s ease-in-out infinite; flex: none; }
+  @keyframes tutorialPulse { 0%, 100% { opacity: 0.35; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.1); } }
+  .mb-tutorialDots.textCount { font-size: 0.74rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .mb-current-tool { font-size:0.78rem; background:var(--bg); border:1.5px dashed var(--border); border-radius:10px; padding:8px 10px; margin-bottom:12px; color:var(--muted); }
   .mb-current-tool b { color:var(--text); }
   .mb-current-tool.warn { color:var(--bad); border-color:var(--bad); border-style:solid; font-weight:600; }
@@ -598,6 +675,30 @@
     cursor: help; font-size: 0.7rem; font-style: italic; font-family: Georgia, "Times New Roman", serif; line-height: 1;
   }
   .infoIcon:hover { border-color: var(--text); color: var(--text); }
+  /* A label + info icon riding side by side on one line (see
+     buildStatLabelRow) -- reused across every stats-pane widget header that
+     wants a hover explainer (Accuracy, Breakdown, Strongest/Weakest Topic,
+     Accuracy by Question Type, and the quick-stat tiles). Owns the margin
+     the plain label class it wraps used to carry by itself, so the label
+     inside resets to margin:0 -- otherwise the two would stack (row's
+     margin-bottom + label's own). flex-shrink:0 for the same reason
+     .atcLabel/.atcName/etc already need it (see their own comment): a card
+     sitting at its row-track's floor should never crush this header down
+     first. */
+  .chartCardLabelRow { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; flex-shrink: 0; }
+  .chartCardLabelRow .paneSectionLabel, .chartCardLabelRow .atcLabel, .chartCardLabelRow .aqsLabel { margin: 0; }
+  /* #statsPane .paneSectionLabel (below) sets its own margin-bottom at
+     higher specificity (ID + class) than the reset just above (two
+     classes) -- without out-specificity-ing it here too, that stale
+     bottom margin survived on the label once it moved inside this row,
+     and align-items:center centers each flex item by its MARGIN box, not
+     its content box, so the surviving margin quietly pushed the label's
+     own centering point up and left the info icon looking noticeably
+     lower than the words next to it (worst on the Daily tab, where this
+     large-font override actually applies -- the All-time cards' plain
+     .atcLabel/.aqsLabel never had a margin to begin with, hence why only
+     "the daily widgets" were ever visibly off). */
+  #statsPane .chartCardLabelRow .paneSectionLabel { margin: 0; }
   .noReactionChip { display: inline-flex; align-items: center; gap: 8px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; white-space: nowrap; }
   /* per-card correctness marking, shown once the answer is revealed */
   .submittedCard.cardCorrect { border-color: var(--good);}
@@ -725,8 +826,60 @@
      the same way a drawer slides its own fixed-size contents out of frame
      rather than folding them up. */
   .sideNavTop, .paneInfo, .sideNavList { min-width: 248px; }
-  .sideNavTop { margin-bottom: 30px; }
+  .sideNavTop { margin-bottom: 30px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .brandTitle { font-size: 1.5rem; font-weight: 700; line-height: 1.25; margin: 0; }
+  /* Runs whichever pane's own tutorial is currently relevant (see
+     runPaneTutorial) -- the whole-app intro tour runs automatically once,
+     on first visit; after that this is the only way back to any tour,
+     and it always runs the CURRENT pane's own, not the intro's. */
+  .tutorialHelpBtn {
+    flex: none; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1.5px solid var(--border);
+    background: none; color: var(--muted); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+    transition: color 0.12s ease, border-color 0.12s ease;
+  }
+  .tutorialHelpBtn:hover { color: var(--text); border-color: var(--text); }
+  /* Optional cloud sync -- see window.__onFirebaseReady. Hidden by
+     default (.ready reveals it) so a blocked/failed-to-load Firebase
+     script just leaves the sidebar exactly as it always was, not a dead
+     button. Lives INSIDE .sideNavList now (its last child), not as a
+     separate margin-top:auto row of its own -- two independent
+     bottom-pinned boxes stacking beneath each other made the whole group's
+     total height (and therefore the nav item's own vertical position)
+     depend on which of THIS row's two states (one line signed out, three
+     lines signed in with a status line) happened to be showing, which is
+     exactly what read as "the navbar moves depending on the pane" --
+     signing in/out on one pane visibly shifted the nav buttons on every
+     pane. Fixed height regardless of state now (see .accountRow *,
+     single line always) folds it into the SAME block as the nav buttons,
+     so it can never change that block's total height on its own. */
+  .accountRow {
+    display: none; align-items: center; margin-top: 10px; padding-top: 14px;
+    border-top: 1px solid var(--border); min-width: 248px; min-height: 20px;
+  }
+  .accountRow.ready { display: flex; }
+  .accountSignInBtn {
+    width: 100%; font: inherit; font-size: 0.82rem; font-weight: 600; text-align: left; padding: 0;
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .accountSignInBtn:hover { color: var(--text); }
+  .accountSignInBtn:disabled { opacity: 0.5; cursor: not-allowed; text-decoration: none; }
+  .accountSignedIn { display: flex; align-items: center; width: 100%; gap: 8px; }
+  .accountSignedIn.hidden { display: none; }
+  /* A small dot instead of a second "Synced"/"Signing in..." text line --
+     its color is the only thing that changes between states (see
+     setAccountStatus), and its own title attribute carries the full text
+     for anyone who hovers, so nothing here ever needs a second line. */
+  .accountStatusDot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: background 0.15s ease; }
+  .accountStatusDot.ok { background: var(--good, #2f9e5b); }
+  .accountStatusDot.error { background: var(--bad, #e05252); }
+  .accountEmail { flex: 1; min-width: 0; font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .accountSignOutBtn {
+    flex: none; font: inherit; font-size: 0.74rem; font-weight: 600; background: none; border: none;
+    color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 2px;
+  }
+  .accountSignOutBtn:hover { color: var(--text); }
   .paneInfo { margin-bottom: 30px; }
   .paneInfoTitle { font-size: 1.05rem; font-weight: 700; margin: 0 0 10px; }
   .paneInfoDesc { color: var(--muted); font-size: 0.9rem; line-height: 1.55; margin: 0; }
@@ -930,6 +1083,13 @@
   }
   #playPane .modeIndicator { background: none; }
   #playPane input[type="checkbox"], #playPane input[type="radio"] { accent-color: var(--text); }
+  /* Same fix as #playPane's own rule above -- without an explicit
+     accent-color, a checked native radio/checkbox falls back to the
+     browser's own default accent (blue in most browsers, regardless of
+     this app's own black/white palette) -- most visible on the All-time
+     chart's "Filters" radio buttons, but this also covers the Daily
+     table's own column-filter checkboxes for the same reason. */
+  #statsPane input[type="checkbox"], #statsPane input[type="radio"] { accent-color: var(--text); }
   #playPane .tagAutocompleteItem:hover, #playPane .tagAutocompleteItem.tagAcActive { background: var(--text); color: var(--bg); }
   #playPane .distinguishCell:focus, #playPane .distinguishFreeField:focus { box-shadow: 0 0 0 2px var(--border) inset; }
 
@@ -1227,7 +1387,7 @@
      that row of vertical space this used to cost on its own is what goes
      back to the bars grid below. */
   .dailyAccuracyCardHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .dailyAccuracyCardHeader .paneSectionLabel { margin: 0; }
+  .dailyAccuracyCardHeader .chartCardLabelRow { margin: 0; }
   .dailyAccuracyCardHeader .sleekDropdown { margin-bottom: 0; }
   .barRowLabel { font-size: 0.76rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .barTrack { flex: 1; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
@@ -1399,9 +1559,23 @@
      under every topic" has no natural height cap, unlike Overview's
      sections which are all sized to fit. */
   .allTimeBreakdownPage { flex: 1; min-height: 0; overflow: auto; padding-top: 34px; }
-  .allTimeChartCard { grid-column: 1 / -1; border: 1.5px solid var(--text); border-radius: 16px; padding: 6px 18px; background: none; }
-  .lineChartWrap { width: 100%; }
-  .lineChartSvg { width: 100%; height: auto; display: block; }
+  /* display:flex column so the chart itself (flex:1 below) absorbs
+     whatever extra height this card's own grid row ends up with -- row 1
+     is an "auto" track, but .allTimeOverviewPage's default grid
+     align-content still stretches auto tracks to fill any leftover space
+     in a tall viewport (the same 4-KPI-tile row can end up with room to
+     spare too), so without this the chart used to render at its own
+     aspect-locked height and leave the rest as dead space below the
+     legend -- now that space becomes more chart instead. */
+  .allTimeChartCard { grid-column: 1 / -1; border: 1.5px solid var(--text); border-radius: 16px; padding: 18px 22px; background: none; display: flex; flex-direction: column; }
+  .lineChartWrap { width: 100%; flex: 1; min-height: 0; }
+  /* height:100% (not auto) + preserveAspectRatio="none" on the svg itself
+     (see buildAllTimeBarChartSvg) -- together these let the chart's own
+     content redraw to fill exactly however tall .lineChartWrap's flex:1
+     above ends up being, instead of staying locked to viewBox's own 1000:120
+     ratio and leaving the same dead space one level down between the SVG's
+     own (aspect-correct) bottom edge and the wrapper's. */
+  .lineChartSvg { width: 100%; height: 100%; display: block; }
   .lineChartSvg text.lineChartAxisLabel { fill: var(--muted); font-size: 9px; font-family: inherit; }
   .chartLegendGroups { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; }
   .chartLegendGroups .topicGroup { flex: 1 1 220px; margin-bottom: 0; }
@@ -1448,6 +1622,7 @@
     border: 1.5px solid var(--border); border-radius: 14px; padding: 7px 16px; background: none;
     display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0;
   }
+  .allTimeQuickStat .chartCardLabelRow { margin: 0; }
   .aqsLabel { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
   .aqsValue { font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1.15; font-variant-numeric: tabular-nums; }
   .aqsSub { font-size: 0.74rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1525,6 +1700,10 @@
     display: flex; flex-direction: column; justify-content: center; gap: 4px;
     cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   }
+  /* This card's own gap above already spaces every child (label row
+     included) evenly -- .chartCardLabelRow's own default margin-bottom
+     would stack on top of that gap otherwise. */
+  .allTimeTopicCard .chartCardLabelRow { margin: 0; }
   /* flex-shrink:0 on every child, not just the card itself having
      min-height:0 -- without it, a row track pinned at (or near) this
      card's own minmax() floor can flex-shrink .atcName's -webkit-line-clamp
@@ -1579,7 +1758,7 @@
      rows (label + 3 accuracy bars) from being flex-shrunk illegibly small
      if row 5 ever sits right at its own minmax() floor. */
   .allTimeTypeCard > * { flex-shrink: 0; }
-  .allTimeTypeCard .atcLabel { margin-bottom: 2px; }
+  .allTimeTypeCard .chartCardLabelRow { margin-bottom: 2px; }
   .atcTypeRow { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background 0.12s ease; }
   .atcTypeRow:hover, .atcTypeRow.active { background: color-mix(in srgb, var(--text) 8%, transparent); }
   /* Wraps instead of ellipsis-truncating -- "Guess Reagents &
@@ -1630,11 +1809,15 @@
   /* Submit/Next live inside whichever answer box is active (see
      showQuestion's reparenting), not in a row of their own below it --
      .answerRect is a plain block box so this row just stacks under
-     #submittedList; .tagBox is itself a wrapping flex row of chips, where
-     flex:1 0 100% forces this row onto its own line at the end instead of
-     sitting beside the last chip (renderTagBox re-appends it last on every
-     render for the same reason -- see its own comment). */
-  .answerActionRow { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex: 1 0 100%; margin-top: 10px; }
+     #submittedList; .tagBox is a flex COLUMN (see #playPane .tagBox) with
+     #tagChipsWrap as the other, flex:1 child, so this row settles at the
+     box's own bottom edge the same way it does in .answerRect, instead of
+     sitting right under the last chip whenever there's spare room below
+     them. justify-content:flex-end is what pins it to the bottom-right
+     CORNER specifically, not just the bottom -- flex:none since (unlike
+     an earlier version of this rule) nothing here needs to force a line-
+     break inside a wrapping row any more. */
+  .answerActionRow { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex: none; margin-top: 10px; }
   .answerActionBtn, #playPane .answerActionBtn {
     background: var(--text); color: var(--bg); border: 1.5px solid var(--text);
     border-radius: 999px; padding: 6px 16px; font: inherit; font-weight: 600; cursor: pointer;
@@ -1655,9 +1838,22 @@
     display: block; width: 100%; box-sizing: border-box; border: 1.5px solid var(--border);
     border-radius: 999px; padding: 12px 18px; font-size: 1rem; background: none; color: var(--text);
   }
-  #playPane .tagBox {
-    flex: 1; min-height: 0; overflow-y: auto; align-items: flex-start; align-content: flex-start;
-    padding: 22px; border-radius: 20px; border-width: 1.5px;
+  /* Column, not the base .tagBox's own wrapping flex row -- #tagChipsWrap
+     (the actual chip grid, still wrapping+scrolling exactly as before)
+     and #answerActionRow (see its own comment) are now two stacked
+     children instead of the row and the button sharing one flex-wrap
+     line together. flex:1 on the chips wrap is what pins the button row
+     to the box's bottom edge whenever there's more room than the chips
+     themselves need, instead of it sitting right under the last chip. */
+  /* align-items:stretch overrides the base .tagBox rule's own :center
+     (needed for the old single-row layout, wrong here) -- without it
+     #tagChipsWrap and #answerActionRow would each shrink to their own
+     content width and center themselves instead of spanning the box's
+     full width. */
+  #playPane .tagBox { flex: 1; min-height: 0; display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; padding: 22px; border-radius: 20px; border-width: 1.5px; }
+  #playPane .tagChipsWrap {
+    flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px;
+    align-items: flex-start; align-content: flex-start;
   }
   #playPane .submittedCard { text-align: center; }
   #playPane .submittedCard button.submittedEditBtn {
@@ -1917,6 +2113,7 @@
   <aside class="sideNav" id="sideNav">
     <div class="sideNavTop">
       <h1 class="brandTitle">H2 Chemistry<br>Reactions Drill</h1>
+      <button type="button" class="tutorialHelpBtn" id="tutorialHelpBtn" aria-label="Show tutorial" title="Show tutorial">?</button>
     </div>
     <div class="paneInfo">
       <h2 class="paneInfoTitle" id="paneInfoTitle">Play</h2>
@@ -1924,15 +2121,34 @@
     </div>
     <nav class="sideNavList">
       <button type="button" class="navItem active" id="navPlayBtn" data-pane="play">Play</button>
-      <button type="button" class="navItem" id="navTopicsBtn" data-pane="topics">Topic and Question Selection</button>
       <!-- Deliberately no data-pane -- Mistakes isn't a separate top-level
            pane (see enterMistakesMode), it's a source-mode switch on the
            SAME #playPane, wired with its own click handler below instead of
            the generic .navItem dispatch (which no-ops when activePane is
            already 'play', exactly the case this needs to still act on). -->
       <button type="button" class="navItem" id="navMistakesBtn">Mistakes</button>
+      <button type="button" class="navItem" id="navTopicsBtn" data-pane="topics">Topic and Question Selection</button>
       <button type="button" class="navItem" id="navStatsBtn" data-pane="stats">Stats</button>
       <button type="button" class="navItem" id="navFeedbackBtn" data-pane="feedback">Feedback</button>
+      <!-- A fixed row IN the nav list (not pushed to the sidebar's own
+           bottom edge) specifically so it never shifts as .paneInfoDesc's
+           height changes across panes -- that's what the old bottom-
+           anchored placement did, since a taller nav area pushed this row
+           down by exactly the same delta as the description text above
+           it changed height. Optional cloud sync (see
+           window.__onFirebaseReady in the app-logic script) -- never
+           required to use the app. Starts hidden -- .accountRow.ready is
+           what reveals it, added only once the Firebase module has
+           actually loaded, so a page where that script fails/is blocked
+           never shows a dead sign-in button. -->
+      <div class="accountRow" id="accountRow">
+        <button type="button" class="accountSignInBtn" id="accountSignInBtn">Sign in with Google to sync</button>
+        <div class="accountSignedIn hidden" id="accountSignedIn">
+          <span class="accountStatusDot" id="accountStatusDot" title=""></span>
+          <span class="accountEmail" id="accountEmail"></span>
+          <button type="button" class="accountSignOutBtn" id="accountSignOutBtn">Sign out</button>
+        </div>
+      </div>
     </nav>
   </aside>
 
@@ -2019,7 +2235,9 @@
               <input type="text" id="tagTextInput" class="tagTextInput" placeholder="Type a reagent/condition, press Enter&hellip;" autocomplete="off">
               <div id="tagAutocompleteList" class="tagAutocompleteList hidden"></div>
             </div>
-            <div class="tagBox answerRect" id="tagBox"></div>
+            <div class="tagBox answerRect" id="tagBox">
+              <div class="tagChipsWrap" id="tagChipsWrap"></div>
+            </div>
           </div>
 
           <div id="answerBuildArea">
@@ -2198,17 +2416,30 @@
         <svg id="mbSvg" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
     </div>
-    <div class="mb-tutorial hidden" id="mbTutorial">
-      <div class="mb-tutorialCard">
-        <button type="button" class="mb-tutorialSkip" id="mbTutorialSkip">Skip</button>
-        <div class="mb-tutorialStep" id="mbTutorialStep"></div>
-        <div class="mb-tutorialFoot">
-          <div class="mb-tutorialDots" id="mbTutorialDots"></div>
-          <div class="mb-tutorialNav">
-            <button type="button" class="mb-btn" id="mbTutorialBack">Back</button>
-            <button type="button" class="mb-btn primary" id="mbTutorialNext">Next</button>
-          </div>
-        </div>
+  </div>
+</div>
+
+<!-- Generic interactive tutorial engine (see runTutorial() in the
+     app-logic script, and #tutorialSpotlight's own CSS comment) -- ONE
+     of these, reused for the whole-app intro, every per-pane "?" tour,
+     AND the molecule builder's own tutorial (this replaced that
+     feature's old bespoke #mbTutorial markup, which lived inside
+     #mbOverlay above -- z-index 1001+ here is specifically what lets
+     this same overlay spotlight elements inside that modal too). A
+     sibling of .appShell, not nested inside it, so it always renders
+     with the app's normal palette rather than #playPane's forced
+     black/cream one (same reasoning that keeps #mbOverlay a sibling). -->
+<div id="tutorialOverlay">
+  <div id="tutorialSpotlight"></div>
+  <div class="tutorialCard" id="tutorialCard">
+    <button type="button" class="mb-tutorialSkip" id="tutorialSkip">Skip</button>
+    <div class="mb-tutorialStep" id="tutorialStep"></div>
+    <div id="tutorialActionHint" class="tutorialActionHint hidden"><span class="dot"></span><span id="tutorialActionHintText"></span></div>
+    <div class="mb-tutorialFoot">
+      <div class="mb-tutorialDots" id="tutorialDots"></div>
+      <div class="mb-tutorialNav" id="tutorialNav">
+        <button type="button" class="mb-btn" id="tutorialBack">Back</button>
+        <button type="button" class="mb-btn primary" id="tutorialNext">Next</button>
       </div>
     </div>
   </div>
@@ -2602,6 +2833,77 @@ function oxidativeCleavage(mol){
   if(removedIds.size>0) products.push({kind:'small', species:['CO2','H2O']});
 
   return { occurs:true, products };
+}
+
+// How "substituted" one end of a C=C is, for the Markovnikov-rule
+// operators just below -- real bonded neighbours other than the
+// double-bond partner itself, any already-present flat substituent, AND a
+// spectator phenyl ring (same weight as a real alkyl branch: a benzylic
+// carbocation is at least as stabilised as a tertiary one, so
+// Ph-CH=CH2 + HBr correctly puts Br on the phenyl-bearing carbon, not the
+// terminal one). Same "otherCount + subCount" shape oxidativeCleavage
+// already uses above, just phenyl-aware too since that flag carries no
+// explicit edge/sub entry of its own to be counted by neighborsOf/subs.
+function substitutionWeight(v, id, dbEdge){
+  const node = findNode(v, id);
+  const otherCount = neighborsOf(v, id).filter(nb=>nb.edge!==dbEdge).length;
+  return otherCount + node.subs.length + (node.phenyl ? 1 : 0);
+}
+// Ties (equal substitution on both ends, e.g. CH3-CH=CH-CH3) resolve to
+// e.a -- both directions give the identical product for a genuinely tied
+// double bond, so which one "wins" doesn't matter chemically.
+function moreSubstitutedEnd(v, e){
+  return substitutionWeight(v, e.b, e) > substitutionWeight(v, e.a, e) ? e.b : e.a;
+}
+// Alkene + HX(g) -> haloalkane, Markovnikov addition: the more-substituted
+// former alkene carbon forms the more stable carbocation intermediate, so
+// that's where the halide nucleophile ends up; the less-substituted carbon
+// just gets the freed-up valence slot back as implicit H, no explicit sub
+// needed. (The engine doesn't track carbocation-intermediate steps or the
+// anti-Markovnikov minor product as a separate object -- same scope every
+// other operator here keeps to a single, real, examinable answer.)
+function hydrohalogenation(mol, X){
+  const dbs = doubleBondEdges(mol);
+  if(dbs.length===0) return { occurs:false };
+  const v = cloneMol(mol);
+  v.edges.filter(e=>e.type==='D').forEach(e=>{
+    e.type = 'S';
+    findNode(v, moreSubstitutedEnd(v, e)).subs.push(X);
+  });
+  return { occurs:true, product: v };
+}
+// Alkene + steam (H3PO4 catalyst) or dilute H2SO4(aq)/H2O -> alcohol,
+// same Markovnikov regiochemistry as hydrohalogenation above, OH instead
+// of X.
+function hydration(mol){
+  const dbs = doubleBondEdges(mol);
+  if(dbs.length===0) return { occurs:false };
+  const v = cloneMol(mol);
+  v.edges.filter(e=>e.type==='D').forEach(e=>{
+    e.type = 'S';
+    findNode(v, moreSubstitutedEnd(v, e)).subs.push('OH');
+  });
+  return { occurs:true, product: v };
+}
+// Alkene + Br2(aq) -> halohydrin (bromohydrin) -- Br+ bridges both carbons
+// as a bromonium ion, then water (the solvent, present in huge excess)
+// attacks the MORE-substituted carbon, since it carries more of the ion's
+// positive character; that puts OH on the more-substituted carbon and
+// leaves Br on the less-substituted one -- the OPPOSITE regiochemistry
+// from hydrohalogenation/hydration above, even though it looks like "the
+// same shape" of addition across the double bond.
+function halohydrinFormation(mol, X){
+  const dbs = doubleBondEdges(mol);
+  if(dbs.length===0) return { occurs:false };
+  const v = cloneMol(mol);
+  v.edges.filter(e=>e.type==='D').forEach(e=>{
+    e.type = 'S';
+    const ohEnd = moreSubstitutedEnd(v, e);
+    const xEnd = ohEnd===e.a ? e.b : e.a;
+    findNode(v, ohEnd).subs.push('OH');
+    findNode(v, xEnd).subs.push(X);
+  });
+  return { occurs:true, product: v };
 }
 
 /* =========================================================================
@@ -3066,6 +3368,22 @@ function ringTribromination(mol, existingSub){
   return { occurs:true, product:v };
 }
 
+// ArOH + conc HNO3 -> 2,4,6-trinitrophenol (picric acid) -- same "strong
+// activator substitutes all 3 non-meta positions at once" shape as
+// ringTribromination just above, NO2 instead of Br. -OH activates the ring
+// so strongly that concentrated HNO3 alone is enough (no H2SO4 catalyst
+// needed the way plain mono-nitration of an unactivated ring needs it).
+function ringTrinitration(mol, existingSub){
+  const ring = mol.nodes.find(n=>n.ring);
+  if(!ring) return { occurs:false };
+  const subPos = ring.subs.findIndex(s=>s===existingSub);
+  if(subPos===-1) return { occurs:false };
+  const v = cloneMol(mol);
+  const vRing = v.nodes.find(n=>n.ring);
+  [1,3,5].forEach(offset=>{ vRing.subs[(subPos+offset)%6] = 'NO2'; });
+  return { occurs:true, product:v };
+}
+
 // ROH + O2 -> CO2 + H2O -- no organic product at all, same "products" shape
 // oxidativeCleavage already uses for its own CO2+H2O byproduct, just as the
 // WHOLE answer instead of one fragment among several.
@@ -3317,6 +3635,21 @@ function hydrolyzeAmide(mol, target){
   return { occurs:true, product:v };
 }
 
+// RCONH2 + LiAlH4 -> RCH2NH2 -- primary amide only, same scope
+// hydrolyzeAmide already commits to just above (a flat 'NH2' sub on an
+// oxo carbon). The carbonyl carbon just loses its double-bond character
+// (oxo:false); the NH2 sub stays exactly where it is, and the carbon's
+// newly-freed valence slot fills with an implicit H automatically --
+// same "reassign, don't rebuild" pattern nitrileReduction already uses
+// for the equivalent nitrile->amine step.
+function reduceAmide(mol){
+  const v = cloneMol(mol);
+  const c = v.nodes.find(n=>!n.ring && n.oxo && n.subs && n.subs.includes('NH2'));
+  if(!c) return { occurs:false };
+  c.oxo = false;
+  return { occurs:true, product:v };
+}
+
 // CH3-CO-R + I2/NaOH(aq), warm -> CHI3 + RCOONa (iodoform reaction).
 // Methyl ketones only -- finds the carbonyl carbon (oxo, no group) and, of
 // its neighbours, the one that's a genuinely terminal, unsubstituted methyl
@@ -3327,9 +3660,17 @@ function hydrolyzeAmide(mol, target){
 // carbon's own 3 H's become CHI3 (built fresh, not derived from it, since
 // the 3 I substituents replace those H's); the carbonyl carbon closes up
 // into a carboxylate salt exactly like hydrolyzeEster's alkaline branch.
+// Also matches a CLOSED group:'CHO' node, not just an open oxo one --
+// ethanal (CH3-CHO) is the one aldehyde that genuinely gives a positive
+// iodoform test (its own methyl IS the group directly attached to the
+// carbonyl), but generateAldehyde always represents that carbon as a
+// closed CHO group rather than an open oxo carbon, so the original
+// oxo-only check could never match it. Any OTHER aldehyde (its CHO
+// carbon's neighbour is a longer chain, not a bare terminal methyl) still
+// correctly refuses via the methylNb check below either way.
 function iodoformCleavage(mol){
   const v = cloneMol(mol);
-  const c = v.nodes.find(n=>!n.ring && n.oxo && !n.group);
+  const c = v.nodes.find(n=>!n.ring && ((n.oxo && !n.group) || n.group==='CHO'));
   if(!c) return { occurs:false };
   const methylNb = neighborsOf(v, c.id).find(nb=>{
     const n = findNode(v, nb.to);
@@ -3338,6 +3679,41 @@ function iodoformCleavage(mol){
   });
   if(!methylNb) return { occurs:false };
   c.oxo = false;
+  c.group = 'COONa';
+  v.nodes = v.nodes.filter(n=>n.id!==methylNb.to);
+  v.edges = v.edges.filter(e=>e.a!==methylNb.to && e.b!==methylNb.to);
+  const chi3Carbon = newNode();
+  chi3Carbon.subs = ['I','I','I'];
+  const chi3 = { nodes:[chi3Carbon], edges:[] };
+  const products = connectedComponents(v).map(f=>({ kind:'chain', mol:{nodes:f.nodes, edges:f.edges} }));
+  products.push({ kind:'chain', mol: chi3 });
+  return { occurs:true, products };
+}
+
+// CH3-CH(OH)-R (or ethanol, R=H) + I2/NaOH(aq), warm -> RCOONa + CHI3 --
+// alkaline iodine first oxidises the alcohol to the equivalent methyl
+// ketone shape in situ, which then cleaves exactly like iodoformCleavage's
+// own ketone case above; modelled directly from the alcohol starting
+// material instead of chaining through a separate oxidation step, same
+// "reassign the shape you started with" style every other operator here
+// uses. Finds an -OH-bearing carbon with a genuinely terminal
+// (unsubstituted, single-neighbour) methyl directly attached -- exactly
+// the shape that distinguishes ethanol/propan-2-ol-style CH3CH(OH)-
+// alcohols (a real positive test) from a plain primary alcohol like
+// propan-1-ol (CH3CH2CH2OH, whose OH carbon's only neighbour is a CH2, not
+// a bare methyl -- correctly refused, same as any secondary/tertiary
+// alcohol without a methyl directly on the OH carbon).
+function iodoformCleavageFromAlcohol(mol){
+  const v = cloneMol(mol);
+  const c = v.nodes.find(n=>!n.ring && !n.oxo && !n.group && n.subs && n.subs.includes('OH'));
+  if(!c) return { occurs:false };
+  const methylNb = neighborsOf(v, c.id).find(nb=>{
+    const n = findNode(v, nb.to);
+    if(!n || n.ring || n.oxo || n.group || (n.subs && n.subs.length)) return false;
+    return neighborsOf(v, n.id).length===1;
+  });
+  if(!methylNb) return { occurs:false };
+  c.subs = c.subs.filter(s=>s!=='OH');
   c.group = 'COONa';
   v.nodes = v.nodes.filter(n=>n.id!==methylNb.to);
   v.edges = v.edges.filter(e=>e.a!==methylNb.to && e.b!==methylNb.to);
@@ -3452,12 +3828,13 @@ function protonateAmine(mol){
 
 module.exports = {
   radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage, doubleBondEdges,
+  hydrohalogenation, hydration, halohydrinFormation,
   ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
-  oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, combustion,
+  oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, ringTrinitration, combustion,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, iodoformCleavage, connectedComponents,
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, iodoformCleavage, iodoformCleavageFromAlcohol, connectedComponents,
   diazotisation, azoCoupling, protonateAmine
 };
 
@@ -6243,11 +6620,21 @@ document.addEventListener("keydown", function(ev){
     render();
   }
 });
+// window.__mbCloseLocked -- set true by the Play tutorial's own "try
+// building something" step (see PLAY_TUTORIAL_STEPS in the app-logic
+// script) so a first-timer can't back out of the builder without actually
+// submitting a molecule; a plain window property (not a local var) since
+// it's read/written from both script blocks, same bridge every other
+// window.__ export in this file uses. Always false outside that guided
+// flow, so this is a no-op for ordinary use.
+window.__mbCloseLocked = false;
 document.getElementById("mbCloseBtn").addEventListener("click", function(){
+  if(window.__mbCloseLocked) return;
   document.getElementById("mbOverlay").classList.remove("open");
   pendingSubmitCallback = null;
 });
 document.getElementById("mbOverlay").addEventListener("click", function(ev){
+  if(window.__mbCloseLocked) return;
   if(ev.target===document.getElementById("mbOverlay")){
     document.getElementById("mbOverlay").classList.remove("open");
     pendingSubmitCallback = null;
@@ -6343,44 +6730,41 @@ document.getElementById("mbAddBtn").addEventListener("click", function(){
 // via the header's "?" button or the sidebar's one-line hint -- so it
 // never gets in the way of someone who's used this before.
 var MB_TUTORIAL_STORAGE_KEY = "h2ChemDrill.mbTutorialSeen.v1";
+// Steps run through the SAME generic engine every other tutorial in this
+// app uses now (see window.__runTutorial, defined in the app-logic
+// script -- this block just calls it, same cross-script-block bridge
+// every other window.__ export in this file already uses). Two of the
+// six steps are real gates (waitForClick) rather than a plain "click
+// Next to continue" -- placing an atom and hitting Add to answer are the
+// two actions someone actually has to perform to use this tool at all,
+// so making the tour itself require them once is a better teacher than
+// just describing them.
 var MB_TUTORIAL_STEPS = [
-  { title: "Place your first atom", body: "Pick the atom, or functional group, and bond type on the left sidebar that you would like to add" },
-  { title: "Grow from there", body: "Hover your cursor around an existing atom — ghost atoms will appear. Click one to add an atom there (this is also how a 4th substituent is added to an atom)." },
-  { title: "Select &amp; edit", body: "Click on an atom or bond to select it. <b>Backspace</b> deletes it, <b>1</b>/<b>2</b>/<b>3</b> sets a selected bond's order, <b>+</b>/<b>−</b> resizes it." },
-  { title: "Move &amp; multi-select", body: "Drag an atom or bond to move its whole molecule. <br><b>Shift</b>+click allows you to select multiple atoms and bonds;<br> <b>Shift</b>+drag lassos an area." },
-  { title: "Connections", body: "To connect 2 existing atoms, select the first atom, press <br>C</br> on your keyboard, then click on the second atom. This forms a bond between the two atoms." },
-  { title: "You're set", body: "<b>Undo</b> and <b>Clear</b> are always in the top bar. Once your structure looks right, hit <b>Add to answer</b>." }
+  { title: "Pick a tool", body: "Choose an atom, bond, or group from the list on the left.",
+    target: function(){ return document.getElementById("mbAtomCatalog"); } },
+  { title: "Place an atom", body: "Click anywhere on the canvas to place it.",
+    target: function(){ return document.getElementById("mbSvg"); }, waitForClick: true, actionHint: "Click the canvas to place an atom" },
+  { title: "Grow from there", body: "Hover an atom to see its open slots.<br>Click a slot to add another atom there.",
+    target: function(){ return document.getElementById("mbSvg"); } },
+  { title: "Select &amp; edit", body: "Click an atom or bond to select it.<br>To delete it, press <span class=\"tutorialKey\">Backspace</span>.<br>To change a bond's order, press <span class=\"tutorialKey\">1</span>, <span class=\"tutorialKey\">2</span>, or <span class=\"tutorialKey\">3</span>.",
+    target: function(){ return document.getElementById("mbSvg"); } },
+  { title: "Move &amp; connect", body: "Drag an atom or bond to move it.<br>Hold <span class=\"tutorialKey\">Shift</span> and click to select more than one.<br>To connect two atoms: select one, press <span class=\"tutorialKey\">C</span>, then click the other.",
+    target: function(){ return document.getElementById("mbSvg"); } },
+  { title: "You're set", body: "Happy with your molecule?<br>Click <b>Add to answer</b> to submit it.",
+    target: function(){ return document.getElementById("mbAddBtn"); }, waitForClick: true, actionHint: "Click Add to answer to finish" }
 ];
-var mbTutorialStep = 0;
-function renderMbTutorial(){
-  var stepData = MB_TUTORIAL_STEPS[mbTutorialStep];
-  document.getElementById("mbTutorialStep").innerHTML =
-    '<div class="mb-tutorialStepTitle">'+stepData.title+'</div><div class="mb-tutorialStepBody">'+stepData.body+'</div>';
-  document.getElementById("mbTutorialDots").innerHTML = MB_TUTORIAL_STEPS.map(function(_, i){
-    return '<span class="mb-tutorialDot'+(i===mbTutorialStep?' active':'')+'"></span>';
-  }).join('');
-  document.getElementById("mbTutorialBack").classList.toggle("hidden", mbTutorialStep===0);
-  document.getElementById("mbTutorialNext").textContent = mbTutorialStep===MB_TUTORIAL_STEPS.length-1 ? "Got it" : "Next";
-}
-function openMbTutorial(){
-  mbTutorialStep = 0;
-  renderMbTutorial();
-  document.getElementById("mbTutorial").classList.remove("hidden");
-}
-function closeMbTutorial(){
-  document.getElementById("mbTutorial").classList.add("hidden");
-  try{ localStorage.setItem(MB_TUTORIAL_STORAGE_KEY, "1"); }catch(e){ /* storage unavailable -- just won't persist across sessions */ }
-}
+function openMbTutorial(){ if(window.__runTutorial) window.__runTutorial(MB_TUTORIAL_STEPS); }
 document.getElementById("mbHelpBtn").addEventListener("click", openMbTutorial);
 document.getElementById("mbHintTutorialLink").addEventListener("click", openMbTutorial);
-document.getElementById("mbTutorialSkip").addEventListener("click", closeMbTutorial);
-document.getElementById("mbTutorialBack").addEventListener("click", function(){
-  if(mbTutorialStep>0){ mbTutorialStep--; renderMbTutorial(); }
-});
-document.getElementById("mbTutorialNext").addEventListener("click", function(){
-  if(mbTutorialStep < MB_TUTORIAL_STEPS.length-1){ mbTutorialStep++; renderMbTutorial(); }
-  else closeMbTutorial();
-});
+// Exported so the Play tutorial (app-logic script -- see PLAY_TUTORIAL_STEPS)
+// can splice these same 6 steps straight into its own flow when it reaches
+// the "build a molecule" section, rather than duplicating this content --
+// and so it can mark this seen itself (same key) before that first real
+// Build Molecule click, which is what stops window.__openMoleculeBuilder's
+// own auto-trigger below from ALSO firing and clobbering the Play
+// tutorial's state at that exact moment.
+window.__MB_TUTORIAL_STEPS = MB_TUTORIAL_STEPS;
+window.__MB_TUTORIAL_STORAGE_KEY = MB_TUTORIAL_STORAGE_KEY;
 
 /* ============================= PUBLIC ENTRY POINT ============================= */
 window.__openMoleculeBuilder = function(onSubmit, seedMol){
@@ -6406,14 +6790,12 @@ window.__openMoleculeBuilder = function(onSubmit, seedMol){
   document.getElementById("mbOverlay").classList.add("open");
   var tutorialSeen = false;
   try{ tutorialSeen = localStorage.getItem(MB_TUTORIAL_STORAGE_KEY)==="1"; }catch(e){ /* storage unavailable -- treat as never seen, same as a fresh browser */ }
-  if(!tutorialSeen){
-    // Marked seen right here, not only on Skip/finish -- so it's a true
+  if(!tutorialSeen && window.__runTutorial){
+    // Marked seen right here, not only on finish/skip -- so it's a true
     // one-time auto-show no matter how this first viewing ends, including
     // just closing the whole builder without ever touching the tutorial.
     try{ localStorage.setItem(MB_TUTORIAL_STORAGE_KEY, "1"); }catch(e){}
-    openMbTutorial();
-  } else {
-    document.getElementById("mbTutorial").classList.add("hidden");
+    window.__runTutorial(MB_TUTORIAL_STEPS);
   }
 };
 
@@ -6457,6 +6839,25 @@ window.__renderStaticMolecule = function(engineMol){
   var formula = computeFormula();
   nodes = savedNodes; edges = savedEdges; rootId = savedRoot; idCounter = savedCounter;
   return { svg: svg, formula: formula, overlap: overlap };
+};
+
+// Same swap-run-restore idiom as __renderStaticMolecule just above, but
+// returns the raw {nodes,edges} builder-graph `data` too (deep-cloned,
+// not the live working state) -- the exact shape userAnswer.molecules[i]
+// normally gets from the interactive builder's own "Add to answer" flow
+// (see mbAddBtn's click handler). Lets the app-logic script's tutorial
+// (see window.__runTutorial) silently seed a correct or incorrect
+// submitted-answer card for a scripted demo question, without actually
+// driving the builder UI through a full atom-by-atom build.
+window.__buildAnswerFromEngineMol = function(engineMol){
+  if(!engineMol || !engineMol.nodes || engineMol.nodes.length===0) return null;
+  var savedNodes=nodes, savedEdges=edges, savedRoot=rootId, savedCounter=idCounter;
+  rootId = engineMolToBuilderGraph(engineMol);
+  layoutAll();
+  var svg = moleculeSnapshotSvg();
+  var data = JSON.parse(JSON.stringify({nodes:nodes, edges:edges}));
+  nodes = savedNodes; edges = savedEdges; rootId = savedRoot; idCounter = savedCounter;
+  return { svg: svg, data: data };
 };
 
 // Translates a submitted builder graph ({nodes,edges}, the same shape
@@ -7100,6 +7501,11 @@ var POOL = [
     explanation:'UV light homolyses Br2 into Br• radicals, which abstract an H from the alkane in a chain reaction that substitutes Br for H.',
     gen:function(d){ return generateMolecule(d, Math.random()<0.5 ? {forceExistingHalogen:true, forceNoDoubleBonds:true} : {forceNoDoubleBonds:true}); },
     run:function(mol){ return op.radicalSubstitution(mol,'Br'); } },
+  { id:'combustionOfAlkanes', label:'Combustion of alkanes', topic:'Alkanes',
+    reagentText:'Combustion in air', tags: ['Combustion in air'], mode:'fragments',
+    explanation:'Complete combustion in excess air/O2 oxidises every carbon fully through to CO2 and H2O.',
+    gen:function(d){ return generateMolecule(d, {forceNoDoubleBonds:true}); },
+    run:function(mol){ return op.combustion(mol); } },
   { id:'addBr2', label:'Electrophilic addition of Br2', topic:'Alkenes',
     reagentText:'Br2 in CCl4, room temperature, in the dark', tags: ['Br2 in CCl4', 'room temperature', 'in the dark'], mode:'single',
     explanation:'The electron-rich C=C induces a dipole in Br2, which adds across the double bond via a bromonium-ion intermediate; CCl4 keeps the medium non-aqueous so no bromohydrin forms instead.',
@@ -7125,6 +7531,26 @@ var POOL = [
     explanation:'Hot, acidified KMnO4 is a strong enough oxidant to cleave the C=C completely, oxidising each fragment through to a ketone or carboxylic acid (or CO2 from a terminal =CH2).',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds: Math.random()<0.5?2:1, forcePhenyl: Math.random()<0.3?true:undefined}); },
     run:function(mol){ return op.oxidativeCleavage(mol); } },
+  { id:'alkeneHBr', label:'Electrophilic addition of HBr', topic:'Alkenes',
+    reagentText:'HBr(g), room temperature', tags: ['HBr(g)', 'room temperature'], mode:'single',
+    explanation:'H-Br adds across the C=C via a carbocation intermediate; Markovnikov\'s rule puts Br on the more-substituted carbon, since that carbocation is more stable.',
+    gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
+    run:function(mol){ return op.hydrohalogenation(mol,'Br'); } },
+  { id:'alkeneHCl', label:'Electrophilic addition of HCl', topic:'Alkenes',
+    reagentText:'HCl(g), room temperature', tags: ['HCl(g)', 'room temperature'], mode:'single',
+    explanation:'Same Markovnikov addition as HBr, just with HCl -- Cl ends up on the more-substituted carbon, since that carbocation intermediate is more stable.',
+    gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
+    run:function(mol){ return op.hydrohalogenation(mol,'Cl'); } },
+  { id:'alkeneHydration', label:'Electrophilic addition of steam', topic:'Alkenes',
+    reagentText:'H2O(g), H3PO4 catalyst, heat, high pressure', tags: ['H2O(g)', 'H3PO4 catalyst', 'heat', 'high pressure'], tagAlternates: [['dilute H2SO4(aq)', 'then H2O']], mode:'single',
+    explanation:'Water adds across the C=C via a carbocation intermediate, same Markovnikov regiochemistry as HX addition -- OH ends up on the more-substituted carbon.',
+    gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
+    run:function(mol){ return op.hydration(mol); } },
+  { id:'alkeneHalohydrin', label:'Formation of a bromohydrin', topic:'Alkenes',
+    reagentText:'Br2(aq), room temperature', tags: ['Br2(aq)', 'room temperature'], mode:'single',
+    explanation:'Br2(aq) forms a bromonium-ion intermediate; water (the solvent, in huge excess) attacks the more-substituted carbon since it carries more of the ion\'s positive character, giving a bromohydrin with OH on the more-substituted carbon and Br on the less-substituted one.',
+    gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
+    run:function(mol){ return op.halohydrinFormation(mol,'Br'); } },
 
   // ---- Arenes ----
   // Ring reactions (benzene/methylbenzene): starting material is a ring:true
@@ -7179,6 +7605,11 @@ var POOL = [
     explanation:'AlCl3 generates the electrophile as usual; the ring\'s existing substituent activates/deactivates it and directs where the incoming Cl attacks.',
     gen:function(d){ return generateSubstitutedArene(d); },
     run:function(mol){ return op.ringElectrophilicSubstitution(mol,'Cl'); } },
+  { id:'methylbenzeneRingBromination', label:'Ring bromination of a substituted benzene', topic:'Arenes',
+    reagentText:'Br2(l), AlBr3, room temperature, absence of UV', tags: ['Br2(l)', 'AlBr3', 'room temperature', 'absence of UV'], mode:'variants',
+    explanation:'AlBr3 generates the electrophile as usual; the ring\'s existing substituent activates/deactivates it and directs where the incoming Br attacks.',
+    gen:function(d){ return generateSubstitutedArene(d); },
+    run:function(mol){ return op.ringElectrophilicSubstitution(mol,'Br'); } },
   { id:'methylbenzeneRingNitration', label:'Ring nitration of a substituted benzene', topic:'Arenes',
     reagentText:'conc HNO3, conc H2SO4, 30°C', tags: ['conc HNO3', 'conc H2SO4', '30°C'], mode:'variants',
     explanation:'conc H2SO4/HNO3 generates NO2+ as usual; the ring\'s existing substituent directs where the incoming NO2 attacks.',
@@ -7473,18 +7904,31 @@ var POOL = [
     explanation:'With Br2(aq) in excess, the strongly activated ring reacts at all three available ortho/para positions at once, precipitating 2,4,6-tribromophenol.',
     gen:function(d){ return generatePhenol(); },
     run:function(mol){ return op.ringTribromination(mol, 'OH'); } },
+  { id:'trinitrationOfPhenol', label:'Trinitration of phenol (picric acid)', topic:'Hydroxy Compounds',
+    reagentText:'conc HNO3, room temperature', tags: ['conc HNO3', 'room temperature'], mode:'single',
+    explanation:'-OH activates the ring so strongly that concentrated HNO3 alone (no H2SO4 catalyst needed, unlike plain mono-nitration of an unactivated ring) substitutes all three non-meta positions at once, giving 2,4,6-trinitrophenol (picric acid).',
+    gen:function(d){ return generatePhenol(); },
+    run:function(mol){ return op.ringTrinitration(mol, 'OH'); } },
+  { id:'iodoformTestAlcohol', label:'Tri-iodomethane test (CH3CH(OH)- alcohol)', topic:'Hydroxy Compounds',
+    reagentText:'I2(aq), NaOH(aq), warm', tags: ['I2(aq)', 'NaOH(aq)', 'warm'], mode:'fragments',
+    explanation:'Alkaline iodine first oxidises the CH3CH(OH)- group to the equivalent methyl ketone shape in situ, which then cleaves the same way as the ketone version of this test -- CHI3 forms, and the rest of the molecule closes up to a carboxylate.',
+    gen:function(d){ return generateAlcohol(Math.random()<0.4 ? [1] : [1, shortHalideChainLen()]); },
+    run:function(mol){ return op.iodoformCleavageFromAlcohol(mol); } },
 
   // ---- Carbonyl Compounds ----
-  // Deliberately NOT covered this round: the 2,4-DNPH condensation (orange
-  // precipitate) and the tri-iodomethane test on methyl ketones/ethanal
-  // (yellow CHI3 crystals) -- both pure observation/precipitate tests with
-  // no buildable organic product this app can grade, same category of gap
-  // already deferred for the alcohol iodoform test and the FeCl3 test for
-  // phenols in the Hydroxy Compounds chapter. Tollens'/Fehling's ARE
-  // covered, but as the same underlying RCHO->RCOOH transform every other
-  // oxidising agent in this topic already uses -- this app doesn't track
-  // which inorganic oxidant produces which precipitate/mirror, only
-  // whether the aldehyde gets oxidised at all.
+  // Deliberately NOT covered: the 2,4-DNPH condensation (orange
+  // precipitate) -- a pure observation/precipitate test with no buildable
+  // organic product this app can grade, same category of gap already
+  // deferred for the FeCl3 test for phenols in the Hydroxy Compounds
+  // chapter. Tollens'/Fehling's ARE covered, but as the same underlying
+  // RCHO->RCOOH transform every other oxidising agent in this topic already
+  // uses -- this app doesn't track which inorganic oxidant produces which
+  // precipitate/mirror, only whether the aldehyde gets oxidised at all.
+  // The tri-iodomethane test DOES have a buildable product (CHI3 +
+  // carboxylate) and is covered below, for both methyl ketones and
+  // ethanal specifically (see iodoformTestEthanal) -- an older version of
+  // this comment claimed otherwise; that was simply wrong, not a
+  // deliberate scope decision.
   { id:'hcnAddition', label:'Nucleophilic addition of hydrogen cyanide', topic:'Carbonyl Compounds',
     reagentText:'HCN, trace KCN catalyst, cold', tags: ['HCN', 'trace KCN catalyst', 'cold'], mode:'single',
     explanation:'CN- (from the trace KCN catalyst) is a good nucleophile that attacks the electrophilic carbonyl carbon; the resulting alkoxide is then protonated to give the cyanohydrin\'s -OH.',
@@ -7504,6 +7948,11 @@ var POOL = [
     reagentText:'I2(aq), NaOH(aq), warm', tags: ['I2(aq)', 'NaOH(aq)', 'warm'], mode:'fragments',
     explanation:'I2/NaOH substitutes all 3 H on the methyl ketone\'s CH3 with I via successive enolate iodinations, then cleaves the resulting CI3 group off as the yellow CHI3 precipitate, leaving the carboxylate.',
     gen:function(d){ return generateKetone(1, shortHalideChainLen()); },
+    run:function(mol){ return op.iodoformCleavage(mol); } },
+  { id:'iodoformTestEthanal', label:'Tri-iodomethane test (ethanal)', topic:'Carbonyl Compounds',
+    reagentText:'I2(aq), NaOH(aq), warm', tags: ['I2(aq)', 'NaOH(aq)', 'warm'], mode:'fragments',
+    explanation:'Ethanal is the one aldehyde with a methyl group directly on its own carbonyl carbon, so it\'s the only aldehyde that gives a positive tri-iodomethane test -- CHI3 forms, and the rest of the molecule closes up to methanoate.',
+    gen:function(d){ return generateAldehyde(2); },
     run:function(mol){ return op.iodoformCleavage(mol); } },
   { id:'oxidationAldehydeToCarboxylicAcid', label:'Oxidation of aldehyde to carboxylic acid', topic:'Carbonyl Compounds',
     reagentText:'K2Cr2O7(aq) (or KMnO4(aq)), H2SO4(aq), heat under reflux', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat under reflux'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat under reflux']], mode:'single',
@@ -7693,16 +8142,26 @@ var POOL = [
     explanation:'OH- attacks the amide\'s electrophilic carbonyl carbon, hydrolysing it to the carboxylate and releasing ammonia.',
     gen:function(d){ return op.acylChlorideToAmide(anyAcylChloride(), null).product; },
     run:function(mol){ return op.hydrolyzeAmide(mol, 'COONa'); } },
+  { id:'amideReduction', label:'Reduction of amide', topic:'Carboxylic Acids & Derivatives',
+    reagentText:'LiAlH4, dry ether', tags: ['LiAlH4', 'dry ether'], mode:'single',
+    explanation:'LiAlH4 reduces the amide\'s C=O all the way to CH2, giving a primary amine.',
+    gen:function(d){ return op.acylChlorideToAmide(anyAcylChloride(), null).product; },
+    run:function(mol){ return op.reduceAmide(mol); } },
 
   // ---- Nitrogen Compounds ----
   // Deliberately NOT re-covered here (already graded under an earlier
   // topic, same reaction): nitrile reduction/hydrolysis (Halogen
-  // Derivatives), amine + acyl chloride -> amide (Carboxylic Acids &
-  // Derivatives), and alkylation of ammonia/amine with a haloalkane
-  // (Halogen Derivatives + Amines, across the primary/secondary/tertiary
-  // steps). Deliberately NOT covered at all: the ammonia/amine litmus-paper
-  // test -- observation-only, no buildable product, same gap already
-  // deferred for every other qualitative test this session.
+  // Derivatives), amine + acyl chloride -> amide and amide
+  // hydrolysis/reduction (Carboxylic Acids & Derivatives), and alkylation
+  // of ammonia/amine with a haloalkane (Halogen Derivatives + Amines,
+  // across the primary/secondary/tertiary steps). Deliberately NOT covered
+  // at all: the ammonia/amine litmus-paper test -- observation-only, no
+  // buildable product, same gap already deferred for every other
+  // qualitative test this session; and amino acids/proteins (zwitterion
+  // behaviour, peptide-bond formation, protein hydrolysis) -- a genuinely
+  // new molecule type this engine has no representation for at all, out
+  // of scope for a same-shaped-operator fix the way everything else here
+  // is.
   { id:'diazotisationOfPhenylamine', label:'Diazotisation of phenylamine', topic:'Nitrogen Compounds',
     reagentText:'NaNO2(aq)/HCl(aq), 0-10°C', tags: ['NaNO2(aq)', 'HCl(aq)', '0-10°C'], mode:'single',
     explanation:'NaNO2/HCl generates nitrous acid in situ, which converts the primary aromatic amine\'s -NH2 into the diazonium ion -N2+; kept below 10°C since the diazonium salt decomposes above that.',
@@ -7721,8 +8180,14 @@ var POOL = [
     genReactant:function(d){ return { mol:generatePhenylamine() }; },
     run:function(mol, reactant){ return op.azoCoupling(mol, reactant.mol); } },
   { id:'nitrobenzeneReduction', label:'Reduction of nitrobenzene to phenylamine', topic:'Nitrogen Compounds',
-    reagentText:'Sn(s)/conc HCl, heat, then NaOH(aq) (or LiAlH4 in dry ether, or H2(g)/Ni catalyst)', tags: ['Sn(s)', 'conc HCl', 'heat', 'NaOH(aq)'], tagAlternates: [['LiAlH4', 'dry ether'], ['H2(g)', 'Ni catalyst']], mode:'single',
-    explanation:'Sn/conc HCl (or LiAlH4, or H2/Ni) reduces the nitro group\'s nitrogen all the way down to -NH2; with Sn/HCl the amine first forms as its ammonium salt, freed by the later NaOH(aq) step.',
+    // LiAlH4 deliberately NOT listed as an alternate here -- unlike nitrile/
+    // amide/carboxylic-acid reduction elsewhere, LiAlH4 does NOT take a
+    // nitro group all the way to the amine; it stops at (or gives) an azo
+    // compound instead, a genuinely different product this engine doesn't
+    // model. Sn(s)/conc HCl and H2(g)/Ni catalyst are the two routes that
+    // actually give phenylamine.
+    reagentText:'Sn(s)/conc HCl, heat, then NaOH(aq) (or H2(g)/Ni catalyst)', tags: ['Sn(s)', 'conc HCl', 'heat', 'NaOH(aq)'], tagAlternates: [['H2(g)', 'Ni catalyst']], mode:'single',
+    explanation:'Sn/conc HCl (or H2/Ni) reduces the nitro group\'s nitrogen all the way down to -NH2; with Sn/HCl the amine first forms as its ammonium salt, freed by the later NaOH(aq) step.',
     gen:function(d){ return generateNitrobenzene(); },
     run:function(mol){ return op.ringFlatSubSwap(mol, 'NO2', 'NH2'); } },
   { id:'phenylammoniumSaltFormation', label:'Formation of phenylammonium salt', topic:'Nitrogen Compounds',
@@ -7763,6 +8228,7 @@ function saveStats(){
     var note = document.getElementById('statsSavedNote');
     if(note) note.textContent = 'Saved ' + new Date().toLocaleTimeString();
   } catch(e){ /* storage unavailable -- export/import still works manually */ }
+  pushToCloudSync();
 }
 function loadStats(){
   try {
@@ -7804,6 +8270,7 @@ function saveAttemptLog(){
   try {
     localStorage.setItem(ATTEMPT_LOG_STORAGE_KEY, JSON.stringify({ attempts: attemptLog, savedAt: new Date().toISOString() }));
   } catch(e){ /* storage unavailable -- in-memory only for this session */ }
+  pushToCloudSync();
 }
 function loadAttemptLog(){
   try {
@@ -7853,6 +8320,7 @@ function saveMistakes(){
   try {
     localStorage.setItem(MISTAKES_STORAGE_KEY, JSON.stringify({ mistakes: mistakes, savedAt: new Date().toISOString() }));
   } catch(e){ /* storage unavailable -- in-memory only for this session */ }
+  pushToCloudSync();
 }
 function loadMistakesFromStorage(){
   try {
@@ -8232,8 +8700,13 @@ function resetTagInput(){
 function renderTagBox(){
   // The text input is its own element above #tagBox now (see the reagent-
   // guess markup), not a child of it, so chips just append in order rather
-  // than being inserted before an in-box input reference.
-  var box = document.getElementById('tagBox');
+  // than being inserted before an in-box input reference. Chips append
+  // into #tagChipsWrap specifically, not #tagBox itself -- #answerActionRow
+  // (the Submit/Next row) lives as #tagBox's OTHER child now, a sibling of
+  // this wrap rather than sharing its flex-wrap line, so there's no more
+  // "keep it last among the chips" bookkeeping needed here (see
+  // .answerActionRow's own comment for why).
+  var box = document.getElementById('tagChipsWrap');
   Array.from(box.querySelectorAll('.tagChip')).forEach(function(el){ el.remove(); });
   var matchedCombo = current ? bestMatchingTagCombo(reagentGuessTags, getReagentAcceptableCombos()) : [];
   reagentGuessTags.forEach(function(tag, idx){
@@ -8275,12 +8748,6 @@ function renderTagBox(){
       box.appendChild(chip);
     });
   }
-  // Keep the Submit/Next row last among #tagBox's children -- chips above
-  // just got re-appended in order, which would otherwise leave it stranded
-  // in the middle (see showQuestion's reparenting comment). A no-op in
-  // product/reactant mode, where it lives in #answerRectWrap instead.
-  var actionRow = document.getElementById('answerActionRow');
-  if(box.contains(actionRow)) box.appendChild(actionRow);
   updateSubmitEnabled();
 }
 
@@ -9727,6 +10194,32 @@ function pieSliceColor(i, n){
   var b = Math.round(PIE_GRADIENT_FROM[2] + (PIE_GRADIENT_TO[2]-PIE_GRADIENT_FROM[2])*t);
   return 'rgb('+r+','+g+','+b+')';
 }
+// A bare hover-explainer icon (see .infoIcon / wireDataTipHover) -- the
+// same one the radar chart's own header already uses, factored out so
+// every other stats widget that wants one (see buildStatLabelRow below)
+// shares the exact same markup/wiring instead of re-typing it per call site.
+function buildInfoIcon(tip){
+  var icon = document.createElement('span');
+  icon.className = 'infoIcon';
+  icon.textContent = 'i';
+  icon.setAttribute('data-tip', tip);
+  wireDataTipHover(icon);
+  return icon;
+}
+// A small "<label> <i>" row -- reuses whatever label class the card
+// already uses (.paneSectionLabel / .atcLabel) so it drops in as a
+// straight replacement for a plain label div, just with an info icon
+// riding alongside it.
+function buildStatLabelRow(text, tip, labelClass){
+  var row = document.createElement('div');
+  row.className = 'chartCardLabelRow';
+  var lbl = document.createElement('div');
+  lbl.className = labelClass;
+  lbl.textContent = text;
+  row.appendChild(lbl);
+  row.appendChild(buildInfoIcon(tip));
+  return row;
+}
 // Always-visible companion to the proportion donut: accuracy per question
 // type specifically (not whatever tab.groupBy happens to be), so it reads
 // the same regardless of how the donut above it is currently grouped.
@@ -9756,10 +10249,7 @@ function buildDailyAccuracyWidget(dayRows, tab, onToggle){
   card.className = 'dailyChartCard dailyAccuracyCard';
   var headerRow = document.createElement('div');
   headerRow.className = 'dailyAccuracyCardHeader';
-  var lbl = document.createElement('div');
-  lbl.className = 'paneSectionLabel';
-  lbl.textContent = 'Accuracy';
-  headerRow.appendChild(lbl);
+  headerRow.appendChild(buildStatLabelRow('Accuracy', 'Your accuracy on today’s questions, split by whichever grouping you pick below — Question Type or Topic.', 'paneSectionLabel'));
   headerRow.appendChild(buildDropdownToggle([['guessMode','Question Type'],['topic','Topic']], mode, onToggle));
   card.appendChild(headerRow);
   if(dayRows.length===0){
@@ -9917,10 +10407,7 @@ function renderDailyTab(tab, wrap){
 
   var chartCard = document.createElement('div');
   chartCard.className = 'dailyChartCard dailyBreakdownCard';
-  var lbl = document.createElement('div');
-  lbl.className = 'paneSectionLabel';
-  lbl.textContent = 'Breakdown';
-  chartCard.appendChild(lbl);
+  chartCard.appendChild(buildStatLabelRow('Breakdown', 'How today’s questions split by topic or question type. Click a slice to filter the question list below to just that group — click it again to clear the filter.', 'paneSectionLabel'));
   chartCard.appendChild(buildDropdownToggle([['topic','Topic'],['guessMode','Question Type']], tab.groupBy, function(v){
     animateDailyWidgetChange('.dailyBreakdownCard', function(){ tab.groupBy=v; tab.groupFilter=null; renderActiveStatTabPanel(); });
   }));
@@ -10303,7 +10790,12 @@ function buildAllTimeBarChartSvg(dayKeys, dayStats){
     if(i%labelEvery!==0 && i!==n-1) return;
     parts.push('<text x="'+(xFor(i)+barW/2)+'" y="'+(h-8)+'" text-anchor="middle" class="lineChartAxisLabel">'+shortDateLabel(dk)+'</text>');
   });
-  return '<svg viewBox="0 0 '+w+' '+h+'" class="lineChartSvg allTimeBarSvg">'+parts.join('')+'</svg>';
+  // preserveAspectRatio="none" -- lets the CSS side (.lineChartSvg,
+  // height:100% now instead of auto) actually redraw this to fill
+  // whatever height its flex:1 wrapper ends up with, rather than staying
+  // locked to this viewBox's own 1000:120 ratio and leaving dead space
+  // below it on a tall viewport (see .allTimeChartCard's own comment).
+  return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" class="lineChartSvg allTimeBarSvg">'+parts.join('')+'</svg>';
 }
 function showAllTimeBarTooltip(rectEl, dayStatsByKey){
   var dayKey = rectEl.dataset.day;
@@ -10464,6 +10956,7 @@ function buildAllTimePageEl(tab, page){
       '<div class="chartLegendRow"><span class="legendSwatch" style="background:var(--chart-ink);opacity:0.32"></span><span class="legendLabel">Wrong</span></div>'+
       '<div class="chartLegendRow"><span class="legendSwatch allTimeAccuracyLineSwatch"></span><span class="legendLabel">Accuracy %</span></div>'+
       '<div class="allTimeZoomHint">'+tab.visibleDays+' days shown — scroll on the chart to zoom</div>';
+    legend.appendChild(buildInfoIcon('Correct vs wrong answers per day, with your rolling accuracy % as a line. Drag across the chart to average a date range, or scroll to zoom in and out — use Filters to narrow it down to one topic or question type.'));
     legend.appendChild(buildAllTimeFilterPicker(tab));
     chartCard.appendChild(legend);
   }
@@ -10476,10 +10969,19 @@ function buildAllTimePageEl(tab, page){
   // reads as one clean rectangle instead of two mismatched-width rows.
   var total = totalQuestionsAllTime();
   var curStreak = computeCurrentStreak();
+  var longestStreak = computeDailyStreak();
   var cStreak = computeLongestCorrectStreak();
   var bestDay = computeBestDay();
+  // "Day Streak" sub-line always mentions the all-time longest run alongside
+  // the current one (computeDailyStreak vs computeCurrentStreak -- see
+  // their own comments for the distinction) so a broken streak still shows
+  // the record to beat, not just a bare "start one today". Omitted only
+  // when there's literally no data yet (longestStreak===0), since "best: 0"
+  // would just be noise.
+  var streakSub = curStreak>0 ? 'days running' : 'start one today';
+  if(longestStreak>0) streakSub += ' · best ' + longestStreak;
   overview.appendChild(buildAllTimeQuickStat('Total Questions', total, 'all-time'));
-  overview.appendChild(buildAllTimeQuickStat('Day Streak', curStreak, curStreak>0 ? 'days running' : 'start one today'));
+  overview.appendChild(buildAllTimeQuickStat('Day Streak', curStreak, streakSub));
   overview.appendChild(buildAllTimeQuickStat('Perfect Streak', cStreak, 'correct in a row'));
   overview.appendChild(buildAllTimeQuickStat('Best Day', bestDay ? bestDay.pct+'%' : '—', bestDay ? shortDateLabel(bestDay.day) : 'not enough data yet'));
 
@@ -10630,11 +11132,27 @@ function computeBestDay(){
 }
 // A single KPI tile -- top row of the Overview grid (see
 // .allTimeOverviewPage), four of these sitting under the chart.
-function buildAllTimeQuickStat(label, value, sub){
+function buildAllTimeQuickStat(label, value, sub, tip){
   var el = document.createElement('div');
   el.className = 'allTimeQuickStat';
-  el.innerHTML = '<div class="aqsLabel">'+escapeHtml(label)+'</div><div class="aqsValue">'+value+'</div>'+
-    (sub ? '<div class="aqsSub">'+escapeHtml(sub)+'</div>' : '');
+  if(tip){
+    el.appendChild(buildStatLabelRow(label, tip, 'aqsLabel'));
+  } else {
+    var lbl = document.createElement('div');
+    lbl.className = 'aqsLabel';
+    lbl.textContent = label;
+    el.appendChild(lbl);
+  }
+  var valueEl = document.createElement('div');
+  valueEl.className = 'aqsValue';
+  valueEl.innerHTML = value;
+  el.appendChild(valueEl);
+  if(sub){
+    var subEl = document.createElement('div');
+    subEl.className = 'aqsSub';
+    subEl.textContent = sub;
+    el.appendChild(subEl);
+  }
   return el;
 }
 // Strongest-topic / weakest-topic cards -- both read straight off
@@ -10659,8 +11177,13 @@ function buildAllTimeTopicCard(tab, kind, ranking){
   var card = document.createElement('div');
   card.className = 'allTimeTopicCard ' + kind;
   var title = kind==='strongest' ? 'Strongest Topic' : 'Weakest Topic';
+  var tip = 'Ranked by plain accuracy, only among topics with at least '+ALLTIME_TOPIC_MIN_ATTEMPTS+' questions answered — too few to be a fair ranking otherwise. Click the card to filter the chart above to just this topic.';
+  card.appendChild(buildStatLabelRow(title, tip, 'atcLabel'));
   if(!ranking){
-    card.innerHTML = '<div class="atcLabel">'+title+'</div><div class="atcEmpty">Answer a few more questions to see this.</div>';
+    var empty = document.createElement('div');
+    empty.className = 'atcEmpty';
+    empty.textContent = 'Answer a few more questions to see this.';
+    card.appendChild(empty);
     return card;
   }
   var isActive = tab.chartFilterTopic===ranking.topic;
@@ -10668,11 +11191,18 @@ function buildAllTimeTopicCard(tab, kind, ranking){
   // Single column, top to bottom: heading, topic name (the headline
   // answer to "which topic is this" -- wraps up to 2 lines, see .atcName),
   // the bar, then the numbers behind it.
-  card.innerHTML =
-    '<div class="atcLabel">'+title+'</div>'+
-    '<div class="atcName">'+escapeHtml(ranking.topic)+'</div>'+
-    '<div class="atcBarTrack"><div class="atcBarFill" style="width:'+ranking.pct+'%"></div></div>'+
-    '<div class="atcMeta">'+ranking.pct+'% · '+ranking.count+' question'+(ranking.count===1?'':'s')+'</div>';
+  var name = document.createElement('div');
+  name.className = 'atcName';
+  name.textContent = ranking.topic;
+  card.appendChild(name);
+  var barTrack = document.createElement('div');
+  barTrack.className = 'atcBarTrack';
+  barTrack.innerHTML = '<div class="atcBarFill" style="width:'+ranking.pct+'%"></div>';
+  card.appendChild(barTrack);
+  var meta = document.createElement('div');
+  meta.className = 'atcMeta';
+  meta.textContent = ranking.pct+'% · '+ranking.count+' question'+(ranking.count===1?'':'s');
+  card.appendChild(meta);
   card.addEventListener('click', function(){
     tab.chartFilterTopic = isActive ? null : ranking.topic;
     renderActiveStatTabPanel();
@@ -10687,10 +11217,7 @@ function buildAllTimeTopicCard(tab, kind, ranking){
 function buildAllTimeTypeCard(tab){
   var card = document.createElement('div');
   card.className = 'allTimeTypeCard';
-  var lbl = document.createElement('div');
-  lbl.className = 'atcLabel';
-  lbl.textContent = 'Accuracy by Question Type';
-  card.appendChild(lbl);
+  card.appendChild(buildStatLabelRow('Accuracy by Question Type', 'Your accuracy on each guessable question type — Product, Reactant, and Reagents & Conditions — across every attempt you’ve ever logged. Click a row to filter the chart above to just that type.', 'atcLabel'));
   ['product','reactant','reagent'].forEach(function(t){
     var rows = attemptLog.filter(function(a){ return a.guessMode===t; });
     var acc = accuracyStats(rows);
@@ -11152,35 +11679,45 @@ var questionTypes = { product:true, reactant:true, reagent:true, distinguish:tru
 var includeInorganicByproducts = false;
 var showReactionName = true;
 var showAutocompleteSuggestions = true;
+function buildSettingsSnapshot(){
+  return {
+    selected: selected, mode: mode, questionTypes: questionTypes,
+    includeInorganicByproducts: includeInorganicByproducts, showReactionName: showReactionName,
+    showAutocompleteSuggestions: showAutocompleteSuggestions
+  };
+}
 function saveSettings(){
   try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
-      selected: selected, mode: mode, questionTypes: questionTypes,
-      includeInorganicByproducts: includeInorganicByproducts, showReactionName: showReactionName,
-      showAutocompleteSuggestions: showAutocompleteSuggestions
-    }));
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(buildSettingsSnapshot()));
   } catch(e){ /* storage unavailable -- settings just won't persist this session */ }
+  pushToCloudSync();
+}
+// Split out of loadSettings so cloud sync (see window.__onFirebaseReady)
+// can apply a Firestore-fetched settings object through the exact same
+// validation path a localStorage read already goes through, instead of
+// a second hand-rolled copy of these same field checks.
+function applySettingsSnapshot(parsed){
+  if(!parsed) return;
+  if(parsed.selected){
+    Object.keys(selected).forEach(function(id){
+      if(parsed.selected.hasOwnProperty(id)) selected[id] = !!parsed.selected[id];
+    });
+  }
+  if(parsed.mode==='A' || parsed.mode==='B') mode = parsed.mode;
+  if(parsed.questionTypes){
+    ['product','reactant','reagent','distinguish'].forEach(function(k){
+      if(typeof parsed.questionTypes[k]==='boolean') questionTypes[k] = parsed.questionTypes[k];
+    });
+  }
+  if(typeof parsed.includeInorganicByproducts==='boolean') includeInorganicByproducts = parsed.includeInorganicByproducts;
+  if(typeof parsed.showReactionName==='boolean') showReactionName = parsed.showReactionName;
+  if(typeof parsed.showAutocompleteSuggestions==='boolean') showAutocompleteSuggestions = parsed.showAutocompleteSuggestions;
 }
 function loadSettings(){
   try {
     var raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if(!raw) return;
-    var parsed = JSON.parse(raw);
-    if(!parsed) return;
-    if(parsed.selected){
-      Object.keys(selected).forEach(function(id){
-        if(parsed.selected.hasOwnProperty(id)) selected[id] = !!parsed.selected[id];
-      });
-    }
-    if(parsed.mode==='A' || parsed.mode==='B') mode = parsed.mode;
-    if(parsed.questionTypes){
-      ['product','reactant','reagent','distinguish'].forEach(function(k){
-        if(typeof parsed.questionTypes[k]==='boolean') questionTypes[k] = parsed.questionTypes[k];
-      });
-    }
-    if(typeof parsed.includeInorganicByproducts==='boolean') includeInorganicByproducts = parsed.includeInorganicByproducts;
-    if(typeof parsed.showReactionName==='boolean') showReactionName = parsed.showReactionName;
-    if(typeof parsed.showAutocompleteSuggestions==='boolean') showAutocompleteSuggestions = parsed.showAutocompleteSuggestions;
+    applySettingsSnapshot(JSON.parse(raw));
   } catch(e){ /* corrupt or unavailable -- just start with defaults */ }
 }
 
@@ -11951,6 +12488,19 @@ document.getElementById('topicsPane').addEventListener('change', function(){
 });
 function switchPane(name){
   if(!PANE_EL[name] || name===activePane) return;
+  // Mistakes mode only ever exists layered on the Play pane (see
+  // mistakesModeActive's own comment) -- previously this flag stayed true
+  // if you navigated straight from Mistakes to Topics/Stats/Feedback
+  // (nothing cleared it except navPlayBtn's own click handler, which only
+  // runs when heading back TO Play), so runPaneTutorial's own dispatch
+  // (and renderModeIndicator, and anything else that reads this flag)
+  // kept treating "somewhere else entirely" as "still reviewing mistakes"
+  // -- the concrete bug being fixed here was the "?" button showing the
+  // Mistakes tutorial on, say, the Stats pane. Not the full
+  // exitMistakesMode() -- that also fires a real nextQuestion() and writes
+  // Play's own pane-info text, both wasted here since this function is
+  // about to overwrite the pane info for wherever we're ACTUALLY headed.
+  if(name!=='play' && mistakesModeActive) mistakesModeActive = false;
   // A rapid click (or click-drag) on nav/tag/reveal text elsewhere in the
   // app can leave the browser's own native text selection sitting on
   // whatever was under the cursor -- normally invisible once its pane
@@ -12080,6 +12630,540 @@ document.getElementById('sidebarToggleBtn').addEventListener('click', function()
   setSidebarCollapsed(!document.body.classList.contains('sidebarCollapsed'));
 });
 document.getElementById('sideNavScrim').addEventListener('click', function(){ setSidebarCollapsed(true); });
+
+// ---- generic interactive tutorial engine ----
+// Replaces the old single whole-app tour: any pane (or the molecule
+// builder, via MB_TUTORIAL_STEPS elsewhere) hands this a `steps` array and
+// gets a spotlighted, click-through walkthrough for free. A step is
+// { title, body, target: fn()=>Element|null, waitForClick, actionHint,
+// onEnter }. `target` is a function (not an element) because the element it
+// points at often doesn't exist yet -- it's resolved fresh every time the
+// step is entered or the window resizes. `waitForClick` hides the engine's
+// own Next button and instead adds a REAL click listener to the target,
+// letting the page's own handler for that element fire first (so real app
+// state actually changes), then advancing second -- this is what makes the
+// tour "interactive" rather than just narrated.
+var tutorialState = null; // {steps, index, onFinish, cleanupClick}
+function tutorialResolveTarget(step){
+  if(!step || !step.target) return null;
+  try { return step.target(); } catch(e){ return null; }
+}
+// A target that's currently hidden (display:none, or not yet revealed --
+// a real element with a zero-size rect) OR occluded by something else on
+// top of it (the molecule builder modal, most often -- Back/forward
+// paging can revisit a step whose target lives on the underlying Play
+// pane while the builder is still open over it) isn't something to
+// spotlight or gate a click on right now: spotlighting it anyway used to
+// draw the ring at that real screen position regardless of what's
+// actually ON screen there -- since the modal sits on top, that position
+// now belongs to a DIFFERENT real element (whatever's in the builder at
+// that same spot), so the ring appeared to be circling the wrong thing
+// entirely. elementFromPoint at the target's own center is what actually
+// answers "is this the thing really there right now" -- centralized here
+// so the ring, the hint-vs-Next decision, and the click-listener arming
+// all agree on it.
+function tutorialResolveVisibleTarget(step){
+  var target = tutorialResolveTarget(step);
+  if(!target) return null;
+  var r = target.getBoundingClientRect();
+  if(r.width===0 || r.height===0) return null;
+  var topEl = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+  // elementFromPoint can legitimately come back empty (right at a
+  // viewport edge, mid-layout, etc.) without that meaning anything is
+  // actually blocking the target -- fails OPEN here (trust the target
+  // exists) rather than closed, so an inconclusive check can never hide a
+  // perfectly clickable element the way a wrongly-confident "occluded"
+  // would.
+  if(!topEl) return target;
+  // A hit on the tutorial's OWN card/overlay doesn't count as occlusion --
+  // tutorialRenderCard (which needs this same visibility check, to decide
+  // hint-vs-Next) runs BEFORE tutorialReposition on every step change, so
+  // the card is still sitting at the PREVIOUS step's position for that one
+  // check; if that stale position happens to overlap this step's new
+  // target, elementFromPoint would hit the card itself, not the target --
+  // a false "occluded" that had nothing to do with any real UI actually
+  // blocking it. tutorialPlaceCard's own job is placing the card BESIDE
+  // the target once repositioning does run, never over it, so this is
+  // never masking a genuine self-overlap either way.
+  if(topEl.closest && topEl.closest('.tutorialCard, #tutorialOverlay')) return target;
+  if(target!==topEl && !target.contains(topEl) && !topEl.contains(target)) return null;
+  return target;
+}
+// getBoundingClientRect() reports POST-scale visual px (body carries the
+// site-wide --ui-scale transform -- see its own CSS and switchPane's
+// identical correction), but #tutorialSpotlight/.tutorialCard are
+// position:fixed descendants of that same scaled body, so any length
+// written back onto them as a plain CSS value gets shrunk by --ui-scale a
+// SECOND time unless divided back out first -- same trick used everywhere
+// else this app writes a measured rect back as a style (see switchPane and
+// switchAllTimePage's identical comments).
+function tutorialUiScale(){
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+}
+function tutorialPlaceCard(targetRect){
+  var card = document.getElementById('tutorialCard');
+  var margin = 16;
+  var uiScale = tutorialUiScale();
+  var vw = window.innerWidth / uiScale, vh = window.innerHeight / uiScale;
+  if(!targetRect){
+    card.style.transform = 'translate(-50%, -50%)';
+    card.style.top = '50%'; card.style.left = '50%';
+    return;
+  }
+  card.style.transform = 'none';
+  var cw = card.offsetWidth, ch = card.offsetHeight;
+  var t = { top: targetRect.top/uiScale, bottom: targetRect.bottom/uiScale, left: targetRect.left/uiScale, right: targetRect.right/uiScale };
+  var candidates = [
+    { top: t.bottom+margin, left: t.left, fits: t.bottom+margin+ch <= vh },
+    { top: t.top-ch-margin, left: t.left, fits: t.top-ch-margin >= 0 },
+    { top: t.top, left: t.right+margin, fits: t.right+margin+cw <= vw },
+    { top: t.top, left: t.left-cw-margin, fits: t.left-cw-margin >= 0 }
+  ];
+  var chosen = candidates.find(function(c){ return c.fits; }) || candidates[0];
+  var top = Math.max(margin, Math.min(chosen.top, vh-ch-margin));
+  var left = Math.max(margin, Math.min(chosen.left, vw-cw-margin));
+  card.style.top = top+'px'; card.style.left = left+'px';
+}
+function tutorialReposition(){
+  if(!tutorialState) return;
+  var step = tutorialState.steps[tutorialState.index];
+  var spotlight = document.getElementById('tutorialSpotlight');
+  var target = tutorialResolveVisibleTarget(step);
+  if(target){
+    var r = target.getBoundingClientRect();
+    var uiScale = tutorialUiScale();
+    var pad = 4;
+    spotlight.classList.add('visible');
+    spotlight.style.top = (r.top/uiScale-pad)+'px';
+    spotlight.style.left = (r.left/uiScale-pad)+'px';
+    spotlight.style.width = (r.width/uiScale+pad*2)+'px';
+    spotlight.style.height = (r.height/uiScale+pad*2)+'px';
+    tutorialPlaceCard(r);
+  } else {
+    spotlight.classList.remove('visible');
+    tutorialPlaceCard(null);
+  }
+}
+// isNewGround -- true only the FIRST time this run ever reaches this
+// index; false when revisiting a step already passed (via Back, or paging
+// forward again through ground already covered). Only new ground gates on
+// a real click; anything already-visited just shows a plain Next. Without
+// this, Back into a waitForClick step whose target has since become
+// unreachable -- e.g. "press Build Molecule" once the molecule builder
+// modal it opens is already covering that button -- left no way forward
+// short of Skip. Computed once per tutorialEnterStep call and threaded
+// through explicitly (tutorialRenderCard has no "before this step" state
+// of its own to recompute it from).
+function tutorialRenderCard(isNewGround){
+  var step = tutorialState.steps[tutorialState.index];
+  document.getElementById('tutorialStep').innerHTML =
+    '<div class="mb-tutorialStepTitle">'+step.title+'</div><div class="mb-tutorialStepBody">'+step.body+'</div>';
+  var total = tutorialState.steps.length;
+  var dotsEl = document.getElementById('tutorialDots');
+  if(total<=12){
+    dotsEl.classList.remove('textCount');
+    dotsEl.innerHTML = tutorialState.steps.map(function(_, i){
+      return '<span class="mb-tutorialDot'+(i===tutorialState.index?' active':'')+'"></span>';
+    }).join('');
+  } else {
+    dotsEl.classList.add('textCount');
+    dotsEl.textContent = (tutorialState.index+1)+' / '+total;
+  }
+  document.getElementById('tutorialBack').classList.toggle('hidden', tutorialState.index===0);
+  var hint = document.getElementById('tutorialActionHint');
+  var nav = document.getElementById('tutorialNav');
+  if(step.waitForClick && isNewGround && tutorialResolveVisibleTarget(step)){
+    nav.classList.add('hidden');
+    hint.classList.remove('hidden');
+    document.getElementById('tutorialActionHintText').textContent = step.actionHint || 'Click the highlighted element to continue';
+  } else {
+    nav.classList.remove('hidden');
+    hint.classList.add('hidden');
+    document.getElementById('tutorialNext').textContent = tutorialState.index===tutorialState.steps.length-1 ? 'Got it' : 'Next';
+  }
+}
+function tutorialEnterStep(i){
+  if(tutorialState.cleanupClick){ tutorialState.cleanupClick(); tutorialState.cleanupClick = null; }
+  var isNewGround = i >= tutorialState.maxIndexReached;
+  tutorialState.maxIndexReached = Math.max(tutorialState.maxIndexReached, i);
+  tutorialState.index = i;
+  var step = tutorialState.steps[i];
+  if(step.onEnter){ try{ step.onEnter(); } catch(e){ } }
+  tutorialRenderCard(isNewGround);
+  tutorialReposition();
+  if(step.waitForClick && isNewGround){
+    var target = tutorialResolveVisibleTarget(step);
+    if(target){
+      var handler = function(){ tutorialAdvance(); };
+      target.addEventListener('click', handler);
+      tutorialState.cleanupClick = function(){ target.removeEventListener('click', handler); };
+    } else {
+      document.getElementById('tutorialNav').classList.remove('hidden');
+      document.getElementById('tutorialActionHint').classList.add('hidden');
+    }
+  }
+}
+function tutorialAdvance(){
+  if(!tutorialState) return;
+  if(tutorialState.index < tutorialState.steps.length-1) tutorialEnterStep(tutorialState.index+1);
+  else tutorialFinish();
+}
+function tutorialFinish(){
+  if(!tutorialState) return;
+  if(tutorialState.cleanupClick) tutorialState.cleanupClick();
+  var onFinish = tutorialState.onFinish;
+  tutorialState = null;
+  document.getElementById('tutorialOverlay').classList.remove('active');
+  window.removeEventListener('resize', tutorialReposition);
+  if(onFinish){ try{ onFinish(); } catch(e){ } }
+}
+document.getElementById('tutorialSkip').addEventListener('click', tutorialFinish);
+document.getElementById('tutorialBack').addEventListener('click', function(){
+  if(tutorialState && tutorialState.index>0) tutorialEnterStep(tutorialState.index-1);
+});
+document.getElementById('tutorialNext').addEventListener('click', tutorialAdvance);
+window.__runTutorial = function(steps, onFinish){
+  if(tutorialState && tutorialState.cleanupClick) tutorialState.cleanupClick();
+  tutorialState = { steps: steps, index: 0, onFinish: onFinish || null, cleanupClick: null, maxIndexReached: -1 };
+  document.getElementById('tutorialOverlay').classList.add('active');
+  window.addEventListener('resize', tutorialReposition);
+  tutorialEnterStep(0);
+};
+
+// ---- per-pane tutorial content ----
+// Fixed, deterministic demo reactions (never the random generator) so the
+// same walkthrough is reproducible every time -- ethanol (generateAlcohol
+// with a single 2-carbon arm) covers all 3 POOL-driven guess modes, and the
+// first 3 members of the halogenoalkane distinguishing-test family cover
+// the 4th.
+function startTutorialQuestion(specId, guessMode, molFn, reactantFn){
+  var spec = POOL.find(function(p){ return p.id===specId; });
+  if(!spec) return null;
+  var mol = molFn();
+  var reactant = reactantFn ? reactantFn() : null;
+  var result = spec.run(mol, reactant);
+  var visual = window.__renderStaticMolecule(mol);
+  var reactantVisual = reactant ? window.__renderStaticMolecule(reactant.mol) : null;
+  showPracticeMode('reaction');
+  current = { spec:spec, mol:mol, difficulty:3, result:result, visual:visual, reactant:reactant, reactantVisual:reactantVisual, guessMode: guessMode };
+  showQuestion();
+  return current;
+}
+function startTutorialDistinguishSet(){
+  var family = DISTINGUISH_FAMILIES[0];
+  var group = family.groups[0];
+  var members = group.members.slice(0,3);
+  var len = 2;
+  var entries = members.map(function(m){
+    return { mol: m.gen(len), results: m.results, explanation: m.explanation };
+  });
+  entries.forEach(function(e){ e.visual = window.__renderStaticMolecule(e.mol); });
+  distinguishCurrent = { family:family, tests:group.tests, entries:entries };
+  distinguishRevealed = false;
+  showPracticeMode('distinguish');
+  renderDistinguishSet();
+}
+// The 3 "how did I do" beats (product/reactant/reagent) all point at the
+// same #answerBlock and say almost the same thing regardless of the actual
+// verdict -- a shared factory instead of 3 near-duplicate literals, since
+// this always runs AFTER a real Submit now (see PLAY_TUTORIAL_STEPS' own
+// comment on why there's no more seeded fake answer to react to).
+// includeReportMention only fires once (the first, product-mode occurrence)
+// -- repeating the same "you can report a bad question" aside 3 times in
+// one tour was exactly the kind of redundancy this rewrite was trying to
+// cut.
+function tutorialExplainResultStep(title, includeReportMention){
+  var body = 'Green = right. Red = wrong.<br>Missed one? Look for the “ghost” card.';
+  if(includeReportMention) body += '<br><br>Question seems off? Tap “Mistake in the question?”';
+  return { title: title, body: body, target: function(){ return document.getElementById('answerBlock'); } };
+}
+// The "How grading works" step's own two mini "screenshots" -- a real
+// molecule snapshot (generateAlcohol([1]), same one for both, its own
+// molecule isn't the point) paired with the exact same .verdictBadge
+// classes the live UI uses, one styled correct/solid, one wrong/dashed
+// (see .tutorialGradingRow's own CSS), each captioned in a couple of
+// words underneath. Built once, here, rather than per-render -- nothing
+// about it changes between viewings, so there's no need for an onEnter.
+function tutorialGradingPreviewHtml(){
+  // [2] (not [1]) -- a bare methanol shape is just one short line at this
+  // size, easy to mistake for a rendering glitch; the same zigzag chain
+  // the rest of this tour already uses reads clearly as "a molecule" even
+  // this small.
+  var mol = window.__renderStaticMolecule(generateAlcohol([2]));
+  var svg = mol ? mol.svg : '';
+  return '<div class="tutorialGradingPreview">'+
+    '<div class="tutorialGradingRow"><div class="tutorialGradingMol">'+svg+'</div><span class="verdictBadge verdictGood">✓ Correct</span></div>'+
+    '<div class="tutorialGradingCaption">Right answer</div>'+
+    '<div class="tutorialGradingRow wrong"><div class="tutorialGradingMol">'+svg+'</div><span class="verdictBadge verdictBad">✗ Not quite</span></div>'+
+    '<div class="tutorialGradingCaption wrong">Wrong answer</div>'+
+  '</div>';
+}
+// Runs whether the Play tour finished naturally or was skipped partway --
+// either way, whatever demo question it left behind needs replacing with a
+// genuine one before the student is handed control back, and the molecule
+// builder (possibly still open and lock*ed* mid "try building something",
+// see the tour's own step below) needs releasing so Skip can never strand
+// someone inside a builder they can't close.
+function tutorialRestorePlayState(){
+  window.__mbCloseLocked = false;
+  var mbOverlay = document.getElementById('mbOverlay');
+  if(mbOverlay) mbOverlay.classList.remove('open');
+  if(mistakesModeActive) loadNextMistake();
+  else { showPracticeMode('reaction'); nextQuestion(); }
+}
+
+// One flat array, not a nested/resumable tutorial -- the "play builder
+// tutorial" section (see the "try building something" step below) is
+// literally window.__MB_TUTORIAL_STEPS spliced straight in via .concat,
+// reusing the exact same step objects the molecule builder's own "?"
+// button runs (see MB_TUTORIAL_STEPS in the molecule-builder script
+// block). Its own last step (waitForClick on Add to answer) is what
+// naturally carries this tour on to "How grading works" once a real
+// molecule has actually been submitted -- no separate resume/callback
+// machinery needed, since it's all one tutorialState under the hood.
+var PLAY_TUTORIAL_STEPS = [
+  { title: 'Welcome!', body: 'Guess reactions.<br>New molecules, every time.',
+    // Spotlights whatever question is already on screen a moment from now --
+    // if that happened to be a Distinguishing Test (Play's 4th question
+    // type, its own separate panel), swap to a real reaction question first
+    // so #equationRow/#buildControlsRow actually exist to point at.
+    onEnter: function(){ if(currentPracticeMode!=='reaction'){ showPracticeMode('reaction'); generateQuestion(); } } },
+  { title: 'Read the question', body: 'Figure out the <b>product</b> of this reaction.',
+    target: function(){ return document.getElementById('equationRow'); },
+    onEnter: function(){ startTutorialQuestion('oxidationPrimaryAlcoholToCarboxylicAcid', 'product', function(){ return generateAlcohol([2]); }); } },
+  { title: 'Build it', body: 'Press <b>Build Molecule</b> to answer.',
+    target: function(){ return document.getElementById('buildBtn'); }, waitForClick: true, actionHint: 'Click Build Molecule',
+    // Marking the builder's OWN tutorial seen here, just before the real
+    // click, is what stops window.__openMoleculeBuilder's first-open auto-
+    // trigger from ALSO firing an instant later and clobbering this very
+    // tutorial's state -- see its own comment.
+    onEnter: function(){ try{ localStorage.setItem(window.__MB_TUTORIAL_STORAGE_KEY, '1'); }catch(e){} } },
+  { title: 'Your sandbox', body: 'Build any molecule you like.<br>Give it a try!',
+    // Locks the molecule builder's own close (X) button so a first-timer
+    // can't back out without actually submitting one -- see
+    // window.__mbCloseLocked's own comment in the molecule-builder script.
+    onEnter: function(){ window.__mbCloseLocked = true; } }
+].concat(window.__MB_TUTORIAL_STEPS).concat([
+  // Submit comes IMMEDIATELY after Add to answer -- grading is only
+  // explained once the student has actually submitted something real, not
+  // as a hypothetical preview beforehand (see tutorialGradingPreviewHtml's
+  // own step, right after this one). Unlocking the builder's close button
+  // here too, now that the guided "you must submit something" segment is
+  // over (the builder is already closed for real by this point -- Add to
+  // answer's own click handler always closes it -- this is just the
+  // matching release for the lock above).
+  { title: 'Submit', body: 'Press <b>Submit</b> to check your answer.',
+    target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Click Submit',
+    onEnter: function(){ window.__mbCloseLocked = false; } },
+  { title: 'Grading', body: tutorialGradingPreviewHtml(),
+    target: function(){ return document.getElementById('answerBlock'); } },
+  tutorialExplainResultStep('Result', true),
+  { title: 'Guess the reactant', body: 'You can also be asked for the <b>starting material</b> instead.<br>Build it the same way, then submit.',
+    target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Build a molecule, then press Submit',
+    onEnter: function(){ startTutorialQuestion('dehydrationOfAlcohols', 'reactant', function(){ return generateAlcohol([2]); }); } },
+  tutorialExplainResultStep('Result', false),
+  { title: 'Reagents & conditions', body: 'Sometimes you’ll guess the <b>reagents and conditions</b> instead.<br>Type one below.',
+    target: function(){ return document.getElementById('tagTextInput'); },
+    onEnter: function(){ startTutorialQuestion('alcoholToBromoalkane', 'reagent', function(){ return generateAlcohol([2]); }); } },
+  { title: 'Your turn', body: 'Type a reagent, then press <b>Submit</b>.',
+    target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Type a reagent/condition, then press Submit' },
+  tutorialExplainResultStep('Result', false),
+  { title: 'Distinguishing tests', body: 'The last question type: describe a test that tells similar compounds apart.',
+    target: function(){ return document.getElementById('distinguishRevealBtn'); }, waitForClick: true, actionHint: 'Click Reveal answers',
+    onEnter: function(){ startTutorialDistinguishSet(); } },
+  { title: 'All set!', body: 'That’s everything!<br>Press <b>?</b> anytime you need this again.',
+    target: function(){ return document.getElementById('tutorialHelpBtn'); } }
+]);
+
+var TOPICS_TUTORIAL_STEPS = [
+  { title: 'Question types', body: 'Tick which of the 4 question types should come up — Product, Reactant, Reagents & Conditions, and Distinguishing Test. At least one needs to stay checked.',
+    target: function(){ return document.querySelector('.qtypeChecks'); } },
+  { title: 'Practice mode', body: 'Turning this on weights questions toward the reactions you’ve gotten wrong most often, instead of picking evenly at random.',
+    target: function(){ return document.getElementById('practiceModeCb'); } },
+  { title: 'Topics', body: 'Switch entire chapters, or individual reactions within them, on or off — only enabled ones are drawn from.',
+    target: function(){ return document.getElementById('pickerBlock'); } },
+  { title: 'Display options', body: 'These control whether the reaction name is shown up front, whether inorganic byproducts (H2O, HCl, CO2) need to be added to condensation answers, and whether reagent typing gets autocomplete suggestions.',
+    target: function(){ return document.querySelector('.topicsCol'); } }
+];
+
+var STATS_TUTORIAL_STEPS = [
+  { title: 'Your stats', body: 'Tracks accuracy per reaction, broken out by topic — use the tabs to switch views.',
+    target: function(){ return document.getElementById('statTabStrip'); } },
+  { title: 'Activity', body: 'Shows which days you’ve practised on, going back over time. Click the calendar icon to jump straight to a date.',
+    target: function(){ return document.getElementById('activityGridWrap'); } },
+  { title: 'Saved locally', body: 'Everything here is saved right in this browser — it stays on this device only unless you sign in to sync.',
+    target: function(){ return document.getElementById('accountRow'); } }
+];
+
+var FEEDBACK_TUTORIAL_STEPS = [
+  { title: 'Feedback', body: 'Spot a mistake in a question, or have a suggestion? Describe it here.',
+    target: function(){ return document.getElementById('feedbackMessage'); } },
+  { title: 'Context is automatic', body: 'Reporting straight from a question (via its own "Mistake in the question?" link) attaches that question’s details automatically — no need to describe which one you mean.',
+    target: function(){ return document.getElementById('feedbackContextBox'); } },
+  { title: 'Optional email', body: 'Leave your email only if you’d like a reply — it’s never required.',
+    target: function(){ return document.getElementById('feedbackContactEmail'); } }
+];
+
+var MISTAKES_TUTORIAL_STEPS = [
+  { title: 'Reviewing mistakes', body: 'Every question you’ve gotten wrong lands here automatically. Answer one correctly and it drops off this list for good — nothing else about how you answer changes.',
+    target: function(){ return document.getElementById('equationRow'); } },
+  { title: 'Leaving Mistakes', body: 'Click <b>Exit Mistakes</b> any time to go back to regular, freshly generated questions.',
+    target: function(){ return document.getElementById('exitMistakesBtn'); } }
+];
+
+// Dispatches to whichever pane's own tutorial applies to where the student
+// currently is -- Mistakes is checked first since it's a mode switch on
+// #playPane rather than a distinct entry in activePane (see mistakesModeActive's
+// own comment).
+function runPaneTutorial(){
+  if(mistakesModeActive){ window.__runTutorial(MISTAKES_TUTORIAL_STEPS); return; }
+  if(activePane==='play'){ window.__runTutorial(PLAY_TUTORIAL_STEPS, tutorialRestorePlayState); return; }
+  if(activePane==='topics'){ window.__runTutorial(TOPICS_TUTORIAL_STEPS); return; }
+  if(activePane==='stats'){ window.__runTutorial(STATS_TUTORIAL_STEPS); return; }
+  if(activePane==='feedback'){ window.__runTutorial(FEEDBACK_TUTORIAL_STEPS); return; }
+}
+document.getElementById('tutorialHelpBtn').addEventListener('click', runPaneTutorial);
+
+// Shown automatically the FIRST time the app is ever opened on this device,
+// exactly the same "once, then only on request" pattern the molecule
+// builder's own tutorial already uses (see MB_TUTORIAL_STORAGE_KEY) -- the
+// intro is identical to the Play pane's own tutorial, per spec.
+var TUTORIAL_INTRO_SEEN_KEY = 'h2ChemDrill.tutorialIntroSeen.v1';
+(function(){
+  var seen = false;
+  try{ seen = localStorage.getItem(TUTORIAL_INTRO_SEEN_KEY)==='1'; }catch(e){ /* storage unavailable -- treat as never seen */ }
+  if(!seen){
+    try{ localStorage.setItem(TUTORIAL_INTRO_SEEN_KEY, '1'); }catch(e){ /* storage unavailable -- just won't persist across sessions */ }
+    window.__runTutorial(PLAY_TUTORIAL_STEPS, tutorialRestorePlayState);
+  }
+})();
+
+// ---- optional cloud sync (Firebase) ----
+// localStorage stays the source of truth for THIS device and keeps
+// working exactly as before with no sign-in at all -- this layers an
+// opt-in sync on top, it never replaces it. The actual Firebase SDK
+// calls (auth, Firestore reads/writes) live in a separate <script
+// type="module"> block near the end of the body, exposed here as
+// window.__fb -- kept as a thin wrapper with no app-specific logic of
+// its own, so all the merge/business rules below live in one place
+// with direct access to `stats`/`attemptLog`/`mistakes`/settings,
+// instead of being split across the module boundary. window.__fb loads
+// asynchronously (ES modules are deferred) and might never load at all
+// (offline, ad blocker, the config placeholder never filled in) --
+// every entry point here has to stay a no-op until window.__onFirebaseReady
+// actually fires, and the sign-in button starts hidden (see .accountRow)
+// so a page that never gets that far just looks like the app always did.
+var cloudReady = false;
+var cloudUser = null; // {uid, email} while signed in, else null
+function pushToCloudSync(){
+  if(!cloudReady || !cloudUser || !window.__fb) return;
+  window.__fb.saveDoc(cloudUser.uid, {
+    stats: stats, attemptLog: attemptLog, mistakes: mistakes, settings: buildSettingsSnapshot(), updatedAt: Date.now()
+  }).catch(function(){ /* offline or transient -- localStorage already has this; the next successful sync catches up */ });
+}
+// Runs every time sign-in resolves (including a page reload while
+// already signed in, not just a fresh click) -- deliberately idempotent
+// rather than a one-time "first sign-in only" migration, so it's safe
+// to just always merge-then-push instead of needing a flag to track
+// whether this device has reconciled before.
+function mergeCloudIntoLocal(cloud){
+  if(!cloud) return; // no cloud doc yet for this account -- nothing to merge, local stays authoritative and gets pushed up as-is
+  // stats: per reaction, take whichever side has seen MORE -- two
+  // independent counters can't be merged exactly, but taking the max of
+  // each field can never make a real attempt disappear, which is the
+  // one property that actually matters here.
+  if(cloud.stats){
+    Object.keys(cloud.stats).forEach(function(id){
+      if(!stats[id]) return; // a reaction this build no longer has -- skip rather than resurrect it
+      var c = cloud.stats[id];
+      stats[id].attempts = Math.max(stats[id].attempts||0, Number(c.attempts)||0);
+      stats[id].wrong = Math.max(stats[id].wrong||0, Number(c.wrong)||0);
+    });
+  }
+  // attemptLog: union by its own timestamp (unique per record), then
+  // re-sort and re-cap exactly like a normal local append would.
+  if(Array.isArray(cloud.attemptLog)){
+    var seenTs = new Set(attemptLog.map(function(a){ return a.ts; }));
+    cloud.attemptLog.forEach(function(a){
+      if(a && typeof a.ts==='number' && typeof a.day==='string' && typeof a.specId==='string' && !seenTs.has(a.ts)){
+        attemptLog.push(a); seenTs.add(a.ts);
+      }
+    });
+    attemptLog.sort(function(a,b){ return a.ts-b.ts; });
+    if(attemptLog.length>ATTEMPT_LOG_CAP) attemptLog = attemptLog.slice(attemptLog.length-ATTEMPT_LOG_CAP);
+  }
+  // mistakes: union by id (each entry already carries its own unique id,
+  // see addMistake) -- order doesn't matter the way attemptLog's does.
+  if(Array.isArray(cloud.mistakes)){
+    var seenIds = new Set(mistakes.map(function(m){ return m.id; }));
+    cloud.mistakes.forEach(function(m){
+      if(m && typeof m.id==='string' && typeof m.specId==='string' && m.mol && typeof m.guessMode==='string' && !seenIds.has(m.id)){
+        mistakes.push(m); seenIds.add(m.id);
+      }
+    });
+    if(mistakes.length>MISTAKES_CAP) mistakes = mistakes.slice(mistakes.length-MISTAKES_CAP);
+  }
+  // settings: cloud wins outright (not merged field-by-field) -- these
+  // are preferences, not accumulated progress, so "whatever I last set,
+  // anywhere" is the more useful default than reconciling both sides.
+  if(cloud.settings) applySettingsSnapshot(cloud.settings);
+}
+function renderAccountRow(){
+  var row = document.getElementById('accountRow');
+  row.classList.toggle('ready', cloudReady);
+  document.getElementById('accountSignInBtn').classList.toggle('hidden', !!cloudUser);
+  document.getElementById('accountSignedIn').classList.toggle('hidden', !cloudUser);
+  if(cloudUser) document.getElementById('accountEmail').textContent = cloudUser.email || cloudUser.uid;
+}
+// One small dot instead of a whole extra text line (see .accountStatusDot's
+// own CSS comment) -- `text` still carries the full message, just as this
+// dot's title (a native hover tooltip) instead of always-visible text.
+function setAccountStatus(text, kind){
+  var dot = document.getElementById('accountStatusDot');
+  if(!dot) return;
+  dot.className = 'accountStatusDot' + (kind ? ' '+kind : '');
+  dot.title = text || '';
+}
+document.getElementById('accountSignInBtn').addEventListener('click', function(){
+  if(!cloudReady || !window.__fb) return;
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  window.__fb.signIn().catch(function(){ btn.textContent = 'Sign-in failed — try again'; })
+    .then(function(){
+      btn.disabled = false;
+      if(!cloudUser) btn.textContent = 'Sign in with Google to sync';
+    });
+});
+document.getElementById('accountSignOutBtn').addEventListener('click', function(){
+  if(!cloudReady || !window.__fb) return;
+  window.__fb.signOut();
+});
+// Called once by the Firebase module (see its own final line) once the
+// SDK has actually loaded and initialised -- defined here, synchronously,
+// well before that module (a <script type="module">) gets a chance to
+// run, since module scripts are always deferred until after every plain
+// synchronous <script> on the page, regardless of source order. Safe to
+// rely on that ordering rather than polling for window.__fb to appear.
+window.__onFirebaseReady = function(){
+  cloudReady = true;
+  window.__fb.onAuthChange(function(user){
+    cloudUser = user;
+    renderAccountRow();
+    if(!user){ setAccountStatus(''); return; }
+    setAccountStatus('Syncing…');
+    window.__fb.fetchDoc(user.uid).then(function(cloudData){
+      mergeCloudIntoLocal(cloudData);
+      // renderStats() already calls saveStats() itself (see its own
+      // body) -- calling it here instead of a separate saveStats() both
+      // re-renders the stats table if it's the visible pane AND pushes
+      // the merged result back to Firestore (every save* function does,
+      // see pushToCloudSync), without double-saving.
+      renderStats(); saveAttemptLog(); saveMistakes(); saveSettings();
+      setAccountStatus('Synced', 'ok');
+    }).catch(function(){ setAccountStatus('Signed in, but sync failed — still saving locally.', 'error'); });
+  });
+};
 
 // What the builder opens seeded with -- the GIVEN side of the reaction, so
 // the student edits what's already there instead of drawing from scratch.
@@ -12333,6 +13417,108 @@ renderStats();
 
 nextQuestion();
 })();
+</script>
+
+<!-- ============================================================
+     Optional cloud sync (Firebase). A <script type="module"> specifically
+     so it can `import` the Firebase SDK straight from Google's own CDN --
+     module scripts are always deferred until after every plain
+     synchronous <script> above has already run, which is what guarantees
+     window.__onFirebaseReady (defined in the app-logic block) exists by
+     the time this calls it, regardless of this tag's own position in the
+     document. This block is a THIN wrapper only -- auth + Firestore
+     plumbing, nothing app-specific -- all the merge/sync business logic
+     lives in the app-logic script instead (see its own "optional cloud
+     sync" section), so this stays swappable/removable on its own.
+
+     ---- SETUP (do this once, in the Firebase console) ----
+     1. https://console.firebase.google.com -> Add project (free tier is
+        plenty for this).
+     2. Build -> Authentication -> Get started -> enable the "Google"
+        sign-in provider.
+     3. Build -> Firestore Database -> Create database (start in
+        "production mode" -- the rules below lock it down properly, this
+        app never needs "test mode"'s wide-open default).
+     4. Firestore Database -> Rules, replace the default with:
+
+          rules_version = '2';
+          service cloud.firestore {
+            match /databases/{database}/documents {
+              match /users/{userId} {
+                allow read, write: if request.auth != null && request.auth.uid == userId;
+              }
+            }
+          }
+
+        This is the actual security boundary -- it's what stops one
+        signed-in user from ever reading or writing another's data, not
+        the config values below (those are meant to be public; Firebase's
+        client SDK has no secret key to hide the way a server API key
+        would).
+     5. Project settings (gear icon) -> General -> Your apps -> Add app ->
+        Web (</>) -> register it (no Firebase Hosting needed) -> copy the
+        `firebaseConfig` object it shows you -> paste it over
+        FIREBASE_CONFIG below.
+     6. Project settings -> Authentication -> Settings -> Authorized
+        domains -- add whatever domain(s) this actually gets served from
+        (localhost is already allowed by default for local testing;
+        deployed Vercel domain needs adding here too, or sign-in will
+        fail with an unauthorized-domain error).
+     Until FIREBASE_CONFIG is filled in, this whole block fails quietly
+     (see the catch below) and the app behaves exactly as it did before
+     this feature existed -- localStorage-only, no sign-in button shown.
+     ============================================================ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+// Replace with YOUR OWN project's config (see step 5 above) -- these
+// values are not secret, but they do need to be real for any of this to
+// do anything.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDmYZcYiIDQ0ynvP_zERqoVYvMuy--r-fM",
+  authDomain: "chem-reactions-89aeb.firebaseapp.com",
+  projectId: "chem-reactions-89aeb",
+  storageBucket: "chem-reactions-89aeb.firebasestorage.app",
+  messagingSenderId: "902534982782",
+  appId: "1:902534982782:web:a700b1ffa6692604ac7c2f"
+  // measurementId deliberately omitted -- that's Analytics, which this
+  // app doesn't import/use (see the setup comment above).
+};
+
+try {
+  if(FIREBASE_CONFIG.apiKey.indexOf("YOUR_")===0){
+    throw new Error("FIREBASE_CONFIG still has placeholder values -- see the setup comment just above this script block");
+  }
+  const app = initializeApp(FIREBASE_CONFIG);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  window.__fb = {
+    signIn: function(){ return signInWithPopup(auth, provider); },
+    signOut: function(){ return signOut(auth); },
+    onAuthChange: function(cb){
+      onAuthStateChanged(auth, function(user){
+        cb(user ? { uid: user.uid, email: user.email } : null);
+      });
+    },
+    fetchDoc: function(uid){
+      return getDoc(doc(db, "users", uid)).then(function(snap){ return snap.exists() ? snap.data() : null; });
+    },
+    saveDoc: function(uid, data){
+      return setDoc(doc(db, "users", uid), data);
+    }
+  };
+  window.__onFirebaseReady();
+} catch(e){
+  // No Firebase project configured yet (or it failed to load/init) --
+  // window.__fb is simply never defined, and every call site in the
+  // app-logic script already checks for that before touching it, so the
+  // app just runs exactly as it would with this whole feature deleted.
+  console.warn("Cloud sync unavailable:", e.message);
+}
 </script>
 </body>
 </html>

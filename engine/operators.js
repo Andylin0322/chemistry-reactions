@@ -114,6 +114,54 @@ function oxidativeCleavage(mol){
   return { occurs:true, products };
 }
 
+// How "substituted" one end of a C=C is, for the Markovnikov-rule
+// operators just below -- real bonded neighbours other than the
+// double-bond partner itself, any already-present flat substituent, AND a
+// spectator phenyl ring (same weight as a real alkyl branch: a benzylic
+// carbocation is at least as stabilised as a tertiary one). Mirrors
+// app.html's embedded copy exactly -- see its own comment.
+function substitutionWeight(v, id, dbEdge){
+  const node = findNode(v, id);
+  const otherCount = neighborsOf(v, id).filter(nb=>nb.edge!==dbEdge).length;
+  return otherCount + node.subs.length + (node.phenyl ? 1 : 0);
+}
+function moreSubstitutedEnd(v, e){
+  return substitutionWeight(v, e.b, e) > substitutionWeight(v, e.a, e) ? e.b : e.a;
+}
+function hydrohalogenation(mol, X){
+  const dbs = doubleBondEdges(mol);
+  if(dbs.length===0) return { occurs:false };
+  const v = cloneMol(mol);
+  v.edges.filter(e=>e.type==='D').forEach(e=>{
+    e.type = 'S';
+    findNode(v, moreSubstitutedEnd(v, e)).subs.push(X);
+  });
+  return { occurs:true, product: v };
+}
+function hydration(mol){
+  const dbs = doubleBondEdges(mol);
+  if(dbs.length===0) return { occurs:false };
+  const v = cloneMol(mol);
+  v.edges.filter(e=>e.type==='D').forEach(e=>{
+    e.type = 'S';
+    findNode(v, moreSubstitutedEnd(v, e)).subs.push('OH');
+  });
+  return { occurs:true, product: v };
+}
+function halohydrinFormation(mol, X){
+  const dbs = doubleBondEdges(mol);
+  if(dbs.length===0) return { occurs:false };
+  const v = cloneMol(mol);
+  v.edges.filter(e=>e.type==='D').forEach(e=>{
+    e.type = 'S';
+    const ohEnd = moreSubstitutedEnd(v, e);
+    const xEnd = ohEnd===e.a ? e.b : e.a;
+    findNode(v, ohEnd).subs.push('OH');
+    findNode(v, xEnd).subs.push(X);
+  });
+  return { occurs:true, product: v };
+}
+
 /* =========================================================================
    ARENE OPERATORS
    These act on a ring:true node's own positions (see engine.js) rather
@@ -573,6 +621,17 @@ function ringTribromination(mol, existingSub){
   return { occurs:true, product:v };
 }
 
+function ringTrinitration(mol, existingSub){
+  const ring = mol.nodes.find(n=>n.ring);
+  if(!ring) return { occurs:false };
+  const subPos = ring.subs.findIndex(s=>s===existingSub);
+  if(subPos===-1) return { occurs:false };
+  const v = cloneMol(mol);
+  const vRing = v.nodes.find(n=>n.ring);
+  [1,3,5].forEach(offset=>{ vRing.subs[(subPos+offset)%6] = 'NO2'; });
+  return { occurs:true, product:v };
+}
+
 // ROH + O2 -> CO2 + H2O -- no organic product at all, same "products" shape
 // oxidativeCleavage already uses for its own CO2+H2O byproduct, just as the
 // WHOLE answer instead of one fragment among several.
@@ -824,6 +883,14 @@ function hydrolyzeAmide(mol, target){
   return { occurs:true, product:v };
 }
 
+function reduceAmide(mol){
+  const v = cloneMol(mol);
+  const c = v.nodes.find(n=>!n.ring && n.oxo && n.subs && n.subs.includes('NH2'));
+  if(!c) return { occurs:false };
+  c.oxo = false;
+  return { occurs:true, product:v };
+}
+
 // CH3-CO-R + I2/NaOH(aq), warm -> CHI3 + RCOONa (iodoform reaction).
 // Methyl ketones only -- finds the carbonyl carbon (oxo, no group) and, of
 // its neighbours, the one that's a genuinely terminal, unsubstituted methyl
@@ -836,7 +903,7 @@ function hydrolyzeAmide(mol, target){
 // into a carboxylate salt exactly like hydrolyzeEster's alkaline branch.
 function iodoformCleavage(mol){
   const v = cloneMol(mol);
-  const c = v.nodes.find(n=>!n.ring && n.oxo && !n.group);
+  const c = v.nodes.find(n=>!n.ring && ((n.oxo && !n.group) || n.group==='CHO'));
   if(!c) return { occurs:false };
   const methylNb = neighborsOf(v, c.id).find(nb=>{
     const n = findNode(v, nb.to);
@@ -845,6 +912,28 @@ function iodoformCleavage(mol){
   });
   if(!methylNb) return { occurs:false };
   c.oxo = false;
+  c.group = 'COONa';
+  v.nodes = v.nodes.filter(n=>n.id!==methylNb.to);
+  v.edges = v.edges.filter(e=>e.a!==methylNb.to && e.b!==methylNb.to);
+  const chi3Carbon = newNode();
+  chi3Carbon.subs = ['I','I','I'];
+  const chi3 = { nodes:[chi3Carbon], edges:[] };
+  const products = connectedComponents(v).map(f=>({ kind:'chain', mol:{nodes:f.nodes, edges:f.edges} }));
+  products.push({ kind:'chain', mol: chi3 });
+  return { occurs:true, products };
+}
+
+function iodoformCleavageFromAlcohol(mol){
+  const v = cloneMol(mol);
+  const c = v.nodes.find(n=>!n.ring && !n.oxo && !n.group && n.subs && n.subs.includes('OH'));
+  if(!c) return { occurs:false };
+  const methylNb = neighborsOf(v, c.id).find(nb=>{
+    const n = findNode(v, nb.to);
+    if(!n || n.ring || n.oxo || n.group || (n.subs && n.subs.length)) return false;
+    return neighborsOf(v, n.id).length===1;
+  });
+  if(!methylNb) return { occurs:false };
+  c.subs = c.subs.filter(s=>s!=='OH');
   c.group = 'COONa';
   v.nodes = v.nodes.filter(n=>n.id!==methylNb.to);
   v.edges = v.edges.filter(e=>e.a!==methylNb.to && e.b!==methylNb.to);
@@ -959,11 +1048,12 @@ function protonateAmine(mol){
 
 module.exports = {
   radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage, doubleBondEdges,
+  hydrohalogenation, hydration, halohydrinFormation,
   ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
-  oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, combustion,
+  oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, ringTrinitration, combustion,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, connectedComponents,
-  diazotisation, azoCoupling, protonateAmine, iodoformCleavage
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, connectedComponents,
+  diazotisation, azoCoupling, protonateAmine, iodoformCleavage, iodoformCleavageFromAlcohol
 };

@@ -1,13 +1,14 @@
 'use strict';
 const { canonicalForm, answerEqual, productSetEqual, newNode, newRingNode, newAmineNode, cloneMol, implicitH, nodeValence } = require('./engine');
 const { radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage,
+  hydrohalogenation, hydration, halohydrinFormation,
   ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
-  oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, combustion,
+  oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, ringTrinitration, combustion,
   diazotisation, azoCoupling, protonateAmine,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, iodoformCleavage } = require('./operators');
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, iodoformCleavage, iodoformCleavageFromAlcohol } = require('./operators');
 const { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateHaloarene, generateAmine, generateAlkylChloride, generateSubstitutedArene,
   generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde,
   generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium } = require('./generator');
@@ -475,6 +476,10 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
   const triRing = tribromination.product.nodes.find(n=>n.ring);
   t('phenol tribromination gives exactly 3 Br + 1 OH, single fixed product', tribromination.occurs===true && triRing.subs.filter(s=>s==='Br').length===3 && triRing.subs.includes('OH'));
 
+  const trinitration = ringTrinitration(generatePhenol(), 'OH');
+  const triNitroRing = trinitration.product.nodes.find(n=>n.ring);
+  t('phenol trinitration (picric acid) gives exactly 3 NO2 + 1 OH, single fixed product', trinitration.occurs===true && triNitroRing.subs.filter(s=>s==='NO2').length===3 && triNitroRing.subs.includes('OH'));
+
   const combustionRes = combustion(generateAlcohol([2]));
   t('combustion always gives CO2+H2O-only products', combustionRes.occurs===true && combustionRes.products.length===1 &&
     JSON.stringify(combustionRes.products[0].species.slice().sort())===JSON.stringify(['CO2','H2O']));
@@ -559,6 +564,18 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
   const amide = acylChlorideToAmide(acyl.product, null).product;
   t('acidic amide hydrolysis gives COOH', hydrolyzeAmide(amide,'COOH').occurs===true && hydrolyzeAmide(amide,'COOH').product.nodes.some(n=>n.group==='COOH'));
   t('alkaline amide hydrolysis gives COONa', hydrolyzeAmide(amide,'COONa').occurs===true && hydrolyzeAmide(amide,'COONa').product.nodes.some(n=>n.group==='COONa'));
+
+  // RCONH2 + LiAlH4 -> RCH2NH2 -- the carbonyl carbon just loses its oxo
+  // (double-bond) character; the NH2 sub stays, and the newly-freed
+  // valence slot fills with 1 implicit H (was 0 as an amide carbon: 1 real
+  // neighbour + NH2 sub + oxo(=2) = 4 used; now 1 real neighbour + NH2 +
+  // 2 implicit H = 4 used, i.e. a real -CH2-NH2 group).
+  const reducedAmide = reduceAmide(amide);
+  const reducedAmideC = reducedAmide.product && reducedAmide.product.nodes.find(n=>n.subs.includes('NH2'));
+  t('amide reduction (LiAlH4) occurs, gives a real -CH2-NH2 carbon (2 implicit H, no oxo)',
+    reducedAmide.occurs===true && !!reducedAmideC && reducedAmideC.oxo===false &&
+    implicitH(reducedAmide.product, reducedAmideC.id)===2);
+  t('amide reduction refuses a non-amide input (plain carboxylic acid)', reduceAmide(acid).occurs===false);
 }
 
 /* ---------- TEST 16: generic charge + Nitrogen Compounds ---------- */
@@ -625,7 +642,41 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
     implicitH(chi3Product.mol, chi3Product.mol.nodes[0].id)===1 &&
     !!saltProduct && saltProduct.mol.nodes.some(n=>n.group==='COONa'));
   t('iodoform reaction refuses a non-methyl ketone (no terminal CH3 arm)', iodoformCleavage(generateKetone(2,2)).occurs===false);
-  t('iodoform reaction refuses a non-ketone input', iodoformCleavage(generateAldehyde(2)).occurs===false);
+  // generateAldehyde(3) = propanal (CH3-CH2-CHO) -- its CHO carbon's own
+  // neighbour is a CH2, not a bare terminal methyl, so this correctly
+  // still refuses (propanal genuinely does NOT give a positive iodoform
+  // test in real chemistry).
+  t('iodoform reaction refuses a non-ethanal aldehyde (CHO carbon has no bare terminal methyl neighbour)', iodoformCleavage(generateAldehyde(3)).occurs===false);
+
+  // generateAldehyde(2) = ethanal (CH3-CHO) specifically -- the ONE
+  // aldehyde that DOES give a positive iodoform test, since its own CHO
+  // carbon's neighbour IS a bare terminal methyl. Product: CHI3 + a lone
+  // COONa node (HCOONa, sodium methanoate) with no other real carbon
+  // attached.
+  const ethanal = generateAldehyde(2);
+  const ethanalIodoform = iodoformCleavage(ethanal);
+  const ethanalChi3 = ethanalIodoform.products && ethanalIodoform.products.find(p=>p.mol.nodes.length===1 && p.mol.nodes[0].subs.includes('I'));
+  const ethanalSalt = ethanalIodoform.products && ethanalIodoform.products.find(p=>p!==ethanalChi3);
+  t('iodoform reaction occurs on ethanal specifically, gives CHI3 + HCOONa',
+    ethanalIodoform.occurs===true && ethanalIodoform.products.length===2 &&
+    !!ethanalChi3 && ethanalChi3.mol.nodes[0].subs.filter(s=>s==='I').length===3 &&
+    !!ethanalSalt && ethanalSalt.mol.nodes.length===1 && ethanalSalt.mol.nodes[0].group==='COONa');
+
+  // Same test family, but starting from the ALCOHOL shape instead of a
+  // ketone/aldehyde -- ethanol (CH3CH2OH) is the classic CH3CH(OH)- (well,
+  // CH3CH2OH itself, R=H) positive case; propan-1-ol is the classic
+  // negative control (OH carbon's neighbour is a CH2, not a bare methyl).
+  const ethanolForIodoform = generateAlcohol([1]);
+  const ethanolIodoform = iodoformCleavageFromAlcohol(ethanolForIodoform);
+  const ethanolChi3 = ethanolIodoform.products && ethanolIodoform.products.find(p=>p.mol.nodes.length===1 && p.mol.nodes[0].subs.includes('I'));
+  const ethanolSalt = ethanolIodoform.products && ethanolIodoform.products.find(p=>p!==ethanolChi3);
+  t('alcohol iodoform reaction occurs on ethanol, gives CHI3 + HCOONa',
+    ethanolIodoform.occurs===true && ethanolIodoform.products.length===2 &&
+    !!ethanolChi3 && ethanolChi3.mol.nodes[0].subs.filter(s=>s==='I').length===3 &&
+    !!ethanolSalt && ethanolSalt.mol.nodes.length===1 && ethanolSalt.mol.nodes[0].group==='COONa');
+  t('alcohol iodoform reaction refuses propan-1-ol (OH carbon has no bare terminal methyl neighbour)',
+    iodoformCleavageFromAlcohol(generateAlcohol([2])).occurs===false);
+  t('alcohol iodoform reaction refuses a non-alcohol input (plain alkane)', iodoformCleavageFromAlcohol(generateAlkylChloride(2)).occurs===false);
 
   // Regression for the "hand-built ethylbenzene marked wrong on a ring-
   // chlorination reactant question" bug: __normalizeMoleculeForGrading
@@ -654,6 +705,68 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
   t('re-running the SAME ring reaction on the round-tripped molecule gives the SAME product set as the original',
     originalResult.occurs===true && restoredResult.occurs===true &&
     sameKeys(keySet(originalResult), keySet(restoredResult)));
+}
+
+/* ---------- TEST 17: alkene electrophilic addition -- Markovnikov regiochemistry
+   (hydrohalogenation, hydration, halohydrin formation) ---------- */
+{
+  // Propene: C0(CH3)-C1(=C2). C1 is the more-substituted alkene carbon
+  // (1 real neighbour, C0, besides the double bond); C2 is terminal (0
+  // real neighbours besides the double bond) -- Markovnikov's rule sends
+  // the incoming group to C1, giving the standard textbook major product.
+  const propene = mkMol(3);
+  setBond(propene, 1, 'D'); // C1=C2
+
+  const hbrAdd = hydrohalogenation(propene, 'Br');
+  const expected2Bromopropane = mkMol(3); setSubs(expected2Bromopropane, 1, ['Br']);
+  t('propene + HBr (Markovnikov) occurs', hbrAdd.occurs===true);
+  t('propene + HBr gives 2-bromopropane (Br on the more-substituted carbon)',
+    canonicalForm(hbrAdd.product)===canonicalForm(expected2Bromopropane));
+
+  const hydrationRes = hydration(propene);
+  const expectedPropan2ol = mkMol(3); setSubs(expectedPropan2ol, 1, ['OH']);
+  t('propene + steam/H2O (Markovnikov) occurs', hydrationRes.occurs===true);
+  t('propene + steam gives propan-2-ol (OH on the more-substituted carbon)',
+    canonicalForm(hydrationRes.product)===canonicalForm(expectedPropan2ol));
+
+  // Halohydrin formation has the OPPOSITE regiochemistry from the two
+  // above: water (the nucleophile) attacks the more-substituted carbon,
+  // so OH lands on C1 and Br lands on the LESS-substituted C2 this time --
+  // 1-bromopropan-2-ol, not the 2-bromopropan-1-ol a naive "just like
+  // hydrohalogenation" guess would give.
+  const halohydrin = halohydrinFormation(propene, 'Br');
+  const expectedBromohydrin = mkMol(3); setSubs(expectedBromohydrin, 1, ['OH']); setSubs(expectedBromohydrin, 2, ['Br']);
+  t('propene + Br2(aq) (halohydrin) occurs', halohydrin.occurs===true);
+  t('propene + Br2(aq) gives 1-bromopropan-2-ol (OH more-substituted, Br less-substituted -- opposite of HX addition)',
+    canonicalForm(halohydrin.product)===canonicalForm(expectedBromohydrin));
+
+  // A genuinely tied double bond (but-2-ene: CH3-CH=CH-CH3, both carbons
+  // equally substituted) -- Markovnikov has no preference here, and both
+  // possible assignments give the identical product anyway, so this just
+  // confirms the tie-break path doesn't crash and still gives a sane,
+  // single, real product.
+  const but2ene = mkMol(4);
+  setBond(but2ene, 1, 'D'); // C1=C2
+  const but2eneHBr = hydrohalogenation(but2ene, 'Br');
+  t('but-2-ene + HBr (tied substitution) still occurs and gives a single real product',
+    but2eneHBr.occurs===true && but2eneHBr.product.nodes.some(n=>n.subs.includes('Br')));
+
+  // Styrene-shaped alkene (Ph-CH=CH2, phenyl flag on the SAME carbon as
+  // one alkene terminus, not a separate neighbour node) -- the benzylic
+  // carbon must still be recognised as "more substituted" even though its
+  // phenyl ring isn't a real bonded neighbour in this engine's model (see
+  // substitutionWeight's own comment).
+  const styrene = mkMol(2);
+  setBond(styrene, 0, 'D'); // C0=C1
+  styrene.nodes[0].phenyl = true;
+  const styreneHBr = hydrohalogenation(styrene, 'Br');
+  const benzylicC = styreneHBr.product && styreneHBr.product.nodes.find(n=>n.phenyl);
+  t('styrene + HBr puts Br on the benzylic (phenyl-bearing) carbon, not the terminal one',
+    styreneHBr.occurs===true && !!benzylicC && benzylicC.subs.includes('Br'));
+
+  t('hydrohalogenation refuses a molecule with no double bond', hydrohalogenation(mkMol(3), 'Br').occurs===false);
+  t('hydration refuses a molecule with no double bond', hydration(mkMol(3)).occurs===false);
+  t('halohydrin formation refuses a molecule with no double bond', halohydrinFormation(mkMol(3), 'Br').occurs===false);
 }
 
 console.log('\\n'+pass+' passed, '+fail+' failed');
