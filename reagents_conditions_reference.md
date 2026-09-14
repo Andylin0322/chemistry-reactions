@@ -1,10 +1,11 @@
 # Reagents & Conditions Reference — All Reactions
 
-Generated from the app's own `POOL` data (100 reactions across 9 topics), for review.
+Generated from the app's own `POOL` data (115 reactions across 9 topics), for review.
 
 **How grading works, so the example answers below make sense:**
 - A submitted answer must exactly match ONE complete accepted combination — you can't mix a reagent from one combo with a condition from another.
 - Matching is case-insensitive.
+- **"heat" and "heat under reflux" are treated as exactly the same condition** — reflux is lab technique (how the heating is done so volatiles don't escape), not a separately markable point in H2 exams. Every reaction below is written as just "heat"; typing "heat under reflux" instead is silently accepted as equivalent, never penalized.
 - If a combo doesn't call out any temperature/condition at all, adding "room temperature" to your answer is not penalized (it's treated as the implicit default). If a combo does specify a temperature (even a mild one), you need to give it.
 - "Also accepted" lines below are fully independent alternative combos (e.g. AlCl3 OR FeCl3 OR Fe OR Al as catalyst) — not something you mix and match with the primary answer.
 - Some questions may accept additional combos beyond what's listed here, if a different POOL reaction produces the exact same product from the same starting material (resolved at runtime, not listed statically here).
@@ -20,6 +21,10 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 ### Free radical substitution (Br2)
 - **Reagents/Conditions shown to the student:** Br2(g), UV light
 - **Primary correct answer:** `Br2(g), UV light`
+
+### Combustion of alkanes
+- **Reagents/Conditions shown to the student:** Combustion in air
+- **Primary correct answer:** `Combustion in air`
 
 ## Alkenes
 
@@ -43,6 +48,23 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 - **Reagents/Conditions shown to the student:** KMnO4(aq), H2SO4(aq), heat
 - **Primary correct answer:** `KMnO4(aq), H2SO4(aq), heat`
 
+### Electrophilic addition of HBr
+- **Reagents/Conditions shown to the student:** HBr(g), room temperature
+- **Primary correct answer:** `HBr(g), room temperature`
+
+### Electrophilic addition of HCl
+- **Reagents/Conditions shown to the student:** HCl(g), room temperature
+- **Primary correct answer:** `HCl(g), room temperature`
+
+### Electrophilic addition of steam
+- **Reagents/Conditions shown to the student:** H2O(g), H3PO4 catalyst, heat, high pressure
+- **Primary correct answer:** `H2O(g), H3PO4 catalyst, heat, high pressure`
+- **Also accepted:** `H2SO4(aq), then H2O`
+
+### Formation of a bromohydrin
+- **Reagents/Conditions shown to the student:** Br2(aq), room temperature
+- **Primary correct answer:** `Br2(aq), room temperature`
+
 ## Arenes
 
 ### Chlorination of benzene
@@ -61,7 +83,6 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Halogenation of benzene (no catalyst)
 - **Reagents/Conditions shown to the student:** Cl2(g) or Br2(l), no Lewis acid catalyst
-- **Result:** No reaction
 - **Primary correct answer:** `Cl2(g), no Lewis acid catalyst`
 - **Also accepted:** `Br2(l), no Lewis acid catalyst`
 
@@ -71,7 +92,6 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Nitration of benzene (no H2SO4)
 - **Reagents/Conditions shown to the student:** conc HNO3 only, no conc H2SO4
-- **Result:** No reaction
 - **Primary correct answer:** `conc HNO3 only, no conc H2SO4`
 
 ### Friedel-Crafts alkylation of benzene
@@ -80,17 +100,19 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Benzene + bromine in tetrachloromethane
 - **Reagents/Conditions shown to the student:** Br2 in CCl4
-- **Result:** No reaction
 - **Primary correct answer:** `Br2 in CCl4`
 
 ### Benzene + aqueous bromine
 - **Reagents/Conditions shown to the student:** Br2(aq)
-- **Result:** No reaction
 - **Primary correct answer:** `Br2(aq)`
 
 ### Ring chlorination of a substituted benzene
 - **Reagents/Conditions shown to the student:** Cl2(g), AlCl3, room temperature, absence of UV
 - **Primary correct answer:** `Cl2(g), AlCl3, room temperature, absence of UV`
+
+### Ring bromination of a substituted benzene
+- **Reagents/Conditions shown to the student:** Br2(l), AlBr3, room temperature, absence of UV
+- **Primary correct answer:** `Br2(l), AlBr3, room temperature, absence of UV`
 
 ### Ring nitration of a substituted benzene
 - **Reagents/Conditions shown to the student:** conc HNO3, conc H2SO4, 30°C
@@ -153,12 +175,10 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Nucleophilic substitution of fluoroalkanes
 - **Reagents/Conditions shown to the student:** NaOH(aq), heat
-- **Result:** No reaction
 - **Primary correct answer:** `NaOH(aq), heat`
 
 ### Nucleophilic substitution of halogenoarenes
 - **Reagents/Conditions shown to the student:** NaOH(aq), heat (halogenoalkane conditions)
-- **Result:** No reaction
 - **Primary correct answer:** `NaOH(aq), heat`
 
 ### Electrophilic substitution of halogenoarenes
@@ -199,17 +219,14 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Reaction of phenols with carbonates
 - **Reagents/Conditions shown to the student:** Na2CO3(aq)
-- **Result:** No reaction
 - **Primary correct answer:** `Na2CO3(aq)`
 
 ### Reaction of alcohols with sodium hydroxide
 - **Reagents/Conditions shown to the student:** NaOH(aq)
-- **Result:** No reaction
 - **Primary correct answer:** `NaOH(aq)`
 
 ### Reaction of alcohols with carbonates
 - **Reagents/Conditions shown to the student:** Na2CO3(aq)
-- **Result:** No reaction
 - **Primary correct answer:** `Na2CO3(aq)`
 
 ### Conversion of alcohols to chloroalkanes (PCl5)
@@ -235,7 +252,6 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Conversion of phenols to halogenoarenes
 - **Reagents/Conditions shown to the student:** Halogenating reagents (requires extremely harsh conditions)
-- **Result:** No reaction
 - **Primary correct answer:** `Halogenating reagents`
 
 ### Dehydration of alcohols
@@ -245,7 +261,6 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Dehydration of phenols
 - **Reagents/Conditions shown to the student:** conc H3PO4 catalyst, heat
-- **Result:** No reaction
 - **Primary correct answer:** `conc H3PO4 catalyst, heat`
 - **Also accepted:** `conc H2SO4, heat`
 
@@ -271,23 +286,22 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 - **Also accepted:** `KMnO4(aq), H2SO4(aq), heat with immediate distillation`
 
 ### Oxidation of primary alcohols to carboxylic acids
-- **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat under reflux
-- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat under reflux`
-- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat
+- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat`
+- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat`
 
 ### Oxidation of secondary alcohols to ketones
-- **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat under reflux
-- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat under reflux`
-- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat
+- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat`
+- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat`
 
 ### Oxidation of tertiary alcohols
-- **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat under reflux
-- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat under reflux`
-- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat
+- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat`
+- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat`
 
 ### Oxidation of phenols
 - **Reagents/Conditions shown to the student:** K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat
-- **Result:** No reaction
 - **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat`
 - **Also accepted:** `KMnO4(aq), H2SO4(aq), heat`
 
@@ -303,6 +317,14 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 ### Bromination of phenol with aqueous bromine
 - **Reagents/Conditions shown to the student:** Br2(aq), excess, room temperature
 - **Primary correct answer:** `Br2(aq), excess, room temperature`
+
+### Trinitration of phenol (picric acid)
+- **Reagents/Conditions shown to the student:** conc HNO3, room temperature
+- **Primary correct answer:** `conc HNO3, room temperature`
+
+### Tri-iodomethane test (CH3CH(OH)- alcohol)
+- **Reagents/Conditions shown to the student:** I2(aq), NaOH(aq), warm
+- **Primary correct answer:** `I2(aq), NaOH(aq), warm`
 
 ## Carbonyl Compounds
 
@@ -324,10 +346,14 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 - **Reagents/Conditions shown to the student:** I2(aq), NaOH(aq), warm
 - **Primary correct answer:** `I2(aq), NaOH(aq), warm`
 
+### Tri-iodomethane test (ethanal)
+- **Reagents/Conditions shown to the student:** I2(aq), NaOH(aq), warm
+- **Primary correct answer:** `I2(aq), NaOH(aq), warm`
+
 ### Oxidation of aldehyde to carboxylic acid
-- **Reagents/Conditions shown to the student:** K2Cr2O7(aq) (or KMnO4(aq)), H2SO4(aq), heat under reflux
-- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat under reflux`
-- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** K2Cr2O7(aq) (or KMnO4(aq)), H2SO4(aq), heat
+- **Primary correct answer:** `K2Cr2O7(aq), H2SO4(aq), heat`
+- **Also accepted:** `KMnO4(aq), H2SO4(aq), heat`
 
 ### Oxidation of ketone with acidified oxidising agents
 - **Reagents/Conditions shown to the student:** K2Cr2O7(aq) (or KMnO4(aq)), H2SO4(aq), heat
@@ -352,7 +378,6 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Fehling's reagent test (benzaldehyde)
 - **Reagents/Conditions shown to the student:** Fehling's reagent, warm
-- **Result:** No reaction
 - **Primary correct answer:** `Fehling's reagent, warm`
 
 ## Carboxylic Acids & Derivatives
@@ -391,17 +416,15 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 
 ### Reduction of carboxylic acid with NaBH4
 - **Reagents/Conditions shown to the student:** NaBH4
-- **Result:** No reaction
 - **Primary correct answer:** `NaBH4`
 
 ### Reduction of carboxylic acid with H2/Ni
 - **Reagents/Conditions shown to the student:** H2(g), Ni catalyst
-- **Result:** No reaction
 - **Primary correct answer:** `H2(g), Ni catalyst`
 
 ### Oxidation of methanoic acid and ethanedioic acid
-- **Reagents/Conditions shown to the student:** KMnO4(aq)/H2SO4(aq), heat under reflux
-- **Primary correct answer:** `KMnO4(aq), H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** KMnO4(aq)/H2SO4(aq), heat
+- **Primary correct answer:** `KMnO4(aq), H2SO4(aq), heat`
 
 ### Hydrolysis of acyl chloride
 - **Reagents/Conditions shown to the student:** H2O, room temperature
@@ -420,28 +443,32 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 - **Primary correct answer:** `excess secondary amine`
 
 ### Acid hydrolysis of ester
-- **Reagents/Conditions shown to the student:** dilute acid, heat under reflux
-- **Primary correct answer:** `dilute acid, heat under reflux`
-- **Also accepted:** `HCl(aq), heat under reflux`
-- **Also accepted:** `H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** dilute acid, heat
+- **Primary correct answer:** `dilute acid, heat`
+- **Also accepted:** `HCl(aq), heat`
+- **Also accepted:** `H2SO4(aq), heat`
 
 ### Alkaline hydrolysis of ester
-- **Reagents/Conditions shown to the student:** NaOH(aq), heat under reflux
-- **Primary correct answer:** `NaOH(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** NaOH(aq), heat
+- **Primary correct answer:** `NaOH(aq), heat`
 
 ### Hydrolysis of acid anhydride
 - **Reagents/Conditions shown to the student:** H2O
 - **Primary correct answer:** `H2O`
 
 ### Acid hydrolysis of amide
-- **Reagents/Conditions shown to the student:** dilute acid, heat under reflux
-- **Primary correct answer:** `dilute acid, heat under reflux`
-- **Also accepted:** `HCl(aq), heat under reflux`
-- **Also accepted:** `H2SO4(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** dilute acid, heat
+- **Primary correct answer:** `dilute acid, heat`
+- **Also accepted:** `HCl(aq), heat`
+- **Also accepted:** `H2SO4(aq), heat`
 
 ### Alkaline hydrolysis of amide
-- **Reagents/Conditions shown to the student:** NaOH(aq), heat under reflux
-- **Primary correct answer:** `NaOH(aq), heat under reflux`
+- **Reagents/Conditions shown to the student:** NaOH(aq), heat
+- **Primary correct answer:** `NaOH(aq), heat`
+
+### Reduction of amide
+- **Reagents/Conditions shown to the student:** LiAlH4, dry ether
+- **Primary correct answer:** `LiAlH4, dry ether`
 
 ## Nitrogen Compounds
 
@@ -458,9 +485,8 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 - **Primary correct answer:** `phenylamine, 0-10°C`
 
 ### Reduction of nitrobenzene to phenylamine
-- **Reagents/Conditions shown to the student:** Sn(s)/conc HCl, heat, then NaOH(aq) (or LiAlH4 in dry ether, or H2(g)/Ni catalyst)
+- **Reagents/Conditions shown to the student:** Sn(s)/conc HCl, heat, then NaOH(aq) (or H2(g)/Ni catalyst)
 - **Primary correct answer:** `Sn(s), conc HCl, heat, NaOH(aq)`
-- **Also accepted:** `LiAlH4, dry ether`
 - **Also accepted:** `H2(g), Ni catalyst`
 
 ### Formation of phenylammonium salt
@@ -473,3 +499,22 @@ Generated from the app's own `POOL` data (100 reactions across 9 topics), for re
 - **Reagents/Conditions shown to the student:** Br2(aq), room temperature
 - **Primary correct answer:** `Br2(aq), room temperature`
 
+### Reaction of amino acids with acid
+- **Reagents/Conditions shown to the student:** HCl(aq)
+- **Primary correct answer:** `HCl(aq)`
+
+### Reaction of amino acids with alkali
+- **Reagents/Conditions shown to the student:** NaOH(aq)
+- **Primary correct answer:** `NaOH(aq)`
+
+### Formation of a peptide bond
+- **Reagents/Conditions shown to the student:** condensation (enzyme catalysed in vivo)
+- **Primary correct answer:** `condensation, enzyme catalyst`
+
+### Acid hydrolysis of a peptide bond
+- **Reagents/Conditions shown to the student:** H2SO4(aq), heat
+- **Primary correct answer:** `H2SO4(aq), heat`
+
+### Alkaline hydrolysis of a peptide bond
+- **Reagents/Conditions shown to the student:** NaOH(aq), heat
+- **Primary correct answer:** `NaOH(aq), heat`

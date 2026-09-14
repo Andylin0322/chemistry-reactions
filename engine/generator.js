@@ -405,4 +405,29 @@ function generateBenzenediazonium(){
   return { nodes:[ring, dGroup], edges:[{a:ring.id, b:dGroup.id, type:'S', ringPos:0}] };
 }
 
-module.exports = { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateAlkylChloride, generateHaloarene, generateSubstitutedArene, generateAmine, generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde, generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium, ri, pick };
+// An alpha-amino acid, H2N-CH(R)-COOH -- sideChainLen 0 gives glycine's
+// R=H, 1 gives alanine's R=CH3, 2 a longer inert side chain, and so on.
+// The alpha carbon carries the flat 'NH2' sub directly, exactly like any
+// other primary amine in this model (generateAmine's own comment documents
+// why a 1-neighbour amine is never promoted to a real element:'N' node),
+// and bonds to a dedicated group:'COOH' node, an exact mirror of
+// generateCarboxylicAcid's own carboxyl-carbon shape. Real side-chain
+// identity (R/S stereochemistry, acidic/basic/aromatic side chains) is out
+// of scope here, same as every other topic's deliberately generic R group
+// -- only the alpha-amino-acid backbone chemistry (acid/base behaviour,
+// peptide bond formation/hydrolysis) is tested.
+function generateAminoAcid(sideChainLen){
+  const alpha = mkNode(); alpha.subs.push('NH2');
+  const nodes = [alpha]; const edges = [];
+  if(sideChainLen>0){
+    const chainIds = [];
+    for(let i=0;i<sideChainLen;i++){ const c=mkNode(); nodes.push(c); chainIds.push(c.id); }
+    for(let i=0;i<chainIds.length-1;i++) edges.push({a:chainIds[i], b:chainIds[i+1], type:'S'});
+    edges.push({a:alpha.id, b:chainIds[0], type:'S'});
+  }
+  const acidC = mkNode(); acidC.group = 'COOH'; nodes.push(acidC);
+  edges.push({a:alpha.id, b:acidC.id, type:'S'});
+  return { nodes, edges };
+}
+
+module.exports = { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateAlkylChloride, generateHaloarene, generateSubstitutedArene, generateAmine, generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde, generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium, generateAminoAcid, ri, pick };

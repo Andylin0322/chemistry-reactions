@@ -8,10 +8,11 @@ const { radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxida
   diazotisation, azoCoupling, protonateAmine,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, iodoformCleavage, iodoformCleavageFromAlcohol } = require('./operators');
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, iodoformCleavage, iodoformCleavageFromAlcohol,
+  formPeptideBond, hydrolyzePeptideBond } = require('./operators');
 const { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateHaloarene, generateAmine, generateAlkylChloride, generateSubstitutedArene,
   generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde,
-  generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium } = require('./generator');
+  generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium, generateAminoAcid } = require('./generator');
 
 let pass=0, fail=0;
 function t(name, cond){ if(cond){pass++; console.log('PASS -', name);} else {fail++; console.log('FAIL -', name);} }
@@ -767,6 +768,100 @@ function setGroup(mol,i,g){ mol.nodes[i].group=g; return mol; }
   t('hydrohalogenation refuses a molecule with no double bond', hydrohalogenation(mkMol(3), 'Br').occurs===false);
   t('hydration refuses a molecule with no double bond', hydration(mkMol(3)).occurs===false);
   t('halohydrin formation refuses a molecule with no double bond', halohydrinFormation(mkMol(3), 'Br').occurs===false);
+}
+
+/* ---------- TEST 18: amino acids / peptide bonds ---------- */
+{
+  const glycine = generateAminoAcid(0); // H2N-CH2-COOH
+  const alanine = generateAminoAcid(1); // H2N-CH(CH3)-COOH
+
+  const glyAlpha = glycine.nodes.find(n=>n.subs.includes('NH2'));
+  const glyAcid = glycine.nodes.find(n=>n.group==='COOH');
+  t('generateAminoAcid(0) (glycine) has an alpha carbon with 2 implicit H (H2N-CH2-COOH)',
+    !!glyAlpha && !!glyAcid && implicitH(glycine, glyAlpha.id)===2);
+
+  const alaAlpha = alanine.nodes.find(n=>n.subs.includes('NH2'));
+  t('generateAminoAcid(1) (alanine) has an alpha carbon with 1 implicit H (H2N-CH(CH3)-COOH)',
+    !!alaAlpha && implicitH(alanine, alaAlpha.id)===1);
+
+  // Amphoteric behaviour -- both directly reuse existing operators, no new
+  // operator needed for this half of the amino-acid LO.
+  const glyPlusAcid = protonateAmine(glycine);
+  const protonatedN = glyPlusAcid.occurs && glyPlusAcid.product.nodes.find(n=>n.element==='N');
+  t('amino acid + HCl(aq) protonates -NH2 to -NH3+, leaving -COOH untouched',
+    glyPlusAcid.occurs===true && !!protonatedN && protonatedN.charge===1
+    && implicitH(glyPlusAcid.product, protonatedN.id)===3
+    && glyPlusAcid.product.nodes.some(n=>n.group==='COOH'));
+
+  const glyPlusAlkali = carboxylicAcidSaltFormation(glycine);
+  t('amino acid + NaOH(aq) deprotonates -COOH to -COONa, leaving -NH2 untouched',
+    glyPlusAlkali.occurs===true
+    && glyPlusAlkali.product.nodes.some(n=>n.group==='COONa')
+    && glyPlusAlkali.product.nodes.some(n=>n.subs && n.subs.includes('NH2')));
+
+  // Peptide bond formation: glycine (free -NH2 end) + alanine (free -COOH
+  // end) -> Gly-Ala dipeptide, H2N-CH2-CO-NH-CH(CH3)-COOH. Verified against
+  // a hand-built expected structure via canonicalForm, the same equality
+  // every product-answer check in this app actually uses.
+  const dipeptide = formPeptideBond(generateAminoAcid(0), generateAminoAcid(1));
+  const expectedDipeptide = (()=>{
+    const a1 = newNode(); a1.subs.push('NH2');
+    const carbonyl = newNode(); carbonyl.oxo = true;
+    const n = newAmineNode(false);
+    const a2 = newNode();
+    const ch3 = newNode();
+    const acid = newNode(); acid.group = 'COOH';
+    return {
+      nodes: [a1, carbonyl, n, a2, ch3, acid],
+      edges: [
+        {a:a1.id, b:carbonyl.id, type:'S'},
+        {a:carbonyl.id, b:n.id, type:'S'},
+        {a:n.id, b:a2.id, type:'S'},
+        {a:a2.id, b:ch3.id, type:'S'},
+        {a:a2.id, b:acid.id, type:'S'},
+      ]
+    };
+  })();
+  t('glycine + alanine forms the expected Gly-Ala dipeptide',
+    dipeptide.occurs===true && canonicalForm(dipeptide.product)===canonicalForm(expectedDipeptide));
+
+  const peptideCarbonylN = dipeptide.occurs && dipeptide.product.nodes.find(n=>n.element==='N');
+  t('the new peptide bond\'s nitrogen has exactly 1 implicit H (a secondary amide -NH-)',
+    !!peptideCarbonylN && implicitH(dipeptide.product, peptideCarbonylN.id)===1);
+
+  // Peptide bond hydrolysis -- reverse of the above, under both conditions.
+  const dipeptideMol = dipeptide.product;
+  const acidHydrolysis = hydrolyzePeptideBond(dipeptideMol, 'acidic');
+  t('acid hydrolysis of the dipeptide gives 2 fragments, each protonated to -NH3+ and still -COOH',
+    acidHydrolysis.occurs===true && acidHydrolysis.products.length===2
+    && acidHydrolysis.products.every(p=>{
+      const mol = p.mol;
+      const nNode = mol.nodes.find(n=>n.element==='N');
+      return nNode && nNode.charge===1 && implicitH(mol, nNode.id)===3
+        && mol.nodes.some(n=>n.group==='COOH');
+    }));
+
+  const alkalineHydrolysis = hydrolyzePeptideBond(dipeptideMol, 'alkaline');
+  t('alkaline hydrolysis of the dipeptide gives 2 fragments, each deprotonated to -COONa and still -NH2',
+    alkalineHydrolysis.occurs===true && alkalineHydrolysis.products.length===2
+    && alkalineHydrolysis.products.every(p=>{
+      const mol = p.mol;
+      return mol.nodes.some(n=>n.group==='COONa')
+        && mol.nodes.some(n=>n.subs && n.subs.includes('NH2'));
+    }));
+
+  // Round-trip: hydrolysing back under acidic conditions should give
+  // fragments matching protonateAmine applied directly to each starting
+  // amino acid (same amphoteric transform TEST above already verified).
+  const acidFragmentForms = acidHydrolysis.occurs && acidHydrolysis.products.map(p=>canonicalForm(p.mol)).sort();
+  const expectedAcidForms = [protonateAmine(generateAminoAcid(0)).product, protonateAmine(generateAminoAcid(1)).product]
+    .map(canonicalForm).sort();
+  t('acid-hydrolysed dipeptide fragments exactly match protonateAmine applied to glycine/alanine directly',
+    JSON.stringify(acidFragmentForms)===JSON.stringify(expectedAcidForms));
+
+  t('formPeptideBond refuses a molecule with no -COOH group', formPeptideBond(mkMol(2), generateAminoAcid(0)).occurs===false);
+  t('formPeptideBond refuses a second molecule with no free -NH2', formPeptideBond(generateAminoAcid(0), mkMol(2)).occurs===false);
+  t('hydrolyzePeptideBond refuses a molecule with no peptide bond', hydrolyzePeptideBond(generateAminoAcid(0), 'acidic').occurs===false);
 }
 
 console.log('\\n'+pass+' passed, '+fail+' failed');

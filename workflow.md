@@ -429,6 +429,374 @@ used to live).
   used. Runs `PLAY_TUTORIAL_STEPS` verbatim, per the spec's explicit
   requirement that the intro be identical to the Play pane's own tutorial.
 
+## Recent work (2026-09-15 session) -- question-selection fairness bugs
+
+User report: with only "Guess Reagents & Conditions" enabled in Topic and
+Question Selection, "guess the product" questions still appeared
+sometimes; separately, certain reactions seemed to come up disproportion-
+ately more often than others. Both turned out to be real, and both were
+measured empirically (not just reasoned about) via a temporary
+`window.__debugHooks` exposure of `generateQuestion`/`pickSpec`/etc.,
+driven from the Browser pane's `javascript_tool` in thousands-of-trials
+batches -- removed again once fixed, not left in the shipped file.
+
+- **Bug 1 -- disabled question types leaking through.** `pickGuessMode`
+  (app.html) intersects a spec's valid guess-mode options
+  (`guessModeOptions`) with the user's enabled checkboxes, but falls back
+  to the FULL UNFILTERED option set whenever that intersection is empty
+  -- which is exactly what happens for every `occurs:false` ("no
+  reaction") spec, since `guessModeOptions` only ever offers `'product'`
+  for those, regardless of which types are enabled. With only "reagent"
+  enabled, every no-reaction spec (`fluoroalkaneNoSubstitution`,
+  `fehlingsTestKetoneNoReaction`, `oxidationTertiaryAlcoholNoReaction`,
+  ~18 others) silently showed as a "guess the product" question instead.
+  Measured: 290/1500 (19.3%) of questions leaked a disabled type before
+  the fix; 0/3000 after. Fix: `generateQuestion` now rerolls to a
+  DIFFERENT spec (bounded at 20 attempts) whenever the current spec has
+  no valid+enabled guess mode at all, so a disabled type is structurally
+  never reached rather than papered over by `pickGuessMode`'s fallback
+  (that fallback still exists, now only as a true last-resort if 20
+  rerolls somehow all fail -- e.g. every question type disabled at once).
+- **Bug 2 -- rejection-sampling bias favoring "easy to render" reactions.**
+  `generateQuestion`'s retry loop (guards against overlapping molecule
+  renders and >4-variant questions) used to redraw a brand-new `pickSpec()`
+  on EVERY retry, not just regenerate the same spec's molecule. Since
+  `pickSpec()` itself IS uniform (verified: raw per-spec draw counts were
+  flat across the whole pool), the bias was entirely downstream --
+  rejection sampling means a spec's odds of surviving to become the final
+  question are proportional to how often its own `gen()` avoids
+  triggering the retry condition. Measured (mode 'A', all types/topics
+  enabled, 8000 trials): `radSubCl`/`radSubBr` (radical substitution --
+  high >4-variant rate at higher difficulty) landed at 24-29 questions
+  against an expected ~69.6 (unfixed), a >50% deficit; chi-square
+  goodness-of-fit vs. uniform was 185.9 (df=114, wildly significant, no
+  competing explanation). Fix: split the one retry loop into two nested
+  ones -- the inner "render quality" loop keeps the SAME spec and only
+  re-rolls difficulty/molecule (exactly like before, just scoped to one
+  spec), and only the outer loop draws a new spec, gated on the type-
+  availability check from Bug 1's fix rather than render quality. Same
+  8000-trial setup after the fix: chi-square dropped to 100.1 (comfortably
+  inside the p=0.05 uniform-consistent range), and `radSubCl`/`radSubBr`
+  landed at 68/63 against the same ~69.6 expected.
+- Both fixes are confined to `generateQuestion`/`pickGuessMode` in
+  app.html's own app-logic script -- no `engine/*.js` file touched, so
+  no rebuild needed; `node scripts/build.js --check` still reports in
+  sync. `node engine/test.js` (174/174) and `node engine/vetting-agent.js`
+  (70/70) both still pass unchanged.
+
+## Recent work (2026-09-14 session) -- reagent/condition text corrections
+
+Two real errors found by reviewing the app's actual reagentText/tags
+(not the engine logic): "heat" and "heat under reflux" were being used
+as if they were different conditions across the POOL, when reflux is
+just lab technique (how heating is done so volatiles don't escape) and
+is never itself a markable point in H2 exams; and several entries wrote
+"dilute H2SO4(aq)"/"dilute HCl(aq)"/"dilute NaOH(aq)" -- redundant, since
+"(aq)" already means dilute/aqueous (concentrated acid is described as
+"conc X", never "X(aq)") -- when they should just say "H2SO4(aq)" etc.
+
+- **All 19 "heat under reflux" occurrences across 13 POOL entries
+  simplified to "heat"** (reagentText, tags, and tagAlternates alike).
+  Bulk `sed` replace, verified afterward that the only remaining
+  occurrences of the literal phrase in app.html are inside the new
+  explanatory comments below, not any actual tag value.
+- **`tagSetsEqual` (app.html, the tag-based reagent-guess grading
+  comparator) now normalises "heat under reflux" -> "heat" before
+  comparing**, via a new `normalizeConditionTag` step -- so even though
+  every entry's OWN canonical text is now just "heat", a student who
+  still types the fuller phrase (habit, or from other material) is never
+  penalised for it. Live-verified: submitted `['NaOH(aq)', 'heat under
+  reflux']` against `esterHydrolysisAlkaline` (canonical tags now
+  `['NaOH(aq)', 'heat']`) and it graded "Correct". One known, deliberately
+  NOT fixed cosmetic side effect: the tag input still shows "heat under
+  reflux" with the red "unrecognized tag" dashed style while typing
+  (`isKnownTag`/`ALL_TAGS` is built from the POOL's own tags, which no
+  longer contains that exact string) -- grading is unaffected, this is
+  purely a visual autocomplete quirk. Fix later by adding "heat under
+  reflux" to a small list of recognized-but-non-canonical spellings if it
+  matters enough to bother with.
+- **`engine/reagents.js`'s `TEMP_ORDER`** had the identical bug
+  structurally -- `['cold','room','warm','heat','reflux']` treated
+  'reflux' as a HOTTER, separate ordinal level above 'heat'. Never
+  actually required as a value by any of the 64 rules in `rules.js`
+  (all of them use `temperature:{min:'heat'}`, which 'reflux' would have
+  satisfied anyway since it ordered above 'heat'), but wrong on its own
+  terms and a landmine for later -- removed the level entirely, now just
+  `['cold','room','warm','heat']`.
+- **The 5 genuinely redundant "dilute X(aq)" tags fixed**, 4 of them in
+  entries from a PRIOR session (the amino acids work): `aminoAcidPlusAcid`
+  ('dilute HCl(aq)' -> 'HCl(aq)'), `aminoAcidPlusAlkali` ('dilute
+  NaOH(aq)' -> 'NaOH(aq)'), `peptideBondHydrolysisAcidic` ('dilute
+  H2SO4(aq), heat under reflux' -> 'H2SO4(aq), heat'),
+  `peptideBondHydrolysisAlkaline` ('dilute NaOH(aq), heat under reflux'
+  -> 'NaOH(aq), heat'), plus one pre-existing instance in
+  `alkeneHydration`'s own `tagAlternates` ('dilute H2SO4(aq)' ->
+  'H2SO4(aq)'). Deliberately NOT touched: bare "dilute acid" (no formula,
+  no "(aq)") as the PRIMARY tag on `esterHydrolysisAcidic`/
+  `amideHydrolysisAcidic` -- that's a real, intentional, already-correct
+  exam-standard generic answer (see those entries' own comments), not the
+  same redundancy; "dilute alkaline KMnO4" and "dilute HNO3" in
+  EXPLANATION prose (not a graded tag) were also left alone.
+- **`reagents_conditions_reference.md` regenerated from scratch** off the
+  corrected live POOL data (115 entries, was stale at "100 reactions" and
+  still showing LiAlH4 as an accepted `nitrobenzeneReduction` alternate
+  despite that having been removed a session earlier) -- extracted via a
+  proper brace/comment/string-aware parser (not regex-per-field, not
+  hand-transcription) so it can safely be regenerated again the same way
+  next time this file goes stale; the one-off extraction script wasn't
+  kept in the repo (scratch-only), but the exact method (strip comments,
+  isolate each POOL entry by brace-depth, strip out the `gen`/`run`/
+  `genReactant` function fields, `eval` what's left) is recorded here in
+  case it's needed again.
+
+## Recent work (2026-09-11 session) -- new rule-based reaction engine (in progress)
+
+Started a genuine architecture change, not a bugfix: the old POOL system
+(still fully intact and running app.html today) hardcodes exactly one
+operator call per reaction id -- the question generator KNOWS which
+reaction it's asking about because it looked the id up, it never actually
+asks "what would happen here." That makes it structurally impossible to
+generate a molecule, hand it a reagent, and honestly discover what
+occurs -- which is what's needed for harder/more composite questions,
+and for a reactant/reagent-guess answer to be graded by actually
+re-deriving the outcome rather than pattern-matching. See this session's
+full design discussion (not reproduced here) for the reasoning; this
+section just records what got BUILT.
+
+- **Build tooling, first** (a prerequisite, not part of the new engine
+  itself): `engine/*.js` used to be hand-mirrored into app.html's
+  embedded `<script>` copies -- a real, repeatedly-hit source of drift
+  this whole session (see the earlier "Amino acids" entry below: every
+  engine change had to be pasted twice). `app.html` already had a tiny
+  `require()`/`module` shim letting unmodified Node-style CommonJS files
+  load in the browser (see its own "Engine" section header) -- it just
+  wasn't automated. `scripts/build.js` now assembles every file in its
+  own `FILES` list into app.html between `<!-- BUILD:name.js -->` /
+  `<!-- /BUILD:name.js -->` marker pairs (added around all 4 existing
+  blocks). Run `node scripts/build.js` after ANY `engine/*.js` change;
+  `node scripts/build.js --check` (exit 1 if out of sync) is available
+  for a pre-commit/CI check. No bundler, no dependencies, no
+  `node_modules` -- deliberately, to match this repo's own
+  single-static-file style; see the script's own header for how to add a
+  new module to the assembled set.
+- **`engine/facts.js`** -- `scanFunctionalGroups(mol)` reads a molecule's
+  raw graph and returns one fact per distinct reactive site (kind +
+  classification: 1°/2°/3°, aromatic/aliphatic, hasAlphaMethyl for
+  iodoform, hasActivatingSub for a ring, specialOxidisable for
+  methanoic/ethanedioic acid, ...). Never mutates, never decides what
+  reacts -- purely "what is here." Covers alkene, arene (+ring-attached
+  OH/NH2/NO2/halogen as their own facts), benzylicCH (BOTH the
+  `phenyl:true` spectator-flag shape real side-chain operators expect AND
+  a real `ring:true` node's ringPos-edge chain), carboxyl/ester/amide
+  (primary vs secondary/tertiary)/anhydride/acylHalide/nitrile,
+  hydroxyl, amine (flat/real-node/aromatic), haloC, carbonyl
+  (aldehyde/ketone), nitro, diazonium, plus a universal `organic` fact
+  (for combustion) and `alkylCH` (radical substitution enumerates its own
+  sites, so this is one aggregate fact, not one per H).
+- **`engine/reagents.js`** -- the structured `ReagentCondition` shape
+  (`reagents[]`, `solvent`, `catalyst`, `temperature`, `light`,
+  `quantity` [controlled/excess -- stoichiometric amount],
+  `concentration` [dilute/concentrated -- solution strength, a DIFFERENT
+  axis from quantity], `pH`) and `satisfies(given, partialRequirement)` --
+  a rule's requirement is a PARTIAL condition, subset-checked on
+  `reagents` (extra reagents never block a match) and exact/range-checked
+  on everything else it actually sets; an unset field means "don't
+  care." `temperature` is an ordered scale (`cold < room < warm < heat <
+  reflux`) so a requirement can be a minimum, a maximum, or exact.
+  `reagentsExclude` lets one rule explicitly outrank another for the same
+  site (see aminePlusAcid/diazotisation below) without a runtime
+  tie-breaker.
+- **`engine/resolve.js`** -- `resolve(mol, reagentCondition, rules)`:
+  scans facts, finds every rule whose fgRequirement matches some fact AND
+  whose reagentRequirement is satisfied, applies each matched rule's
+  transform ONCE (never once per fact -- every operator already handles
+  every qualifying site itself, e.g. hydrohalogenation loops over every
+  C=C in one call). Two independent functional groups both reacting
+  under one reagent is the ordinary, expected case (chained). Two
+  DIFFERENT rules matching the exact same site is NOT silently resolved
+  -- `resolve()` throws `RuleClashError` naming both rule ids, on the
+  view that this is always a rule-authoring bug (under-specified
+  requirements), never a real ambiguity to guess a winner for. A matched
+  rule whose transform itself still refuses (a shape check that lives in
+  the operator, not duplicated into the fact scanner) is dropped rather
+  than erroring, so an unrelated qualifying rule can still apply.
+- **`engine/rules.js`** -- 58 rules across all 9 topics, each just
+  `{id, topic, fgRequirement, reagentRequirement, transform}` where
+  `transform` is a THIN wrapper around an EXISTING operators.js function
+  -- this layer only changes how a reaction gets SELECTED, not how it's
+  carried out. Some real nuance this table had to get right (found via
+  the vetting harness below, not guessed up front):
+  - Catalysed EAS rules (chlorination/bromination/nitration) must
+    exclude `hasActivatingSub` ring facts, or an activated ring (phenol/
+    aniline) whose test condition happened to also carry a catalyst tag
+    would satisfy both that rule AND the dedicated no-catalyst
+    phenol/aniline rule for the identical site -- a real clash, caught by
+    `resolve()` throwing during vetting, fixed by the exclusion.
+  - `aminePlusAcid` (aromatic amine + HCl -> ammonium salt) needed
+    `reagentsExclude:['NaNO2']`, or an aniline + NaNO2/HCl/cold condition
+    -- meant to test diazotisation -- would ALSO satisfy plain
+    protonation on the same -NH2, another real clash.
+  - Two mostly-identical-looking rules for the same fact kind and the
+    same headline reagent are usually fine as long as ONE other field
+    genuinely can't coexist between them in a single condition:
+    `quantity` (controlled/excess phenol bromination), `pH`
+    (acid/alkaline ester or amide hydrolysis), `solvent` (aqueous vs
+    ethanolic NaOH on a haloalkane -- substitution vs elimination),
+    `concentration` (dilute-cold vs hot-concentrated-acidified KMnO4 --
+    diol vs oxidative cleavage). This turned out to cover almost every
+    case that looked at first like it would need real runtime
+    tie-breaking.
+  - `carbonylReduction` needed splitting into two rules (LiAlH4 and
+    NaBH4 both reduce an aldehyde/ketone; only LiAlH4 reduces a
+    carboxylic acid/nitrile/amide) -- a single rule requiring just one of
+    them silently under-covered the other.
+  - A benzylic side-chain rule (`benzylicOxidation`) only fired for the
+    `phenyl:true` shape real side-chain operators use, NOT a `ring:true`
+    node's ringPos-edge chain -- facts.js now detects both shapes, but
+    only the phenyl:true one is currently wired to a working transform;
+    see Known scope gaps below.
+  - `specialAcidOxidation` (methanoic/ethanedioic acid fully oxidised by
+    hot acidified KMnO4) needed its own `specialOxidisable` fact field --
+    without it, either every carboxylic acid over-fired, or the special
+    two never fired at all.
+- **`engine/vetting-agent.js`** -- a permanent, hand-authored regression
+  suite (NOT derived from the engine -- every expected answer was worked
+  out from A-level chemistry knowledge first) exercising resolve.js +
+  rules.js + facts.js specifically, which engine/test.js's direct
+  operator calls can never cover (they never go through "which reaction,
+  if any" at all). 61 cases, all topics, deliberately including: Markovnikov
+  and anti-Markovnikov-shaped regiochemistry checks (not just "did it
+  react"), the SAME starting molecule under two conditions that must give
+  different products (KMnO4 cold-dilute vs hot-concentrated-acidified;
+  K2Cr2O7 controlled vs excess; NaOH aqueous vs ethanolic; the same ester
+  under acid vs alkaline hydrolysis), molecules with 2-3 independent
+  functional groups where only the intended site(s) should react (and a
+  couple where genuinely BOTH should), several deliberately-inert
+  shapes (tertiary alcohol, ketone vs aldehyde, fluoroalkane, an
+  unactivated ring without a catalyst, an aryl halide, a plain carboxylic
+  acid against the special-oxidation rule, pentan-3-one against
+  iodoform), the HCl-vs-NaNO2/HCl priority case on an aromatic amine, and
+  one fully-generated dipeptide (built via `formPeptideBond` itself, not
+  hand-drawn) hydrolysed back through the rule engine end to end. Run:
+  `node engine/vetting-agent.js`. Current status: **61/61 passing**, 0
+  clashes, 0 exceptions -- reached after several real bugs found and
+  fixed via this exact loop (see the rules.js bullets above), not written
+  correct on the first attempt.
+
+### Two-reactant resolver + app.html wiring (same session, later)
+
+- **`resolveTwoReactant(molA, molB, condition, rules)`** (in
+  `resolve.js`, alongside the single-reactant `resolve()`) -- handles
+  esterification, Friedel-Crafts alkylation, acyl chloride + amine, azo
+  coupling, and peptide bond FORMATION. A two-reactant rule is shaped
+  `{type:'two-reactant', roleA:{fgRequirement}, roleB:{fgRequirement},
+  reagentRequirement, transform(first, second)}` -- roleA/roleB are role
+  labels only, not a fixed argument order: `resolveTwoReactant` tries
+  BOTH physical orderings of the two given molecules against them, so
+  neither the generator nor a student's submitted pair has to pre-commit
+  to which one is "the acid" etc. Two assignments matching the SAME rule
+  (e.g. two amino acids, each of which independently has a free -NH2 AND
+  a free -COOH, so either can supply either role) is NOT a clash -- it's
+  two genuinely different, both-correct products (Gly-Ala vs Ala-Gly),
+  collected as `variants`. Two assignments matching DIFFERENT rules IS a
+  clash, same policy and reasoning as the single-reactant resolver.
+  Peptide bond FORMATION specifically needed a new composite `aminoAcid`
+  fact (present only when a molecule has both a free -COOH and a free
+  primary -NH2) -- `formPeptideBond` the operator doesn't itself check
+  that its second argument is amino-acid-shaped (it would happily
+  amide-couple a plain acid with a plain amine too), and real syllabus
+  scope is "two alpha-amino acids condense," not "any acid + any amine."
+  6 two-reactant rules total. Vetted with 9 more cases in
+  `vetting-agent.js` (esterification incl. the phenol no-reaction case
+  and the acid-vs-acyl-chloride nucleophile-reactivity trick,
+  Friedel-Crafts incl. the no-catalyst no-reaction case, acyl chloride +
+  amine, azo coupling, and the symmetric peptide-formation
+  variants-not-clash case). **70/70 passing** (61 single-reactant + 9
+  two-reactant), all topics.
+- Building this surfaced two real bugs in the single-reactant plumbing
+  that had nothing to do with two-reactant rules themselves, both fixed:
+  `resolve()` was iterating over ALL rules including the new
+  `type:'two-reactant'` ones (which have no top-level `fgRequirement`,
+  only `roleA.fgRequirement`/`roleB.fgRequirement`) and crashing --
+  fixed by having `resolve()` skip any rule with `type==='two-reactant'`.
+  Separately, `vetting-agent.js`'s own hand-built test molecules started
+  at node id 0, which collided with engine.js's own internal, MODULE-LEVEL
+  `_id` counter (used by `newNode`/`newAmineNode`/`newEtherOxygenNode`,
+  called internally by several operators mid-transform) -- silent id
+  collision, not always an obvious crash, that generator.js has always
+  avoided by starting ITS OWN counter at 100000 for the same reason. Now
+  vetting-agent.js starts at 900000. Worth remembering for any FUTURE
+  hand-built test molecule in this codebase: never start a fresh test
+  molecule's own node ids at 0 if any operator it goes through might
+  allocate a new node internally.
+- **app.html is now wired to this engine for a real (partial) subset of
+  POOL entries** -- not a parallel demo, the SAME entries students
+  actually see, converted in place. The integration point is
+  deliberately minimal: two new helpers, `resolveRule(mol, condition)`
+  and `resolveRuleTwo(molA, molB, condition)` (defined right after the
+  existing `var op = __registry['operators']` pull in the app-logic
+  script, wrapping `ruleEngine.resolve`/`resolveTwoReactant` with
+  `Object.assign(emptyReagentCondition(), condition)` so a call site only
+  has to state the fields it cares about). A converted POOL entry's
+  `run(mol[, reactant])` just calls one of these instead of an operator
+  directly -- `gen`/`genReactant`/`reagentText`/`tags`/`mode`/
+  `explanation` are all UNCHANGED, so every other app-logic code path
+  (grading for all 3 guess modes, reactant-mode re-simulation via
+  `reactantCandidateMatchesGiven`, settings/stats/topic listing, the
+  molecule-builder UI) needed zero changes and has no idea anything is
+  different. This is why the conversion could be additive: an
+  unconverted entry's `run` is untouched.
+  Converted so far (15 of 115 -- Alkenes' addition/oxidation family plus
+  a few from Hydroxy/Carboxylic Acids as a cross-topic sample):
+  `addBr2`, `addCl2`, `hydrog`, `diol`, `cleave`, `alkeneHBr`,
+  `alkeneHCl`, `alkeneHydration`, `alkeneHalohydrin`, `phenolPlusNaOH`,
+  `acidPlusNaOH`, `esterHydrolysisAcidic`, `esterHydrolysisAlkaline`,
+  `esterificationAlcoholAcid` (two-reactant), `esterificationPhenolNoReaction`
+  (two-reactant, the no-reaction case). Live-verified in the running app
+  (not just `node`): a complex multi-group case (an alkene several
+  carbons away from an untouched C-Cl, correctly only reacting at the
+  alkene, formula matched exactly), the two-reactant ester case (formula
+  matched exactly), and the two-reactant phenol-refuses case (graded
+  "Correct" for "No reaction"). The other 100 entries are completely
+  unchanged and still call their operator directly -- both styles coexist
+  indefinitely, converting more is purely additive.
+
+### Known scope gaps (deliberate, not yet done)
+
+- **Not full parity with the old POOL's ~115 entries.** 64 rules (58
+  single-reactant + 6 two-reactant) covers every topic with real breadth
+  but is not a 1:1 port of every existing reaction (multiple alternate
+  reagents for the same transform, e.g. PCl5/PCl3/SOCl2 all giving an
+  acyl chloride, are collapsed to one reagent choice per rule for now; a
+  few narrower POOL entries like HI-specific hydrohalogenation aren't
+  ported). Extending coverage is additive (more entries in
+  `engine/rules.js`, and more POOL entries' `run` converted to call
+  `resolveRule`/`resolveRuleTwo`), not a redesign.
+- **Only 15 of 115 POOL entries are actually converted to call the new
+  engine.** The other 100 still call an operator directly, unchanged.
+  Converting more is mechanical (write the ReagentCondition matching the
+  entry's existing reagentText, swap the `run` body) but entry-by-entry,
+  not automatable, since it's exactly the step where a
+  human/Claude needs to actually READ each reagentText and decide what
+  structured condition it means.
+- **Question GENERATION still isn't rule-driven.** Every converted
+  entry's `gen`/`genReactant` is still the same hardcoded
+  `generateXyz()` call as before -- only the ANSWER-COMPUTATION half
+  (`run`) goes through the new engine. The original design's "generate a
+  molecule, discover what happens, don't predetermine the reaction"
+  idea is only half-realized: grading is now genuinely discovered, but
+  which molecule gets shown is still picked the old way. Making
+  generation itself rule-driven (pick a rule to test, then construct a
+  molecule likely to satisfy it, then verify via resolve() before
+  showing it) is real, separate work -- see the original design
+  discussion for the generate-then-verify approach recommended for that.
+- A molecule with TWO functional groups of the SAME kind but different
+  class (e.g. a diol with one 1° and one 2° -OH) inherits whatever
+  scope the underlying operator already has -- `oxidizeAlcohol` only
+  ever finds and transforms the FIRST -OH it locates, same pre-existing
+  limitation the old POOL system has always had. Not touched this
+  session.
+
 ## Recent work (2026-09-01 session)
 
 - **Tutorial redesign**: the full-page dimming overlay used to spotlight
@@ -502,6 +870,56 @@ used to live).
     was NOT regenerated (no generator script exists in the repo) and is
     now stale relative to these additions plus the `nitrobenzeneReduction`
     fix — regenerate by hand or write a script next time it matters.
+
+- **Amino acids / proteins implemented** (the follow-up the above session
+  explicitly deferred): turned out to need almost no new engine surface.
+  - `generateAminoAcid(sideChainLen)` (new generator): H2N-CH(R)-COOH,
+    built from parts that already existed — the alpha carbon's -NH2 is
+    the same flat-sub primary-amine shape every other amine uses, and the
+    -COOH is `generateCarboxylicAcid`'s own `group:'COOH'` node. No new
+    node kind.
+  - The amphoteric POOL entries (`aminoAcidPlusAcid`/`aminoAcidPlusAlkali`)
+    needed **zero new operators** — they call `protonateAmine`/
+    `carboxylicAcidSaltFormation` directly on a `generateAminoAcid` mol,
+    since its -NH2/-COOH are exactly the shapes those two already expect.
+  - Two new operators for the peptide bond itself: `formPeptideBond`
+    (condenses acid1's -COOH with acid2's -NH2, mirrors
+    `esterifyCommon`'s carbonyl-opening step + `acylChlorideToAmide`'s
+    amine-grafting step) and `hydrolyzePeptideBond(mol, mode)` (splits at
+    the bond via `connectedComponents`, reopens it to a plain -COOH/-NH2
+    pair, then applies `protonateAmine`/`carboxylicAcidSaltFormation`
+    *uniformly* across every fragment — acidic hydrolysis protonates
+    every freed -NH2, alkaline deprotonates every freed -COOH, matching
+    the syllabus diagram's "every ionisable group flips" behaviour, not
+    just the one at the newly-broken bond).
+  - **Real bug found and fixed via live browser testing, not unit tests**:
+    both `peptideBondHydrolysisAcidic`/`peptideBondHydrolysisAlkaline`
+    POOL entries were declared `mode:'single'` (copy-paste from the
+    single-product peptide-formation entry) instead of `mode:'fragments'`
+    (what every other multi-product operator's POOL entry uses, e.g.
+    `esterHydrolysisAcidic`). With `mode:'single'`,
+    `computeCorrectAnswerSet` reads `result.product` (singular) — which
+    is `undefined` for an operator that returns `.products` (plural) —
+    producing a `{kind:'chain', mol:undefined}` "correct answer" that
+    crashes `canonicalForm` the instant a student actually submits a
+    real build-molecule answer (`Cannot read properties of undefined
+    (reading 'length')`, deep inside `matchAnswers`). Unit tests never
+    caught this because they call the operators directly, never through
+    `computeCorrectAnswerSet`'s mode-dispatch — this class of bug is
+    fundamentally a POOL *metadata* mismatch, not an operator/generator
+    bug, so it only surfaces via an actual Submit click. Confirmed fixed
+    live: both reactions now grade correctly end-to-end (per-fragment
+    ✓/✗ marking included) after changing both entries to
+    `mode:'fragments'`.
+  - `node engine/test.js`: 174/174 passing (12 new tests: generator
+    shape, both amphoteric reactions, peptide formation verified via
+    exact `canonicalForm` equality against a hand-built expected
+    dipeptide, both hydrolysis modes, and negative/refusal cases).
+  - Deliberately still out of scope: real amino-acid side-chain identity
+    (the 20 natural side chains, R/S stereochemistry, pKa/titration-curve
+    values) — `generateAminoAcid`'s side chain is a plain inert alkyl arm,
+    since only the backbone chemistry (acid/base behaviour, peptide bond
+    formation/hydrolysis) is what the LOs actually name.
 
 ## Recent work (prior session)
 

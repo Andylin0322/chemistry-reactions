@@ -1,0 +1,11 @@
+{
+  "name": "chem-reactions",
+  "private": true,
+  "version": "1.0.0",
+  "description": "H2 Chemistry Reaction Drill -- app.html is the deployed static app; engine/ is the tested source of truth for its chemistry engine.",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:check": "node scripts/build.js --check",
+    "test": "node engine/test.js"
+  }
+}

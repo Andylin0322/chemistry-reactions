@@ -2446,19 +2446,23 @@
 </div>
 
 <!-- ============================================================
-     Engine, embedded verbatim from engine/*.js (source of truth,
+     Engine, assembled verbatim from engine/*.js (source of truth,
      independently testable via `node engine/test.js`). Each file is
      wrapped in its own IIFE so top-level const/let names (e.g.
      `bondSlotsUsed`, declared in both generator.js and render.js)
      don't collide as global bindings. A tiny require()/module shim
      lets the unmodified Node-style files load in the browser.
-     If engine/*.js changes, re-sync the copies below.
+     GENERATED -- do not hand-edit inside a BUILD:* marker pair.
+     Run `node scripts/build.js` after changing anything in engine/
+     to regenerate this section (see scripts/build.js's own header
+     for the file list/order it assembles).
      ============================================================ -->
 <script>
   var __registry = {};
   function require(path){ return __registry[path.replace('./','')]; }
 </script>
 
+<!-- BUILD:engine.js -->
 <script>
 (function(){
 'use strict';
@@ -2714,8 +2718,11 @@ module.exports = {
 
 __registry['engine'] = module.exports;
 })();
-</script>
 
+</script>
+<!-- /BUILD:engine.js -->
+
+<!-- BUILD:operators.js -->
 <script>
 (function(){
 'use strict';
@@ -2839,29 +2846,16 @@ function oxidativeCleavage(mol){
 // operators just below -- real bonded neighbours other than the
 // double-bond partner itself, any already-present flat substituent, AND a
 // spectator phenyl ring (same weight as a real alkyl branch: a benzylic
-// carbocation is at least as stabilised as a tertiary one, so
-// Ph-CH=CH2 + HBr correctly puts Br on the phenyl-bearing carbon, not the
-// terminal one). Same "otherCount + subCount" shape oxidativeCleavage
-// already uses above, just phenyl-aware too since that flag carries no
-// explicit edge/sub entry of its own to be counted by neighborsOf/subs.
+// carbocation is at least as stabilised as a tertiary one). Mirrors
+// app.html's embedded copy exactly -- see its own comment.
 function substitutionWeight(v, id, dbEdge){
   const node = findNode(v, id);
   const otherCount = neighborsOf(v, id).filter(nb=>nb.edge!==dbEdge).length;
   return otherCount + node.subs.length + (node.phenyl ? 1 : 0);
 }
-// Ties (equal substitution on both ends, e.g. CH3-CH=CH-CH3) resolve to
-// e.a -- both directions give the identical product for a genuinely tied
-// double bond, so which one "wins" doesn't matter chemically.
 function moreSubstitutedEnd(v, e){
   return substitutionWeight(v, e.b, e) > substitutionWeight(v, e.a, e) ? e.b : e.a;
 }
-// Alkene + HX(g) -> haloalkane, Markovnikov addition: the more-substituted
-// former alkene carbon forms the more stable carbocation intermediate, so
-// that's where the halide nucleophile ends up; the less-substituted carbon
-// just gets the freed-up valence slot back as implicit H, no explicit sub
-// needed. (The engine doesn't track carbocation-intermediate steps or the
-// anti-Markovnikov minor product as a separate object -- same scope every
-// other operator here keeps to a single, real, examinable answer.)
 function hydrohalogenation(mol, X){
   const dbs = doubleBondEdges(mol);
   if(dbs.length===0) return { occurs:false };
@@ -2872,9 +2866,6 @@ function hydrohalogenation(mol, X){
   });
   return { occurs:true, product: v };
 }
-// Alkene + steam (H3PO4 catalyst) or dilute H2SO4(aq)/H2O -> alcohol,
-// same Markovnikov regiochemistry as hydrohalogenation above, OH instead
-// of X.
 function hydration(mol){
   const dbs = doubleBondEdges(mol);
   if(dbs.length===0) return { occurs:false };
@@ -2885,13 +2876,6 @@ function hydration(mol){
   });
   return { occurs:true, product: v };
 }
-// Alkene + Br2(aq) -> halohydrin (bromohydrin) -- Br+ bridges both carbons
-// as a bromonium ion, then water (the solvent, present in huge excess)
-// attacks the MORE-substituted carbon, since it carries more of the ion's
-// positive character; that puts OH on the more-substituted carbon and
-// leaves Br on the less-substituted one -- the OPPOSITE regiochemistry
-// from hydrohalogenation/hydration above, even though it looks like "the
-// same shape" of addition across the double bond.
 function halohydrinFormation(mol, X){
   const dbs = doubleBondEdges(mol);
   if(dbs.length===0) return { occurs:false };
@@ -2941,27 +2925,24 @@ function downgradeRingIfMono(mol){
 // ring:true node a phenyl:true flag stands in for (lossless: phenyl:true
 // only ever MEANS "an unsubstituted benzene ring attached at exactly one
 // position", so there's nothing else it could have been). Needed because
-// __normalizeMoleculeForGrading's own "fold to phenyl:true" step (see its
-// step 5.5) runs unconditionally on every hand-built ring-plus-one-plain-
-// chain shape, regardless of which reaction it's about to be graded
-// against -- correct for a 'product'/'reagent' answer compared directly by
-// productSetEqual (same shape the correct answer would fold to too), but
-// wrong for a 'reactant' candidate that's about to be RE-SIMULATED (see
-// reactantCandidateMatchesGiven): ringSubstitutionPositions and friends all
-// key off `n.ring`, which the phenyl fold just erased, so a perfectly
-// correct hand-built reactant (e.g. plain ethylbenzene, answering a ring-
-// chlorination question) silently re-simulated to occurs:false and was
-// marked wrong. Only called where re-simulation needs it -- never touches
-// the shared normalizer itself, so every other phenyl:true consumer
-// (radicalSubstitution, sideChainOxidationToBenzoicAcid, ...) is
-// unaffected.
+// app.html's __normalizeMoleculeForGrading's own "fold to phenyl:true" step
+// (its own step 5.5) runs unconditionally on every hand-built ring-plus-
+// one-plain-chain shape, regardless of which reaction it's about to be
+// graded against -- correct for a 'product'/'reagent' answer compared
+// directly by productSetEqual (same shape the correct answer would fold to
+// too), but wrong for a 'reactant' candidate that's about to be
+// RE-SIMULATED (see reactantCandidateMatchesGiven in app.html):
+// ringSubstitutionPositions and friends all key off `n.ring`, which the
+// phenyl fold just erased, so a perfectly correct hand-built reactant
+// (e.g. plain ethylbenzene, answering a ring-chlorination question)
+// silently re-simulated to occurs:false and was marked wrong. Only called
+// where re-simulation needs it -- never touches the shared normalizer
+// itself, so every other phenyl:true consumer (radicalSubstitution,
+// sideChainOxidationToBenzoicAcid, ...) is unaffected.
 function upgradePhenylToRing(mol){
   const phenylNode = mol.nodes.find(n=>n.phenyl);
   if(!phenylNode) return mol;
   const v = cloneMol(mol);
-  // newNode() (not mkRingNode -- that's the generator module's own helper,
-  // a separate closure this one can't reach) plus the same ring:true/subs
-  // shape mkRingNode itself sets, just assembled by hand here.
   const ring = newNode();
   ring.ring = true;
   ring.subs = new Array(6).fill(null);
@@ -3368,11 +3349,6 @@ function ringTribromination(mol, existingSub){
   return { occurs:true, product:v };
 }
 
-// ArOH + conc HNO3 -> 2,4,6-trinitrophenol (picric acid) -- same "strong
-// activator substitutes all 3 non-meta positions at once" shape as
-// ringTribromination just above, NO2 instead of Br. -OH activates the ring
-// so strongly that concentrated HNO3 alone is enough (no H2SO4 catalyst
-// needed the way plain mono-nitration of an unactivated ring needs it).
 function ringTrinitration(mol, existingSub){
   const ring = mol.nodes.find(n=>n.ring);
   if(!ring) return { occurs:false };
@@ -3635,13 +3611,6 @@ function hydrolyzeAmide(mol, target){
   return { occurs:true, product:v };
 }
 
-// RCONH2 + LiAlH4 -> RCH2NH2 -- primary amide only, same scope
-// hydrolyzeAmide already commits to just above (a flat 'NH2' sub on an
-// oxo carbon). The carbonyl carbon just loses its double-bond character
-// (oxo:false); the NH2 sub stays exactly where it is, and the carbon's
-// newly-freed valence slot fills with an implicit H automatically --
-// same "reassign, don't rebuild" pattern nitrileReduction already uses
-// for the equivalent nitrile->amine step.
 function reduceAmide(mol){
   const v = cloneMol(mol);
   const c = v.nodes.find(n=>!n.ring && n.oxo && n.subs && n.subs.includes('NH2'));
@@ -3660,14 +3629,6 @@ function reduceAmide(mol){
 // carbon's own 3 H's become CHI3 (built fresh, not derived from it, since
 // the 3 I substituents replace those H's); the carbonyl carbon closes up
 // into a carboxylate salt exactly like hydrolyzeEster's alkaline branch.
-// Also matches a CLOSED group:'CHO' node, not just an open oxo one --
-// ethanal (CH3-CHO) is the one aldehyde that genuinely gives a positive
-// iodoform test (its own methyl IS the group directly attached to the
-// carbonyl), but generateAldehyde always represents that carbon as a
-// closed CHO group rather than an open oxo carbon, so the original
-// oxo-only check could never match it. Any OTHER aldehyde (its CHO
-// carbon's neighbour is a longer chain, not a bare terminal methyl) still
-// correctly refuses via the methylNb check below either way.
 function iodoformCleavage(mol){
   const v = cloneMol(mol);
   const c = v.nodes.find(n=>!n.ring && ((n.oxo && !n.group) || n.group==='CHO'));
@@ -3690,19 +3651,6 @@ function iodoformCleavage(mol){
   return { occurs:true, products };
 }
 
-// CH3-CH(OH)-R (or ethanol, R=H) + I2/NaOH(aq), warm -> RCOONa + CHI3 --
-// alkaline iodine first oxidises the alcohol to the equivalent methyl
-// ketone shape in situ, which then cleaves exactly like iodoformCleavage's
-// own ketone case above; modelled directly from the alcohol starting
-// material instead of chaining through a separate oxidation step, same
-// "reassign the shape you started with" style every other operator here
-// uses. Finds an -OH-bearing carbon with a genuinely terminal
-// (unsubstituted, single-neighbour) methyl directly attached -- exactly
-// the shape that distinguishes ethanol/propan-2-ol-style CH3CH(OH)-
-// alcohols (a real positive test) from a plain primary alcohol like
-// propan-1-ol (CH3CH2CH2OH, whose OH carbon's only neighbour is a CH2, not
-// a bare methyl -- correctly refused, same as any secondary/tertiary
-// alcohol without a methyl directly on the OH carbon).
 function iodoformCleavageFromAlcohol(mol){
   const v = cloneMol(mol);
   const c = v.nodes.find(n=>!n.ring && !n.oxo && !n.group && n.subs && n.subs.includes('OH'));
@@ -3826,22 +3774,114 @@ function protonateAmine(mol){
   return { occurs:true, product:v };
 }
 
+/* =========================================================================
+   AMINO ACID / PROTEIN OPERATORS
+   An amino acid's amphoteric behaviour (aminoAcidPlusAcid/-Alkali in the
+   POOL) needs no new operator at all -- it's just protonateAmine and
+   carboxylicAcidSaltFormation called directly on a generateAminoAcid
+   molecule, since its -NH2 and -COOH are the exact same flat-sub/group-node
+   shapes those two operators already expect. Only the peptide bond itself
+   (forming and breaking a bond neither operator has ever had to touch) is
+   genuinely new.
+========================================================================= */
+
+// H2N-CHR-COOH + H2N-CHR'-COOH -> a dipeptide + H2O -- peptide (amide) bond
+// formation between two alpha-amino acids' -CO2H and -NH2 ends, condensing
+// out water. Structurally this is esterifyCommon's own "fromGroup"
+// carbonyl-opening step (acid1's group:'COOH' node closes up into a real
+// oxo carbon) combined with acylChlorideToAmide's own amine-grafting step
+// (acid2's flat 'NH2' sub is promoted to a real element:'N' node and bonded
+// directly onto that carbon) -- both moves this file already uses
+// elsewhere, just combined on a COOH source instead of an acyl chloride.
+// acid1Mol supplies the dipeptide's free -NH2 (N-terminus) end, acid2Mol
+// supplies its free -CO2H (C-terminus) end, matching the source material's
+// own asn-lys convention.
+function formPeptideBond(acid1Mol, acid2Mol){
+  const v = cloneMol(acid1Mol);
+  const c = v.nodes.find(n=>n.group==='COOH');
+  if(!c) return { occurs:false };
+  c.group = null; c.oxo = true;
+
+  const aClone = cloneMol(acid2Mol);
+  const host = aClone.nodes.find(n=>!n.ring && n.subs && n.subs.includes('NH2'));
+  if(!host) return { occurs:false };
+  host.subs = host.subs.filter(s=>s!=='NH2');
+  const amine = newAmineNode(false);
+  aClone.nodes.push(amine);
+  aClone.edges.push({ a:host.id, b:amine.id, type:'S' });
+
+  v.nodes.push(...aClone.nodes);
+  v.edges.push(...aClone.edges);
+  v.edges.push({ a:c.id, b:amine.id, type:'S' });
+  return { occurs:true, product:v };
+}
+
+// Reverse of formPeptideBond: hydrolyses a dipeptide's single peptide bond
+// back into its two constituent amino acids. Finds the bond by its shape
+// (an oxo carbon bonded to a real element:'N' node with exactly 2
+// neighbours -- unlike a primary amide's flat 'NH2' sub, or a branching
+// secondary/tertiary amine's 3+ neighbours, this is the one shape only a
+// peptide/secondary-amide bond has here), reopens the carbonyl side to a
+// plain -COOH and demotes the nitrogen back to a flat 'NH2' sub on its
+// other neighbour, splits into the two amino-acid fragments exactly like
+// ester/anhydride hydrolysis already do, then applies the acidic or
+// alkaline condition's ionisation UNIFORMLY across every fragment's now-
+// plain-neutral ends -- reusing protonateAmine (mode:'acidic', every -NH2
+// -> -NH3+, matching the source diagram's "dilute H2SO4, heat" row) or
+// carboxylicAcidSaltFormation (mode:'alkaline', every -CO2H -> -CO2-Na+,
+// matching its "dilute NaOH, heat" row) rather than a bespoke ionisation
+// step, since both fragments come out of the split in exactly the shape
+// those two operators already expect.
+function hydrolyzePeptideBond(mol, mode){
+  const v = cloneMol(mol);
+  let bond = null;
+  for(const c of v.nodes){
+    if(c.ring || !c.oxo) continue;
+    const nNb = neighborsOf(v, c.id).find(nb=>{
+      const n = findNode(v, nb.to);
+      return n.element==='N' && !n.ring && neighborsOf(v, n.id).length===2;
+    });
+    if(nNb){ bond = { c, nId: nNb.to }; break; }
+  }
+  if(!bond) return { occurs:false };
+  bond.c.oxo = false;
+  bond.c.group = 'COOH';
+  const nNode = findNode(v, bond.nId);
+  const otherNb = neighborsOf(v, nNode.id).find(nb=>nb.to!==bond.c.id);
+  findNode(v, otherNb.to).subs.push('NH2');
+  v.nodes = v.nodes.filter(n=>n.id!==nNode.id);
+  v.edges = v.edges.filter(e=>e.a!==nNode.id && e.b!==nNode.id);
+
+  const fragments = connectedComponents(v).map(f=>({ nodes:f.nodes, edges:f.edges }));
+  const transform = mode==='acidic' ? protonateAmine : carboxylicAcidSaltFormation;
+  const products = fragments.map(f=>{
+    const r = transform(f);
+    return { kind:'chain', mol: r.occurs ? r.product : f };
+  });
+  return { occurs:true, products };
+}
+
 module.exports = {
   radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage, doubleBondEdges,
-  hydrohalogenation, hydration, halohydrinFormation,
+  hydrohalogenation, hydration, halohydrinFormation, substitutionWeight, moreSubstitutedEnd,
   ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
+  ringPositionDirectingType, ringSubstitutionPositions, findCarbonylCarbon,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
   oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, ringTrinitration, combustion,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
-  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, iodoformCleavage, iodoformCleavageFromAlcohol, connectedComponents,
-  diazotisation, azoCoupling, protonateAmine
+  hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, connectedComponents,
+  diazotisation, azoCoupling, protonateAmine, iodoformCleavage, iodoformCleavageFromAlcohol,
+  formPeptideBond, hydrolyzePeptideBond
 };
 
 __registry['operators'] = module.exports;
 })();
-</script>
 
+</script>
+<!-- /BUILD:operators.js -->
+
+<!-- BUILD:generator.js -->
 <script>
 (function(){
 'use strict';
@@ -4252,12 +4292,40 @@ function generateBenzenediazonium(){
   return { nodes:[ring, dGroup], edges:[{a:ring.id, b:dGroup.id, type:'S', ringPos:0}] };
 }
 
-module.exports = { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateAlkylChloride, generateHaloarene, generateSubstitutedArene, generateAmine, generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde, generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium, ri, pick };
+// An alpha-amino acid, H2N-CH(R)-COOH -- sideChainLen 0 gives glycine's
+// R=H, 1 gives alanine's R=CH3, 2 a longer inert side chain, and so on.
+// The alpha carbon carries the flat 'NH2' sub directly, exactly like any
+// other primary amine in this model (generateAmine's own comment documents
+// why a 1-neighbour amine is never promoted to a real element:'N' node),
+// and bonds to a dedicated group:'COOH' node, an exact mirror of
+// generateCarboxylicAcid's own carboxyl-carbon shape. Real side-chain
+// identity (R/S stereochemistry, acidic/basic/aromatic side chains) is out
+// of scope here, same as every other topic's deliberately generic R group
+// -- only the alpha-amino-acid backbone chemistry (acid/base behaviour,
+// peptide bond formation/hydrolysis) is tested.
+function generateAminoAcid(sideChainLen){
+  const alpha = mkNode(); alpha.subs.push('NH2');
+  const nodes = [alpha]; const edges = [];
+  if(sideChainLen>0){
+    const chainIds = [];
+    for(let i=0;i<sideChainLen;i++){ const c=mkNode(); nodes.push(c); chainIds.push(c.id); }
+    for(let i=0;i<chainIds.length-1;i++) edges.push({a:chainIds[i], b:chainIds[i+1], type:'S'});
+    edges.push({a:alpha.id, b:chainIds[0], type:'S'});
+  }
+  const acidC = mkNode(); acidC.group = 'COOH'; nodes.push(acidC);
+  edges.push({a:alpha.id, b:acidC.id, type:'S'});
+  return { nodes, edges };
+}
+
+module.exports = { generateMolecule, generateArene, generateAlkylbenzene, generateTertButylbenzene, generateAlkylChloride, generateHaloarene, generateSubstitutedArene, generateAmine, generateAlcohol, generatePhenol, generateCarboxylicAcid, generateAcylChloride, generateAldehyde, generateKetone, generateBenzaldehyde, generateEthanedioicAcid, generateAcidAnhydride, generateNitrobenzene, generatePhenylamine, generateBenzenediazonium, generateAminoAcid, ri, pick };
 
 __registry['generator'] = module.exports;
 })();
-</script>
 
+</script>
+<!-- /BUILD:generator.js -->
+
+<!-- BUILD:render.js -->
 <script>
 (function(){
 'use strict';
@@ -4323,9 +4391,1028 @@ function render(mol){
   return renderFrom(start, null);
 }
 module.exports = { render };
+
 __registry['render'] = module.exports;
 })();
+
 </script>
+<!-- /BUILD:render.js -->
+
+<!-- ============================================================
+     Rule-based reaction engine (facts/reagents/resolve/rules) --
+     assembled the same way as engine/operators/generator/render above.
+     Not yet consumed by any app-logic code below except where a
+     specific POOL entry's `run` is a thin wrapper around it -- see
+     workflow.md's "rule-based reaction engine" section for what's
+     converted and what still uses the older per-reaction operator call
+     directly. Both are free to coexist indefinitely.
+     ============================================================ -->
+<!-- BUILD:facts.js -->
+<script>
+(function(){
+'use strict';
+var module = { exports: {} };
+/* =========================================================================
+   FUNCTIONAL GROUP SCANNER
+   scanFunctionalGroups(mol) reads a molecule's raw node/edge graph (see
+   engine.js's own header for that shape) and returns an array of
+   FunctionalGroupFact objects -- one per distinct reactive SITE found (so
+   a diene reports two 'alkene' facts, a diol reports two 'hydroxyl'
+   facts). This is the "what is this molecule" half of the rule engine
+   (see rules.js for "what happens to it"); it never mutates `mol` and
+   never decides what reacts -- it only reports what's there.
+
+   Each fact carries a `kind` discriminator plus enough classification
+   detail for a rule's predicate to filter on (1°/2°/3°, aromatic vs
+   aliphatic, etc.), and the node id(s) it's anchored to for diagnostics.
+   Rules do NOT use a fact's node id to drive the actual transform --
+   every existing operator in operators.js already re-locates its own
+   target site(s) inside `mol` and (where the real chemistry allows more
+   than one qualifying site, e.g. hydrohalogenation looping over every
+   C=C) already handles all of them in one call. So a rule's transform is
+   invoked at most once per matched rule, never once per fact -- see
+   resolve.js.
+========================================================================= */
+const { findNode, neighborsOf, implicitH } = require('./engine');
+const { doubleBondEdges, substitutionWeight, ringSubstitutionPositions, findCarbonylCarbon } = require('./operators');
+
+// Real bonded-carbon count at a plain carbon that carries a flat
+// substituent (OH, a halogen, ...) -- the same "otherCarbons" shape
+// oxidizeAlcohol/nucleophilicSubstitutionFlat's callers already use to
+// tell 1°/2°/3° apart. A ring attachment or a phenyl flag both count as
+// one more real neighbour, matching how substitutionWeight treats them.
+function carbonClass(mol, node){
+  const n = neighborsOf(mol, node.id).length + (node.phenyl ? 1 : 0);
+  return n<=1 ? '1°' : n===2 ? '2°' : '3°';
+}
+
+const META_DIRECTOR_FLAT = new Set(['NO2']);
+const ACTIVATING_FLAT = new Set(['OH','NH2']);
+
+function scanRing(mol, ring, facts){
+  const occupiedPositions = [];
+  for(let i=0;i<6;i++){
+    const flat = ring.subs[i];
+    const edge = mol.edges.find(e=>(e.a===ring.id||e.b===ring.id) && e.ringPos===i);
+    if(flat || edge) occupiedPositions.push(i);
+  }
+  const freePositions = ringSubstitutionPositions(mol); // null if >2 substituents (this app's own directing-conflict boundary)
+  facts.push({
+    kind:'arene', ringId:ring.id,
+    substitutionLevel: occupiedPositions.length,
+    freePositions: freePositions || [],
+    hasActivatingSub: ring.subs.some(s=>s && ACTIVATING_FLAT.has(s)),
+  });
+  // Ring-attached flat substituents are themselves functional groups (a
+  // phenol's -OH, an aniline's -NH2, a haloarene's halogen, nitrobenzene's
+  // -NO2) -- reported here as their own facts, `aromatic:true`, so the
+  // SAME hydroxyl/amine/haloC rules used for the aliphatic case can match
+  // them too (their reagentRequirement/transform pair can special-case
+  // `aromatic` where the real chemistry actually differs, e.g. phenol
+  // esterification refusing outright).
+  ring.subs.forEach((s, pos)=>{
+    if(!s) return;
+    if(s==='OH') facts.push({ kind:'hydroxyl', nodeId:ring.id, ringPos:pos, class:null, aromatic:true });
+    else if(s==='NH2') facts.push({ kind:'amine', nodeId:ring.id, ringPos:pos, class:'1°', aromatic:true });
+    else if(s==='NO2') facts.push({ kind:'nitro', nodeId:ring.id, ringPos:pos, aromatic:true });
+    else if(['F','Cl','Br','I'].includes(s)) facts.push({ kind:'haloC', nodeId:ring.id, ringPos:pos, halogen:s, class:null, aromatic:true });
+  });
+  // A real chain hanging off the ring via a ringPos edge, with at least
+  // one H on the ring-attached (benzylic) carbon -- side-chain oxidation/
+  // halogenation eligibility. tert-butylbenzene's fully-substituted
+  // benzylic carbon (implicitH===0) correctly reports no benzylicCH fact,
+  // same refusal sideChainOxidationToBenzoicAcid's own implicitH check
+  // already relies on.
+  mol.edges.forEach(e=>{
+    if(e.ringPos==null) return;
+    if(e.a!==ring.id && e.b!==ring.id) return;
+    const outsideId = e.a===ring.id ? e.b : e.a;
+    const outside = findNode(mol, outsideId);
+    if(outside && !outside.ring && !outside.group && !outside.oxo && implicitH(mol, outsideId)>0){
+      facts.push({ kind:'benzylicCH', nodeId:outsideId, ringId:ring.id });
+    }
+  });
+}
+
+function scanFunctionalGroups(mol){
+  const facts = [];
+  if(mol.nodes.length>0) facts.push({ kind:'organic' }); // universal -- any carbon skeleton at all; combustion keys off this rather than a specific group
+
+  doubleBondEdges(mol).forEach(e=>{
+    const a = findNode(mol, e.a), b = findNode(mol, e.b);
+    const wa = substitutionWeight(mol, e.a, e), wb = substitutionWeight(mol, e.b, e);
+    const total = wa + wb;
+    facts.push({
+      kind:'alkene', edge:{a:e.a, b:e.b},
+      substitution: total===0?'mono':total===1?'di':total===2?'tri/gem-di':'tetra/tri',
+      tied: wa===wb,
+      phenylConjugated: a.phenyl || b.phenyl,
+    });
+  });
+
+  mol.nodes.forEach(node=>{
+    if(node.ring){ scanRing(mol, node, facts); return; }
+
+    // A `phenyl:true` spectator flag (an unsubstituted benzene ring
+    // attached at exactly one point, see engine.js's own header) is the
+    // OTHER shape "attached to a ring" can take alongside a real
+    // ring:true node -- generateAlkylbenzene and every side-chain
+    // operator (sideChainOxidationToBenzoicAcid, ...) use exactly this
+    // shape, not a ringPos edge, so it needs its own benzylicCH check
+    // here rather than being folded into scanRing above.
+    if(node.phenyl && !node.oxo && !node.group && implicitH(mol, node.id)>0){
+      facts.push({ kind:'benzylicCH', nodeId:node.id, ringId:null });
+    }
+
+    // -- terminal `group` nodes (COOH/CHO/CN/COONa/N2Cl) --
+    if(node.group==='COOH'){
+      const nbs = neighborsOf(mol, node.id);
+      const isMethanoic = nbs.length===0;
+      let isEthanedioic = false;
+      if(nbs.length===1){
+        const other = findNode(mol, nbs[0].to);
+        isEthanedioic = other.group==='COOH';
+      }
+      facts.push({ kind:'carboxyl', group:'COOH', nodeId:node.id, specialOxidisable: isMethanoic || isEthanedioic });
+      return;
+    }
+    if(node.group==='COONa'){ facts.push({ kind:'carboxyl', group:'COONa', nodeId:node.id }); return; }
+    if(node.group==='CN'){ facts.push({ kind:'nitrile', nodeId:node.id }); return; }
+    if(node.group==='N2Cl'){ facts.push({ kind:'diazonium', nodeId:node.id }); return; }
+    if(node.group==='CHO'){
+      const ringEdge = mol.edges.find(e=>(e.a===node.id||e.b===node.id) && e.ringPos!=null);
+      facts.push({ kind:'carbonyl', class:'aldehyde', nodeId:node.id, aromatic: !!ringEdge, hasAlphaMethyl:false });
+      return;
+    }
+
+    // -- oxo (C=O) plain carbons: ketone / acyl chloride / ester / amide --
+    if(node.oxo){
+      if(node.subs.includes('Cl')){ facts.push({ kind:'acylHalide', nodeId:node.id }); return; }
+      if(node.subs.includes('NH2')){ facts.push({ kind:'amide', class:'primary', nodeId:node.id }); return; }
+      const etherO = neighborsOf(mol, node.id).find(nb=>findNode(mol, nb.to).element==='O');
+      if(etherO){
+        const oNode = findNode(mol, etherO.to);
+        const oOtherNbs = neighborsOf(mol, oNode.id).filter(nb=>nb.to!==node.id);
+        const other = oOtherNbs[0] ? findNode(mol, oOtherNbs[0].to) : null;
+        if(other && other.oxo){ facts.push({ kind:'anhydride', nodeId:node.id }); return; }
+        facts.push({ kind:'ester', nodeId:node.id }); return;
+      }
+      const amideN = neighborsOf(mol, node.id).find(nb=>findNode(mol, nb.to).element==='N');
+      if(amideN){
+        const nNode = findNode(mol, amideN.to);
+        const nDegree = neighborsOf(mol, nNode.id).length;
+        facts.push({ kind:'amide', class: nDegree>=3 ? 'tertiary' : 'secondary', nodeId:node.id, amideNodeId:nNode.id });
+        return;
+      }
+      // Plain carbonyl carbon, no leaving group / heteroatom neighbour ->
+      // ketone (2 real carbon neighbours) or a mid-build aldehyde-shaped
+      // node (1 neighbour, oxo, no group -- e.g. right after
+      // oxidizeAlcohol's 'CHO' branch is skipped for some hand-built
+      // case); either way this app's own iodoformCleavage already treats
+      // "oxo && !group" as CHO-equivalent, so mirror that here.
+      const realNbs = neighborsOf(mol, node.id).length;
+      if(realNbs>=2){
+        const hasAlphaMethyl = neighborsOf(mol, node.id).some(nb=>{
+          const n = findNode(mol, nb.to);
+          return !n.ring && !n.oxo && !n.group && n.subs.length===0 && neighborsOf(mol, n.id).length===1;
+        });
+        facts.push({ kind:'carbonyl', class:'ketone', nodeId:node.id, aromatic:false, hasAlphaMethyl });
+      } else {
+        facts.push({ kind:'carbonyl', class:'aldehyde', nodeId:node.id, aromatic:false, hasAlphaMethyl:false });
+      }
+      return;
+    }
+
+    // -- real branching nitrogen (secondary/tertiary amine, or a charged
+    //    ammonium/amine-salt centre -- charge>0 ones are already
+    //    protonated and reported inert:true so a rule can refuse to
+    //    re-protonate an already-protonated amine). --
+    if(node.element==='N'){
+      const degree = neighborsOf(mol, node.id).length;
+      if(node.charge>0){ facts.push({ kind:'amineSalt', nodeId:node.id, degree }); return; }
+      facts.push({ kind:'amine', nodeId:node.id, class: degree>=3?'3°':'2°', aromatic:false });
+      return;
+    }
+    if(node.element==='O'){ return; } // ether/ester bridge oxygen -- not a site of its own, covered by the ester/anhydride facts above
+
+    // -- flat substituents on an otherwise-plain carbon --
+    if(node.subs.includes('OH')) facts.push({ kind:'hydroxyl', nodeId:node.id, class:carbonClass(mol,node), aromatic:false });
+    if(node.subs.includes('NH2')) facts.push({ kind:'amine', nodeId:node.id, class:'1°', aromatic:false });
+    if(node.subs.includes('NO2')) facts.push({ kind:'nitro', nodeId:node.id, aromatic:false });
+    ['F','Cl','Br','I'].forEach(hal=>{
+      if(node.subs.includes(hal)) facts.push({ kind:'haloC', nodeId:node.id, halogen:hal, class:carbonClass(mol,node), aromatic:false });
+    });
+  });
+
+  // A composite fact -- present only when the SAME molecule carries both
+  // a free -COOH and a free (non-aromatic, primary) -NH2, i.e. is itself
+  // amino-acid-shaped. Peptide bond FORMATION (see rules.js's
+  // two-reactant section) keys off this rather than the plain
+  // 'carboxyl'/'amine' facts individually, since real syllabus scope is
+  // "two alpha-amino acids condense", not "any carboxylic acid condenses
+  // with any primary amine" -- formPeptideBond the OPERATOR doesn't
+  // itself enforce that (it would happily amide-couple a plain acid with
+  // a plain amine too), so the narrower scope has to live here instead.
+  if(facts.some(f=>f.kind==='carboxyl'&&f.group==='COOH') && facts.some(f=>f.kind==='amine'&&!f.aromatic&&f.class==='1°')){
+    facts.push({ kind:'aminoAcid' });
+  }
+
+  // Alkane C-H -- always structurally present wherever a plain carbon has
+  // implicit H left; radicalSubstitution itself enumerates every valid
+  // position (and app.html's variants UI lets the student pick among
+  // them), so this is deliberately ONE aggregate fact, not one per site.
+  if(mol.nodes.some(n=>!n.ring && !n.group && implicitH(mol, n.id)>0)){
+    facts.push({ kind:'alkylCH' });
+  }
+
+  // Stable per-scan identity for each site -- used by resolve.js to
+  // detect two DIFFERENT rules genuinely competing for the same site
+  // (as opposed to two independent sites, e.g. an alkene and an alcohol
+  // in the same molecule, which should both react).
+  facts.forEach((f, i)=>{ f.id = i; });
+  return facts;
+}
+
+module.exports = { scanFunctionalGroups, carbonClass };
+
+__registry['facts'] = module.exports;
+})();
+
+</script>
+<!-- /BUILD:facts.js -->
+
+<!-- BUILD:reagents.js -->
+<script>
+(function(){
+'use strict';
+var module = { exports: {} };
+/* =========================================================================
+   REAGENT / CONDITION FACTS
+   A ReagentCondition is the structured shape every rule's precondition is
+   checked against -- built from a controlled tag vocabulary (never
+   freeform text; see TAG_VOCAB below), so both the question generator and
+   a student's own tag-based answer produce the exact same shape.
+
+     { reagents:['Br2'], solvent:'aq', catalyst:null, temperature:'room',
+       light:false, quantity:'controlled', pH:null }
+
+   `reagents` is always present (possibly empty); every other field is
+   either a real value or `null` (explicitly absent/not applicable -- e.g.
+   `catalyst:null` on a plain Br2(aq) bromination). There is deliberately
+   no "unknown" state for a well-formed condition -- callers building one
+   from a tag list (see conditionFromTags) fill every field in.
+
+   A RULE's requirement (see rules.js) is a PARTIAL condition: any field
+   it omits means "don't care", any field it sets means "must be
+   satisfied" -- `reagents` by subset (extra reagents in the given
+   condition never block a match), everything else by the match rules in
+   `satisfies` below. This is what gives "minimal satisfaction" its
+   precise meaning: a rule fires on the SMALLEST condition that still
+   contains everything it asked for, regardless of what else is present.
+========================================================================= */
+
+// Ordered so a rule can require a MINIMUM ("needs at least heat") or a
+// MAXIMUM ("must stay cold or it decomposes") via {min} / {max} rather
+// than an exact string, without hand-listing every value on each side.
+// Deliberately no separate 'reflux' level above 'heat' -- reflux is lab
+// technique (how the heating is done so volatiles don't escape), not a
+// hotter condition or its own markable point in H2 exams, so "heat" and
+// "heat under reflux" are the exact same condition here, always (see
+// app.html's own tagSetsEqual/normalizeConditionTag for the matching
+// equivalence on the display/grading side).
+const TEMP_ORDER = ['cold', 'room', 'warm', 'heat'];
+function tempIndex(t){ const i = TEMP_ORDER.indexOf(t); if(i===-1) throw new Error('unknown temperature: '+t); return i; }
+
+// The full controlled vocabulary a ReagentCondition/requirement is built
+// from -- deliberately small and closed (no freeform reagent text ever
+// reaches the engine). Extend this list, not ad-hoc strings, when a new
+// rule needs a reagent/catalyst/solvent this doesn't already cover.
+const REAGENT_SPECIES = [
+  'Cl2','Br2','I2','HBr','HCl','HI','H2','H2O','O2','KMnO4','K2Cr2O7',
+  'NaOH','Na','Na2CO3','NaHCO3','HNO3','H2SO4','PCl5','PCl3','SOCl2',
+  'LiAlH4','NaBH4','HCN','KCN','NH3','NaNO2','Sn','I2/NaOH',
+  'NH2R-primary','NH2R-secondary','R-COCl','R-COOH','R-OH','ArOH','ArNH2',
+];
+const SOLVENTS = ['aq', 'CCl4', 'ethanolic', 'dry ether', 'aqueous KOH'];
+const CATALYSTS = ['FeBr3', 'AlCl3', 'Ni', 'Pt', 'V2O5', 'H2SO4']; // conc H2SO4 acts catalytically in Fischer esterification, not as a stoichiometric reagent -- modelled here, not in `reagents`
+const QUANTITIES = ['controlled', 'excess'];
+const PHS = ['acidic', 'alkaline'];
+const CONCENTRATIONS = ['dilute', 'concentrated']; // solution STRENGTH (dilute/hot-concentrated KMnO4) -- distinct from `quantity`, which is stoichiometric AMOUNT (controlled/excess Br2 water)
+
+function emptyCondition(){
+  return { reagents:[], solvent:null, catalyst:null, temperature:'room', light:false, quantity:null, pH:null, concentration:null };
+}
+
+// `given` is a full ReagentCondition; `req` is a PARTIAL one (a rule's
+// requirement) -- every key req sets must be satisfied, every key it
+// omits is ignored. `req.temperature` may be a plain string (exact) or
+// `{min}`/`{max}`/`{min,max}` (range).
+function satisfies(given, req){
+  if(req.reagents && req.reagents.length){
+    if(!req.reagents.every(r=>given.reagents.includes(r))) return false;
+  }
+  // Priority/exclusivity between two rules that would otherwise both
+  // match the same site (e.g. a primary aromatic amine's -NH2 reacts
+  // with NaNO2/HCl by diazotisation, not simple protonation, even
+  // though HCl alone is also present) -- expressed as a requirement,
+  // not a runtime tie-break, so resolve.js's clash detector still
+  // throws if two rules are ever genuinely under-specified against each
+  // other instead of silently picking a winner.
+  if(req.reagentsExclude && req.reagentsExclude.some(r=>given.reagents.includes(r))) return false;
+  if('solvent' in req && req.solvent !== given.solvent) return false;
+  if('catalyst' in req && req.catalyst !== given.catalyst) return false;
+  if('light' in req && req.light !== given.light) return false;
+  if('quantity' in req && req.quantity !== given.quantity) return false;
+  if('pH' in req && req.pH !== given.pH) return false;
+  if('concentration' in req && req.concentration !== given.concentration) return false;
+  if(req.temperature != null){
+    const gi = tempIndex(given.temperature);
+    if(typeof req.temperature === 'string'){
+      if(gi !== tempIndex(req.temperature)) return false;
+    } else {
+      if(req.temperature.min != null && gi < tempIndex(req.temperature.min)) return false;
+      if(req.temperature.max != null && gi > tempIndex(req.temperature.max)) return false;
+    }
+  }
+  return true;
+}
+
+module.exports = { TEMP_ORDER, tempIndex, REAGENT_SPECIES, SOLVENTS, CATALYSTS, QUANTITIES, PHS, CONCENTRATIONS, emptyCondition, satisfies };
+
+__registry['reagents'] = module.exports;
+})();
+
+</script>
+<!-- /BUILD:reagents.js -->
+
+<!-- BUILD:resolve.js -->
+<script>
+(function(){
+'use strict';
+var module = { exports: {} };
+/* =========================================================================
+   RESOLVER
+   The one function question generation AND all three grading modes call
+   (see rules.js's own header): given a molecule and a structured
+   ReagentCondition, scan its functional groups, find every rule whose
+   precondition (functional-group shape + reagent condition) is
+   satisfied, and apply each one's transform -- ONCE per matched rule,
+   never once per fact (see facts.js's header for why). Two independent
+   functional groups both reacting under the same reagent (e.g. an
+   alkene AND an alcohol, both touched by the same reagent) is the
+   expected, common case and is handled by simply chaining both
+   transforms. Two DIFFERENT rules genuinely competing for the SAME site
+   is a rule-design bug, not a real ambiguity to silently pick a winner
+   for -- resolve() throws loudly so it's caught during authoring/vetting
+   rather than silently mis-grading a live question.
+========================================================================= */
+const { scanFunctionalGroups } = require('./facts');
+const { satisfies } = require('./reagents');
+const { canonicalForm } = require('./engine');
+
+class RuleClashError extends Error {
+  constructor(fact, ruleIds){
+    super(`Rule clash: [${ruleIds.join(', ')}] all matched the same ${fact.kind} site (fact #${fact.id}) under the same reagent condition -- exactly one rule should have matched. Fix the rules' reagentRequirement/fgRequirement specificity, this is never correct behaviour.`);
+    this.fact = fact; this.ruleIds = ruleIds;
+  }
+}
+
+function resolve(mol, reagentCondition, rules){
+  const facts = scanFunctionalGroups(mol);
+  const candidates = []; // {rule, facts: matching facts for this rule}
+  const claimedBy = new Map(); // factId -> [ruleId, ...]
+
+  for(const rule of rules){
+    if(rule.type==='two-reactant') continue; // handled only by resolveTwoReactant, below
+    const matchingFacts = facts.filter(f=>rule.fgRequirement(f));
+    if(matchingFacts.length===0) continue;
+    if(!satisfies(reagentCondition, rule.reagentRequirement || {})) continue;
+    candidates.push({ rule, facts: matchingFacts });
+    matchingFacts.forEach(f=>{
+      const list = claimedBy.get(f.id) || [];
+      list.push(rule.id);
+      claimedBy.set(f.id, list);
+    });
+  }
+
+  for(const [factId, ruleIds] of claimedBy){
+    if(ruleIds.length>1){
+      throw new RuleClashError(facts.find(f=>f.id===factId), [...new Set(ruleIds)]);
+    }
+  }
+
+  if(candidates.length===0) return { occurs:false, facts, candidateRuleIds:[] };
+
+  let mol2 = mol;
+  const applied = [];
+  for(const {rule, facts:mf} of candidates){
+    const result = rule.transform(mol2, mf);
+    // A rule's fgRequirement/reagentRequirement matching is a NECESSARY
+    // but not always SUFFICIENT condition (some real chemistry shape
+    // checks -- e.g. "does this ring already have 3 substituents" --
+    // live inside the operator itself, not duplicated into the fact
+    // scanner) -- such a rule is dropped here rather than treated as an
+    // engine error, so an unrelated qualifying rule can still apply.
+    if(!result || !result.occurs) continue;
+    applied.push(rule.id);
+    if(result.product !== undefined){ mol2 = result.product; continue; }
+    if(result.products){ return { occurs:true, appliedRules:[...applied], products: result.products, facts }; }
+    if(result.variants){ return { occurs:true, appliedRules:[...applied], variants: result.variants, facts }; }
+  }
+  if(applied.length===0) return { occurs:false, facts, candidateRuleIds: candidates.map(c=>c.rule.id) };
+  return { occurs:true, appliedRules: applied, product: mol2, facts };
+}
+
+/* =========================================================================
+   TWO-REACTANT RESOLVER
+   For rules shaped `{ type:'two-reactant', roleA, roleB, reagentRequirement,
+   transform(first, second) }` (esterification, Friedel-Crafts, acyl
+   chloride + amine, azo coupling, peptide bond FORMATION -- see rules.js's
+   "Two-reactant rules" section). `roleA`/`roleB` are each just
+   `{fgRequirement}`, exactly like a single-reactant rule's own
+   fgRequirement -- a two-reactant rule is really just a single-reactant
+   rule with a second precondition on a second molecule.
+
+   Order is NOT significant to the caller -- molA/molB are tried in BOTH
+   role assignments, since a student's submitted pair (or a generator
+   that hasn't committed to which slot is which) has no fixed order. Two
+   assignments matching the SAME rule (e.g. two amino acids, each of
+   which independently has both a free -NH2 and a free -COOH, so either
+   one can supply either role) is NOT a clash -- it's two genuinely
+   different, both-correct products (Gly-Ala vs Ala-Gly), collected as
+   `variants`. Two assignments matching DIFFERENT rules IS a clash, same
+   policy as the single-reactant resolver and for the same reason.
+========================================================================= */
+class TwoReactantRuleClashError extends Error {
+  constructor(ruleIds){
+    super(`Two-reactant rule clash: [${ruleIds.join(', ')}] all matched this pair of molecules under the same reagent condition -- fix the rules' role/reagent requirement specificity, this is never correct behaviour.`);
+    this.ruleIds = ruleIds;
+  }
+}
+
+function resolveTwoReactant(molA, molB, reagentCondition, rules){
+  const twoReactantRules = rules.filter(r=>r.type==='two-reactant');
+  const factsA = scanFunctionalGroups(molA);
+  const factsB = scanFunctionalGroups(molB);
+
+  const assignments = []; // {rule, first, second, firstFacts, secondFacts}
+  for(const rule of twoReactantRules){
+    if(!satisfies(reagentCondition, rule.reagentRequirement || {})) continue;
+    const aInRoleA = factsA.filter(f=>rule.roleA.fgRequirement(f));
+    const bInRoleB = factsB.filter(f=>rule.roleB.fgRequirement(f));
+    if(aInRoleA.length && bInRoleB.length){
+      assignments.push({ rule, first:molA, second:molB, firstFacts:aInRoleA, secondFacts:bInRoleB });
+    }
+    const bInRoleA = factsB.filter(f=>rule.roleA.fgRequirement(f));
+    const aInRoleB = factsA.filter(f=>rule.roleB.fgRequirement(f));
+    if(bInRoleA.length && aInRoleB.length){
+      assignments.push({ rule, first:molB, second:molA, firstFacts:bInRoleA, secondFacts:aInRoleB });
+    }
+  }
+
+  if(assignments.length===0) return { occurs:false };
+
+  const distinctRuleIds = [...new Set(assignments.map(a=>a.rule.id))];
+  if(distinctRuleIds.length>1) throw new TwoReactantRuleClashError(distinctRuleIds);
+
+  const rule = assignments[0].rule;
+  const seen = new Set();
+  const variants = [];
+  let smallResult = null;
+  for(const {first, second} of assignments){
+    const result = rule.transform(first, second);
+    if(!result || !result.occurs) continue;
+    if(result.products || result.variants){ smallResult = result; break; } // fragment/variant-producing transform -- return as-is, no cross-assignment dedup needed
+    if(result.product){
+      const key = canonicalForm(result.product);
+      if(!seen.has(key)){ seen.add(key); variants.push(result.product); }
+    }
+  }
+  if(smallResult) return { occurs:true, appliedRules:[rule.id], ...(smallResult.products ? {products:smallResult.products} : {variants:smallResult.variants}) };
+  if(variants.length===0) return { occurs:false };
+  return variants.length===1
+    ? { occurs:true, appliedRules:[rule.id], product: variants[0] }
+    : { occurs:true, appliedRules:[rule.id], variants };
+}
+
+module.exports = { resolve, RuleClashError, resolveTwoReactant, TwoReactantRuleClashError };
+
+__registry['resolve'] = module.exports;
+})();
+
+</script>
+<!-- /BUILD:resolve.js -->
+
+<!-- BUILD:rules.js -->
+<script>
+(function(){
+'use strict';
+var module = { exports: {} };
+/* =========================================================================
+   RULE TABLE
+   Each rule: { id, topic, fgRequirement(fact)->bool, reagentRequirement
+   (partial ReagentCondition, see reagents.js), transform(mol, matchedFacts)
+   -> operator result }. resolve.js (the generic engine) is the only
+   consumer of this file's shape; it never special-cases a rule id.
+
+   Two-reactant rules (see that section, near the end of this file) are
+   shaped differently -- `{ type:'two-reactant', roleA:{fgRequirement},
+   roleB:{fgRequirement}, reagentRequirement, transform(first, second) }`
+   -- and are resolved by resolve.js's separate resolveTwoReactant(),
+   never mixed into the single-molecule candidate pool.
+
+   Transforms are simply the SAME operators.js functions used by the old
+   POOL system -- this table only changes how a reaction gets SELECTED,
+   not how it's carried out once selected.
+========================================================================= */
+const op = require('./operators');
+const { neighborsOf } = require('./engine');
+const { scanFunctionalGroups } = require('./facts');
+
+const RULES = [];
+
+/* ---------------------------------------------------------------- Alkanes */
+RULES.push({
+  id:'radicalSubstitutionCl', topic:'Alkanes',
+  fgRequirement: f=>f.kind==='alkylCH',
+  reagentRequirement: { reagents:['Cl2'], light:true },
+  transform: mol=>op.radicalSubstitution(mol, 'Cl'),
+});
+RULES.push({
+  id:'radicalSubstitutionBr', topic:'Alkanes',
+  fgRequirement: f=>f.kind==='alkylCH',
+  reagentRequirement: { reagents:['Br2'], light:true },
+  transform: mol=>op.radicalSubstitution(mol, 'Br'),
+});
+RULES.push({
+  id:'combustion', topic:'Alkanes/Hydroxy',
+  fgRequirement: f=>f.kind==='organic',
+  reagentRequirement: { reagents:['O2'], quantity:'excess' },
+  transform: mol=>op.combustion(mol),
+});
+
+/* ---------------------------------------------------------------- Alkenes */
+RULES.push({
+  id:'alkeneX2Addition', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['Br2'], solvent:'CCl4' },
+  transform: mol=>op.additionX2(mol, 'Br'),
+});
+RULES.push({
+  id:'alkeneCl2Addition', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['Cl2'] }, // ionic addition -- fast at room temp regardless of light; UV is only ever a distinguishing factor for a SEPARATE alkylCH site (radical substitution elsewhere in the same molecule), not for whether this addition itself occurs
+  transform: mol=>op.additionX2(mol, 'Cl'),
+});
+RULES.push({
+  id:'alkeneHalohydrin', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['Br2'], solvent:'aq' },
+  transform: mol=>op.halohydrinFormation(mol, 'Br'),
+});
+RULES.push({
+  id:'alkeneHydrogenation', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['H2'], catalyst:'Ni' },
+  transform: mol=>op.hydrogenation(mol),
+});
+RULES.push({
+  id:'alkeneMildOxidation', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['KMnO4'], temperature:{max:'cold'}, concentration:'dilute' },
+  transform: mol=>op.mildOxidationDiol(mol),
+});
+RULES.push({
+  id:'alkeneOxidativeCleavage', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['KMnO4'], temperature:{min:'heat'}, concentration:'concentrated', pH:'acidic' },
+  transform: mol=>op.oxidativeCleavage(mol),
+});
+RULES.push({
+  id:'alkeneHBr', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['HBr'] },
+  transform: mol=>op.hydrohalogenation(mol, 'Br'),
+});
+RULES.push({
+  id:'alkeneHCl', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['HCl'] },
+  transform: mol=>op.hydrohalogenation(mol, 'Cl'),
+});
+RULES.push({
+  id:'alkeneHydration', topic:'Alkenes',
+  fgRequirement: f=>f.kind==='alkene',
+  reagentRequirement: { reagents:['H2O'], temperature:{min:'heat'} },
+  transform: mol=>op.hydration(mol),
+});
+
+/* ----------------------------------------------------------------- Arenes
+   The three catalysed EAS rules below all require `!hasActivatingSub` --
+   an activated ring (phenol/aniline) is reactive enough that it never
+   needs a Lewis-acid catalyst (real chemistry: phenol brominates readily
+   with plain aqueous Br2, no FeBr3), so those get their own,
+   catalyst-free rules further down. Without this exclusion, a test
+   condition on an activated ring that happened to also carry a catalyst
+   tag would satisfy BOTH families at once -- a real clash, not a
+   legitimate double reaction, since they're the same site.
+*/
+RULES.push({
+  id:'areneChlorination', topic:'Arenes',
+  fgRequirement: f=>f.kind==='arene' && f.freePositions.length>0 && !f.hasActivatingSub,
+  reagentRequirement: { reagents:['Cl2'], catalyst:'AlCl3' },
+  transform: mol=>op.ringElectrophilicSubstitution(mol, 'Cl'),
+});
+RULES.push({
+  id:'areneBromination', topic:'Arenes',
+  fgRequirement: f=>f.kind==='arene' && f.freePositions.length>0 && !f.hasActivatingSub,
+  reagentRequirement: { reagents:['Br2'], catalyst:'FeBr3' },
+  transform: mol=>op.ringElectrophilicSubstitution(mol, 'Br'),
+});
+RULES.push({
+  id:'areneNitration', topic:'Arenes',
+  fgRequirement: f=>f.kind==='arene' && f.freePositions.length>0 && !f.hasActivatingSub,
+  reagentRequirement: { reagents:['HNO3','H2SO4'] },
+  transform: mol=>op.ringElectrophilicSubstitution(mol, 'NO2'),
+});
+RULES.push({
+  id:'activatedRingMonobromination', topic:'Arenes/Hydroxy/Nitrogen',
+  fgRequirement: f=>f.kind==='arene' && f.hasActivatingSub && f.freePositions.length>0,
+  reagentRequirement: { reagents:['Br2'], solvent:'CCl4', quantity:'controlled' },
+  transform: mol=>op.ringElectrophilicSubstitution(mol, 'Br'),
+});
+RULES.push({
+  id:'activatedRingTribromination', topic:'Arenes/Hydroxy/Nitrogen',
+  fgRequirement: f=>f.kind==='arene' && f.hasActivatingSub,
+  reagentRequirement: { reagents:['Br2'], solvent:'aq', quantity:'excess' },
+  transform: (mol, facts)=>{
+    const ring = mol.nodes.find(n=>n.id===facts[0].ringId);
+    const sub = ring.subs.find(s=>s==='OH'||s==='NH2');
+    return op.ringTribromination(mol, sub);
+  },
+});
+RULES.push({
+  id:'phenolTrinitration', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='arene' && f.hasActivatingSub,
+  reagentRequirement: { reagents:['HNO3','H2SO4'], quantity:'excess', temperature:{min:'heat'} },
+  transform: (mol, facts)=>{
+    const ring = mol.nodes.find(n=>n.id===facts[0].ringId);
+    const sub = ring.subs.find(s=>s==='OH');
+    if(!sub) return { occurs:false };
+    return op.ringTrinitration(mol, sub);
+  },
+});
+RULES.push({
+  id:'benzylicOxidation', topic:'Arenes',
+  fgRequirement: f=>f.kind==='benzylicCH',
+  reagentRequirement: { reagents:['KMnO4'], pH:'acidic', temperature:{min:'heat'} },
+  transform: mol=>op.sideChainOxidationToBenzoicAcid(mol),
+});
+
+/* ------------------------------------------------------- Halogen Derivatives */
+const ALIPHATIC_HALS = new Set(['Cl','Br','I']); // F excluded -- C-F bond too strong to hydrolyse/substitute at this level
+RULES.push({
+  id:'haloalkaneHydrolysis', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='haloC' && !f.aromatic && ALIPHATIC_HALS.has(f.halogen),
+  reagentRequirement: { reagents:['NaOH'], solvent:'aq', temperature:{min:'heat'} },
+  transform: (mol, facts)=>op.nucleophilicSubstitutionFlat(mol, facts[0].halogen, 'OH'),
+});
+RULES.push({
+  id:'haloalkaneToNitrile', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='haloC' && !f.aromatic && ALIPHATIC_HALS.has(f.halogen),
+  reagentRequirement: { reagents:['KCN'], solvent:'ethanolic', temperature:{min:'heat'} },
+  transform: (mol, facts)=>op.nitrileFormation(mol, facts[0].halogen),
+});
+RULES.push({
+  id:'haloalkaneToPrimaryAmine', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='haloC' && !f.aromatic && ALIPHATIC_HALS.has(f.halogen),
+  reagentRequirement: { reagents:['NH3'], solvent:'ethanolic', temperature:{min:'heat'}, quantity:'excess' },
+  transform: (mol, facts)=>op.nucleophilicSubstitutionFlat(mol, facts[0].halogen, 'NH2'),
+});
+RULES.push({
+  id:'haloalkaneElimination', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='haloC' && !f.aromatic && ALIPHATIC_HALS.has(f.halogen),
+  reagentRequirement: { reagents:['NaOH'], solvent:'ethanolic', temperature:{min:'heat'} },
+  transform: (mol, facts)=>op.eliminationHX(mol, facts[0].halogen),
+});
+
+/* ------------------------------------------------------------------ Amines */
+RULES.push({
+  id:'aminePlusAcid', topic:'Amines/Nitrogen Compounds',
+  fgRequirement: f=>f.kind==='amine',
+  // NaNO2 excluded: a primary aromatic amine with NaNO2+HCl present is
+  // the diazotisation rule's job (below), not simple protonation, even
+  // though HCl alone would be enough to protonate it in isolation.
+  reagentRequirement: { reagents:['HCl'], reagentsExclude:['NaNO2'] },
+  transform: mol=>op.protonateAmine(mol),
+});
+
+/* ----------------------------------------------------------- Hydroxy Compounds */
+RULES.push({
+  id:'alcoholPlusNa', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic,
+  reagentRequirement: { reagents:['Na'] },
+  transform: mol=>op.nucleophilicSubstitutionFlat(mol, 'OH', 'ONa'),
+});
+RULES.push({
+  id:'phenolPlusNa', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && f.aromatic,
+  reagentRequirement: { reagents:['Na'] },
+  transform: mol=>op.ringFlatSubSwap(mol, 'OH', 'ONa'),
+});
+RULES.push({
+  id:'phenolPlusNaOH', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && f.aromatic,
+  reagentRequirement: { reagents:['NaOH'], solvent:'aq' },
+  transform: mol=>op.ringFlatSubSwap(mol, 'OH', 'ONa'),
+});
+RULES.push({
+  id:'dehydrationOfAlcohol', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic,
+  reagentRequirement: { reagents:['H2SO4'], concentration:'concentrated', temperature:{min:'heat'} },
+  transform: mol=>op.eliminationHX(mol, 'OH'),
+});
+RULES.push({
+  id:'oxidationPrimaryAlcoholToAldehyde', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic && f.class==='1°',
+  reagentRequirement: { reagents:['K2Cr2O7'], pH:'acidic', quantity:'controlled' },
+  transform: mol=>op.oxidizeAlcohol(mol, 'CHO'),
+});
+RULES.push({
+  id:'oxidationPrimaryAlcoholToAcid', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic && f.class==='1°',
+  reagentRequirement: { reagents:['K2Cr2O7'], pH:'acidic', quantity:'excess', temperature:{min:'heat'} },
+  transform: mol=>op.oxidizeAlcohol(mol, 'COOH'),
+});
+RULES.push({
+  id:'oxidationSecondaryAlcoholToKetone', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic && f.class==='2°',
+  reagentRequirement: { reagents:['K2Cr2O7'], pH:'acidic' },
+  transform: mol=>op.oxidizeAlcohol(mol, 'ketone'),
+});
+RULES.push({
+  id:'alcoholToBromoalkane', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic,
+  reagentRequirement: { reagents:['HBr'] },
+  transform: mol=>op.nucleophilicSubstitutionFlat(mol, 'OH', 'Br'),
+});
+RULES.push({
+  id:'nitrationOfPhenol', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='arene' && f.hasActivatingSub && f.freePositions.length>0,
+  reagentRequirement: { reagents:['HNO3'], concentration:'dilute', temperature:{max:'room'} },
+  transform: mol=>op.ringElectrophilicSubstitution(mol, 'NO2'),
+});
+RULES.push({
+  id:'iodoformMethylKetone', topic:'Hydroxy/Carbonyl Compounds',
+  fgRequirement: f=>f.kind==='carbonyl' && f.class==='ketone' && f.hasAlphaMethyl,
+  reagentRequirement: { reagents:['I2','NaOH'], temperature:{min:'warm'} },
+  transform: mol=>op.iodoformCleavage(mol),
+});
+// Alcohol-side iodoform (CH3-CH(OH)-R): the fgRequirement below is
+// deliberately broad (any non-tertiary aliphatic alcohol) -- the real
+// "does it have a methyl neighbour on the carbinol carbon" shape check
+// already lives inside iodoformCleavageFromAlcohol itself, which
+// correctly returns occurs:false (silently dropped by resolve.js) for
+// e.g. propan-1-ol, matching how every other operator here is the actual
+// source of truth for its own shape, not the fact scanner.
+RULES.push({
+  id:'iodoformAlcohol', topic:'Hydroxy Compounds',
+  fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic && f.class!=='3°',
+  reagentRequirement: { reagents:['I2','NaOH'], temperature:{min:'warm'} },
+  transform: mol=>op.iodoformCleavageFromAlcohol(mol),
+});
+
+/* --------------------------------------------------------- Carbonyl Compounds */
+RULES.push({
+  id:'hcnAddition', topic:'Carbonyl Compounds',
+  fgRequirement: f=>f.kind==='carbonyl',
+  reagentRequirement: { reagents:['HCN'] },
+  transform: mol=>op.cyanohydrinFormation(mol),
+});
+RULES.push({
+  id:'carbonylReductionNaBH4', topic:'Carbonyl Compounds',
+  fgRequirement: f=>f.kind==='carbonyl',
+  reagentRequirement: { reagents:['NaBH4'] },
+  transform: mol=>op.reduceCarbonyl(mol),
+});
+RULES.push({
+  id:'carbonylReductionLiAlH4', topic:'Carbonyl Compounds',
+  fgRequirement: f=>f.kind==='carbonyl',
+  reagentRequirement: { reagents:['LiAlH4'], solvent:'dry ether' },
+  transform: mol=>op.reduceCarbonyl(mol),
+});
+RULES.push({
+  id:'ethanalIodoform', topic:'Carbonyl Compounds',
+  fgRequirement: f=>f.kind==='carbonyl' && f.class==='aldehyde' && !f.aromatic,
+  reagentRequirement: { reagents:['I2','NaOH'], temperature:{min:'warm'} },
+  transform: mol=>op.iodoformCleavage(mol),
+});
+RULES.push({
+  id:'oxidationAldehydeToAcid', topic:'Carbonyl Compounds',
+  fgRequirement: f=>f.kind==='carbonyl' && f.class==='aldehyde',
+  reagentRequirement: { reagents:['K2Cr2O7'], pH:'acidic' },
+  transform: mol=>op.oxidizeAldehyde(mol),
+});
+
+/* --------------------------------------------------- Carboxylic Acids & Derivatives */
+RULES.push({
+  id:'carboxylicAcidPlusBase', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='carboxyl' && f.group==='COOH',
+  reagentRequirement: { reagents:['NaOH'] },
+  transform: mol=>op.carboxylicAcidSaltFormation(mol),
+});
+// Methanoic acid (still has an aldehyde-like H on its carbonyl carbon)
+// and ethanedioic acid (two carboxyls on a weak C-C bond) are the two
+// carboxylic acids hot acidified KMnO4 oxidises all the way to CO2 --
+// every other carboxylic acid is already at its most oxidised state and
+// this rule correctly never fires for them (specialOxidisable is only
+// ever true for those two shapes, see facts.js).
+RULES.push({
+  id:'specialAcidOxidation', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='carboxyl' && f.group==='COOH' && f.specialOxidisable,
+  reagentRequirement: { reagents:['KMnO4'], pH:'acidic', temperature:{min:'heat'} },
+  transform: mol=>op.combustion(mol),
+});
+RULES.push({
+  id:'acidToAcylChloride', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='carboxyl' && f.group==='COOH',
+  reagentRequirement: { reagents:['SOCl2'] },
+  transform: mol=>op.acidToAcylChloride(mol),
+});
+RULES.push({
+  id:'acidReductionLiAlH4', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='carboxyl' && f.group==='COOH',
+  reagentRequirement: { reagents:['LiAlH4'], solvent:'dry ether' },
+  transform: mol=>op.reduceCarboxylicAcid(mol),
+});
+RULES.push({
+  id:'acylChlorideHydrolysis', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='acylHalide',
+  reagentRequirement: { reagents:['H2O'] },
+  transform: mol=>op.hydrolyzeAcylChloride(mol),
+});
+RULES.push({
+  id:'esterHydrolysisAcidic', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='ester',
+  reagentRequirement: { reagents:['H2O'], pH:'acidic', temperature:{min:'heat'} },
+  transform: mol=>op.hydrolyzeEster(mol, 'COOH'),
+});
+RULES.push({
+  id:'esterHydrolysisAlkaline', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='ester',
+  reagentRequirement: { reagents:['NaOH'], solvent:'aq', temperature:{min:'heat'} },
+  transform: mol=>op.hydrolyzeEster(mol, 'COONa'),
+});
+RULES.push({
+  id:'anhydrideHydrolysis', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='anhydride',
+  reagentRequirement: { reagents:['H2O'] },
+  transform: mol=>op.hydrolyzeAcidAnhydride(mol),
+});
+RULES.push({
+  id:'primaryAmideHydrolysisAcidic', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='amide' && f.class==='primary',
+  reagentRequirement: { reagents:['H2O'], pH:'acidic', temperature:{min:'heat'} },
+  transform: mol=>op.hydrolyzeAmide(mol, 'COOH'),
+});
+RULES.push({
+  id:'primaryAmideHydrolysisAlkaline', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='amide' && f.class==='primary',
+  reagentRequirement: { reagents:['NaOH'], solvent:'aq', temperature:{min:'heat'} },
+  transform: mol=>op.hydrolyzeAmide(mol, 'COONa'),
+});
+RULES.push({
+  id:'amideReduction', topic:'Carboxylic Acids & Derivatives',
+  fgRequirement: f=>f.kind==='amide' && f.class==='primary',
+  reagentRequirement: { reagents:['LiAlH4'], solvent:'dry ether' },
+  transform: mol=>op.reduceAmide(mol),
+});
+RULES.push({
+  id:'nitrileHydrolysisAcidic', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='nitrile',
+  reagentRequirement: { reagents:['H2O'], pH:'acidic', temperature:{min:'heat'} },
+  transform: mol=>op.nitrileHydrolysis(mol, 'COOH'),
+});
+RULES.push({
+  id:'nitrileHydrolysisAlkaline', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='nitrile',
+  reagentRequirement: { reagents:['NaOH'], solvent:'aq', temperature:{min:'heat'} },
+  transform: mol=>op.nitrileHydrolysis(mol, 'COONa'),
+});
+RULES.push({
+  id:'nitrileReduction', topic:'Halogen Derivatives',
+  fgRequirement: f=>f.kind==='nitrile',
+  reagentRequirement: { reagents:['LiAlH4'], solvent:'dry ether' },
+  transform: mol=>op.nitrileReduction(mol),
+});
+
+/* -------------------------------------------------------- Nitrogen Compounds */
+RULES.push({
+  id:'diazotisation', topic:'Nitrogen Compounds',
+  fgRequirement: f=>f.kind==='amine' && f.aromatic,
+  reagentRequirement: { reagents:['NaNO2','HCl'], temperature:{max:'cold'} },
+  transform: mol=>op.diazotisation(mol),
+});
+RULES.push({
+  id:'nitrobenzeneReduction', topic:'Nitrogen Compounds',
+  fgRequirement: f=>f.kind==='nitro' && f.aromatic,
+  reagentRequirement: { reagents:['Sn','HCl'], temperature:{min:'heat'} },
+  transform: mol=>op.ringFlatSubSwap(mol, 'NO2', 'NH2'),
+});
+RULES.push({
+  id:'substitutedAmideHydrolysisAcidic', topic:'Nitrogen Compounds', // covers peptide-bond hydrolysis too -- a peptide bond IS a secondary amide, no separate rule needed
+  fgRequirement: f=>f.kind==='amide' && f.class==='secondary',
+  reagentRequirement: { reagents:['H2O'], pH:'acidic', temperature:{min:'heat'} },
+  transform: mol=>op.hydrolyzePeptideBond(mol, 'acidic'),
+});
+RULES.push({
+  id:'substitutedAmideHydrolysisAlkaline', topic:'Nitrogen Compounds',
+  fgRequirement: f=>f.kind==='amide' && f.class==='secondary',
+  reagentRequirement: { reagents:['NaOH'], solvent:'aq', temperature:{min:'heat'} },
+  transform: mol=>op.hydrolyzePeptideBond(mol, 'alkaline'),
+});
+
+/* =========================================================================
+   TWO-REACTANT RULES
+   Resolved by resolve.js's resolveTwoReactant(), never mixed into the
+   single-molecule RULES pool above. roleA/roleB are role labels only
+   (which molecule ends up as the operator's FIRST vs SECOND argument) --
+   resolveTwoReactant tries both physical orderings of the two given
+   molecules against them, so the caller never has to pre-decide which
+   one is "the acid" etc.
+========================================================================= */
+
+// Walks a plain unbranched chain from a given start node, counting every
+// reachable carbon -- bridges this engine's real molecule graph to
+// ringFriedelCraftsAlkylation's own chainLen PARAMETER (the operator
+// itself was written for the old POOL system, which passed chain length
+// as a hand-carried integer alongside the reactant molecule rather than
+// deriving it from the molecule's own structure; this derives the same
+// number from the actual haloalkane molecule instead).
+function chainLengthFrom(mol, startId){
+  const visited = new Set(); let count = 0;
+  (function dfs(id){
+    if(visited.has(id)) return;
+    visited.add(id); count++;
+    neighborsOf(mol, id).forEach(nb=>{ if(!visited.has(nb.to)) dfs(nb.to); });
+  })(startId);
+  return count;
+}
+
+RULES.push({
+  id:'esterificationAlcoholAcid', topic:'Hydroxy Compounds', type:'two-reactant',
+  roleA:{ fgRequirement: f=>f.kind==='carboxyl' && f.group==='COOH' },
+  roleB:{ fgRequirement: f=>f.kind==='hydroxyl' && !f.aromatic },
+  reagentRequirement: { catalyst:'H2SO4', concentration:'concentrated', temperature:{min:'heat'} },
+  transform: (acid, alcohol)=>op.esterifyAcid(acid, alcohol),
+});
+RULES.push({
+  id:'esterificationAcylChloride', topic:'Carboxylic Acids & Derivatives', type:'two-reactant',
+  roleA:{ fgRequirement: f=>f.kind==='acylHalide' },
+  roleB:{ fgRequirement: f=>f.kind==='hydroxyl' }, // accepts BOTH an aliphatic alcohol and a phenol -- unlike esterifyAcid above, esterifyAcylChloride doesn't refuse a ring
+  reagentRequirement: {},
+  transform: (acyl, nucleophile)=>op.esterifyAcylChloride(acyl, nucleophile),
+});
+RULES.push({
+  id:'friedelCraftsAlkylation', topic:'Arenes', type:'two-reactant',
+  roleA:{ fgRequirement: f=>f.kind==='arene' && f.freePositions.length>0 && !f.hasActivatingSub },
+  roleB:{ fgRequirement: f=>f.kind==='haloC' && !f.aromatic },
+  reagentRequirement: { catalyst:'AlCl3' },
+  transform: (arene, haloalkane)=>{
+    const hf = scanFunctionalGroups(haloalkane).find(f=>f.kind==='haloC');
+    if(!hf) return { occurs:false };
+    return op.ringFriedelCraftsAlkylation(arene, chainLengthFrom(haloalkane, hf.nodeId));
+  },
+});
+RULES.push({
+  id:'acylChloridePlusAmine', topic:'Carboxylic Acids & Derivatives', type:'two-reactant',
+  roleA:{ fgRequirement: f=>f.kind==='acylHalide' },
+  roleB:{ fgRequirement: f=>f.kind==='amine' },
+  reagentRequirement: {},
+  transform: (acyl, amine)=>op.acylChlorideToAmide(acyl, amine),
+});
+RULES.push({
+  id:'azoCoupling', topic:'Nitrogen Compounds', type:'two-reactant',
+  roleA:{ fgRequirement: f=>f.kind==='diazonium' },
+  roleB:{ fgRequirement: f=>f.kind==='arene' && f.hasActivatingSub },
+  reagentRequirement: { temperature:{max:'cold'} },
+  transform: (diazonium, arene)=>op.azoCoupling(diazonium, arene),
+});
+RULES.push({
+  id:'peptideBondFormation', topic:'Nitrogen Compounds', type:'two-reactant',
+  roleA:{ fgRequirement: f=>f.kind==='aminoAcid' },
+  roleB:{ fgRequirement: f=>f.kind==='aminoAcid' }, // symmetric -- either amino acid can supply either end, see resolveTwoReactant's own header for how that becomes `variants` (Gly-Ala vs Ala-Gly) rather than a clash
+  reagentRequirement: {},
+  transform: (acid1, acid2)=>op.formPeptideBond(acid1, acid2),
+});
+
+module.exports = { RULES };
+
+__registry['rules'] = module.exports;
+})();
+
+</script>
+<!-- /BUILD:rules.js -->
 
 <!-- ============================================================
      Molecule builder engine — free-form dynamic-angle layout.
@@ -7397,9 +8484,24 @@ var generateAcidAnhydride = __registry['generator'].generateAcidAnhydride;
 var generateNitrobenzene = __registry['generator'].generateNitrobenzene;
 var generatePhenylamine = __registry['generator'].generatePhenylamine;
 var generateBenzenediazonium = __registry['generator'].generateBenzenediazonium;
+var generateAminoAcid = __registry['generator'].generateAminoAcid;
 var render = __registry['render'].render;
 var op = __registry['operators'];
 var engineMod = __registry['engine'];
+// The newer rule-based engine (see workflow.md's "rule-based reaction
+// engine" section) -- not used by every POOL entry's `run`, only the
+// ones deliberately converted to call `resolveRule`/`resolveRuleTwo`
+// below instead of an operator directly. Both styles coexist; nothing
+// here requires every entry to be converted.
+var ruleEngine = __registry['resolve'];
+var RULES = __registry['rules'].RULES;
+var emptyReagentCondition = __registry['reagents'].emptyCondition;
+// Thin helpers a converted POOL entry's `run` calls instead of an
+// operator directly -- `cond` is a partial ReagentCondition (unset
+// fields default via emptyReagentCondition, matching every OTHER
+// converted entry's own literal condition object).
+function resolveRule(mol, cond){ return ruleEngine.resolve(mol, Object.assign(emptyReagentCondition(), cond), RULES); }
+function resolveRuleTwo(molA, molB, cond){ return ruleEngine.resolveTwoReactant(molA, molB, Object.assign(emptyReagentCondition(), cond), RULES); }
 
 // Difficulty-scaled length for a methylbenzene-style ring question's
 // EXISTING alkyl substituent -- low difficulty always gives methylbenzene
@@ -7460,6 +8562,10 @@ function generateAminoAlkane(d){
 // alkylation questions -- same 1-3 range Friedel-Crafts already uses for its
 // own genReactant chloroalkane.
 function shortHalideChainLen(){ return 1+Math.floor(Math.random()*3); }
+// Side-chain length for generateAminoAcid questions (0=glycine's R=H,
+// 1=alanine's R=CH3, 2=a longer inert side chain) -- kept short since the
+// side chain's identity is never what's being tested.
+function aminoAcidSideChainLen(){ return Math.floor(Math.random()*3); }
 
 // Hydroxy Compounds generator helpers -- nArms controls alcohol class
 // (1=primary, 2=secondary, 3=tertiary), reusing shortHalideChainLen for arm
@@ -7510,47 +8616,52 @@ var POOL = [
     reagentText:'Br2 in CCl4, room temperature, in the dark', tags: ['Br2 in CCl4', 'room temperature', 'in the dark'], mode:'single',
     explanation:'The electron-rich C=C induces a dipole in Br2, which adds across the double bond via a bromonium-ion intermediate; CCl4 keeps the medium non-aqueous so no bromohydrin forms instead.',
     gen:function(d){ return generateMolecule(d, Math.random()<0.75 ? {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined} : {forceNoDoubleBonds:true}); },
-    run:function(mol){ return op.additionX2(mol,'Br'); } },
+    // Converted to the new rule engine (see workflow.md) -- `resolveRule`
+    // scans mol's functional groups itself and picks a matching rule
+    // rather than this entry hardcoding which operator to call; kept as
+    // a same-shaped run(mol){...} so nothing else about this entry (or
+    // any grading path that calls run) needs to change.
+    run:function(mol){ return resolveRule(mol, {reagents:['Br2'], solvent:'CCl4'}); } },
   { id:'addCl2', label:'Electrophilic addition of Cl2', topic:'Alkenes',
     reagentText:'Cl2 in CCl4, room temperature, in the dark', tags: ['Cl2 in CCl4', 'room temperature', 'in the dark'], mode:'single',
     explanation:'The electron-rich C=C induces a dipole in Cl2, which adds across the double bond via a chloronium-ion intermediate in the non-aqueous CCl4 solvent.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
-    run:function(mol){ return op.additionX2(mol,'Cl'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['Cl2']}); } },
   { id:'hydrog', label:'Catalytic hydrogenation (H2 / Ni)', topic:'Alkenes',
     reagentText:'H2(g), Ni catalyst', tags: ['H2(g)', 'Ni catalyst'], mode:'single',
     explanation:'H2 is adsorbed and dissociated on the Ni surface, then added syn across the C=C to saturate it.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
-    run:function(mol){ return op.hydrogenation(mol); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['H2'], catalyst:'Ni'}); } },
   { id:'diol', label:'Mild oxidation to diol', topic:'Alkenes',
     reagentText:'KMnO4(aq), NaOH(aq), cold', tags: ['KMnO4(aq)', 'NaOH(aq)', 'cold'], mode:'single',
     explanation:'Cold, dilute alkaline KMnO4 is a mild enough oxidant to add two -OH groups across the C=C (syn addition) without breaking the carbon skeleton.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.3?true:undefined}); },
-    run:function(mol){ return op.mildOxidationDiol(mol); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['KMnO4'], temperature:'cold', concentration:'dilute'}); } },
   { id:'cleave', label:'Oxidative cleavage (hot KMnO4)', topic:'Alkenes',
     reagentText:'KMnO4(aq), H2SO4(aq), heat', tags: ['KMnO4(aq)', 'H2SO4(aq)', 'heat'], mode:'fragments',
     explanation:'Hot, acidified KMnO4 is a strong enough oxidant to cleave the C=C completely, oxidising each fragment through to a ketone or carboxylic acid (or CO2 from a terminal =CH2).',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds: Math.random()<0.5?2:1, forcePhenyl: Math.random()<0.3?true:undefined}); },
-    run:function(mol){ return op.oxidativeCleavage(mol); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['KMnO4'], temperature:'heat', concentration:'concentrated', pH:'acidic'}); } },
   { id:'alkeneHBr', label:'Electrophilic addition of HBr', topic:'Alkenes',
     reagentText:'HBr(g), room temperature', tags: ['HBr(g)', 'room temperature'], mode:'single',
     explanation:'H-Br adds across the C=C via a carbocation intermediate; Markovnikov\'s rule puts Br on the more-substituted carbon, since that carbocation is more stable.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
-    run:function(mol){ return op.hydrohalogenation(mol,'Br'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['HBr']}); } },
   { id:'alkeneHCl', label:'Electrophilic addition of HCl', topic:'Alkenes',
     reagentText:'HCl(g), room temperature', tags: ['HCl(g)', 'room temperature'], mode:'single',
     explanation:'Same Markovnikov addition as HBr, just with HCl -- Cl ends up on the more-substituted carbon, since that carbocation intermediate is more stable.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
-    run:function(mol){ return op.hydrohalogenation(mol,'Cl'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['HCl']}); } },
   { id:'alkeneHydration', label:'Electrophilic addition of steam', topic:'Alkenes',
-    reagentText:'H2O(g), H3PO4 catalyst, heat, high pressure', tags: ['H2O(g)', 'H3PO4 catalyst', 'heat', 'high pressure'], tagAlternates: [['dilute H2SO4(aq)', 'then H2O']], mode:'single',
+    reagentText:'H2O(g), H3PO4 catalyst, heat, high pressure', tags: ['H2O(g)', 'H3PO4 catalyst', 'heat', 'high pressure'], tagAlternates: [['H2SO4(aq)', 'then H2O']], mode:'single',
     explanation:'Water adds across the C=C via a carbocation intermediate, same Markovnikov regiochemistry as HX addition -- OH ends up on the more-substituted carbon.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
-    run:function(mol){ return op.hydration(mol); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['H2O'], temperature:'heat'}); } },
   { id:'alkeneHalohydrin', label:'Formation of a bromohydrin', topic:'Alkenes',
     reagentText:'Br2(aq), room temperature', tags: ['Br2(aq)', 'room temperature'], mode:'single',
     explanation:'Br2(aq) forms a bromonium-ion intermediate; water (the solvent, in huge excess) attacks the more-substituted carbon since it carries more of the ion\'s positive character, giving a bromohydrin with OH on the more-substituted carbon and Br on the less-substituted one.',
     gen:function(d){ return generateMolecule(d, {minDoubleBonds:1, forcePhenyl: Math.random()<0.4?true:undefined}); },
-    run:function(mol){ return op.halohydrinFormation(mol,'Br'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['Br2'], solvent:'aq'}); } },
 
   // ---- Arenes ----
   // Ring reactions (benzene/methylbenzene): starting material is a ring:true
@@ -7769,7 +8880,7 @@ var POOL = [
     reagentText:'NaOH(aq), room temperature', tags: ['NaOH(aq)', 'room temperature'], mode:'single',
     explanation:'Phenol\'s O-H is acidic enough (its conjugate base is stabilised by delocalisation into the ring) to be deprotonated by the weaker base NaOH(aq), not just by Na(s).',
     gen:function(d){ return generatePhenol(); },
-    run:function(mol){ return op.ringFlatSubSwap(mol,'OH','ONa'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['NaOH'], solvent:'aq'}); } },
   { id:'phenolPlusCarbonateNoReaction', label:'Reaction of phenols with carbonates', topic:'Hydroxy Compounds',
     reagentText:'Na2CO3(aq)', tags: ['Na2CO3(aq)'], mode:'single',
     explanation:'Phenol isn\'t a strong enough acid to protonate carbonate (its conjugate base is less stabilised than carbonic acid\'s) -- no visible reaction, unlike a genuine carboxylic acid.',
@@ -7845,13 +8956,13 @@ var POOL = [
     explanation:'conc H2SO4 protonates the acid\'s carbonyl oxygen, making it electrophilic enough for the alcohol\'s -OH to attack; heat drives the equilibrium towards the ester.',
     gen:function(d){ return anyAlcohol(); },
     genReactant:function(d){ return { mol:generateCarboxylicAcid(shortHalideChainLen()) }; },
-    run:function(mol, reactant){ return op.esterifyAcid(reactant.mol, mol); } },
+    run:function(mol, reactant){ return resolveRuleTwo(mol, reactant.mol, {catalyst:'H2SO4', concentration:'concentrated', temperature:'heat'}); } },
   { id:'esterificationPhenolNoReaction', label:'Condensation of phenols with carboxylic acids', topic:'Hydroxy Compounds',
     reagentText:'few drops conc H2SO4, heat', tags: ['few drops conc H2SO4', 'heat'], mode:'single', byproductSpecies:['H2O'],
     explanation:'Phenol\'s O-H lone pair is delocalised into the ring rather than freely available to attack, so it\'s too poor a nucleophile for Fischer esterification -- an acyl chloride is needed instead.',
     gen:function(d){ return generatePhenol(); },
     genReactant:function(d){ return { mol:generateCarboxylicAcid(shortHalideChainLen()) }; },
-    run:function(mol, reactant){ return op.esterifyAcid(reactant.mol, mol); } },
+    run:function(mol, reactant){ return resolveRuleTwo(mol, reactant.mol, {catalyst:'H2SO4', concentration:'concentrated', temperature:'heat'}); } },
   { id:'acylationAlcoholAcylChloride', label:'Condensation of alcohols with acyl chlorides', topic:'Hydroxy Compounds',
     reagentText:'room temperature', tags: ['room temperature'], mode:'single', byproductSpecies:['HCl'],
     explanation:'The alcohol\'s O-H lone pair attacks the acyl chloride\'s electrophilic carbonyl carbon directly -- no acid catalyst or heat needed, since acyl chlorides are far more reactive than the acid itself.',
@@ -7870,17 +8981,17 @@ var POOL = [
     gen:function(d){ return alcoholClass(1); },
     run:function(mol){ return op.oxidizeAlcohol(mol,'CHO'); } },
   { id:'oxidationPrimaryAlcoholToCarboxylicAcid', label:'Oxidation of primary alcohols to carboxylic acids', topic:'Hydroxy Compounds',
-    reagentText:'K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat under reflux', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat under reflux'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat under reflux']], mode:'single',
+    reagentText:'K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat']], mode:'single',
     explanation:'The same oxidant, but kept under reflux instead of distilled off, oxidises the primary alcohol all the way through the aldehyde to the carboxylic acid.',
     gen:function(d){ return alcoholClass(1); },
     run:function(mol){ return op.oxidizeAlcohol(mol,'COOH'); } },
   { id:'oxidationSecondaryAlcoholToKetone', label:'Oxidation of secondary alcohols to ketones', topic:'Hydroxy Compounds',
-    reagentText:'K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat under reflux', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat under reflux'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat under reflux']], mode:'single',
+    reagentText:'K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat']], mode:'single',
     explanation:'The oxidant removes 2 H (from C-H and O-H) to form the ketone; a ketone has no further H on that carbon left to remove, so oxidation stops there.',
     gen:function(d){ return alcoholClass(2); },
     run:function(mol){ return op.oxidizeAlcohol(mol,'ketone'); } },
   { id:'oxidationTertiaryAlcoholNoReaction', label:'Oxidation of tertiary alcohols', topic:'Hydroxy Compounds',
-    reagentText:'K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat under reflux', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat under reflux'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat under reflux']], mode:'single',
+    reagentText:'K2Cr2O7(aq)/H2SO4(aq) (or KMnO4(aq)/H2SO4(aq)), heat', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat']], mode:'single',
     explanation:'A tertiary alcohol\'s carbon bearing -OH has no H of its own to remove -- the oxidant has nothing to react with, so no reaction occurs.',
     gen:function(d){ return alcoholClass(3); },
     run:function(mol){ return op.oxidizeAlcohol(mol,'COOH'); } },
@@ -7955,7 +9066,7 @@ var POOL = [
     gen:function(d){ return generateAldehyde(2); },
     run:function(mol){ return op.iodoformCleavage(mol); } },
   { id:'oxidationAldehydeToCarboxylicAcid', label:'Oxidation of aldehyde to carboxylic acid', topic:'Carbonyl Compounds',
-    reagentText:'K2Cr2O7(aq) (or KMnO4(aq)), H2SO4(aq), heat under reflux', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat under reflux'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat under reflux']], mode:'single',
+    reagentText:'K2Cr2O7(aq) (or KMnO4(aq)), H2SO4(aq), heat', tags: ['K2Cr2O7(aq)', 'H2SO4(aq)', 'heat'], tagAlternates: [['KMnO4(aq)', 'H2SO4(aq)', 'heat']], mode:'single',
     explanation:'The oxidant removes the aldehyde\'s carbonyl C-H and adds -OH in its place, giving -COOH.',
     gen:function(d){ return anyAldehyde(); },
     run:function(mol){ return op.oxidizeAldehyde(mol); } },
@@ -8039,7 +9150,7 @@ var POOL = [
     reagentText:'NaOH(aq)', tags: ['NaOH(aq)'], mode:'single',
     explanation:'A straightforward acid-base neutralisation -- NaOH deprotonates the carboxylic acid to its carboxylate salt.',
     gen:function(d){ return anyAcid(); },
-    run:function(mol){ return op.carboxylicAcidSaltFormation(mol); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['NaOH']}); } },
   { id:'acidPlusCarbonate', label:'Reaction of carboxylic acid with carbonate', topic:'Carboxylic Acids & Derivatives',
     reagentText:'Na2CO3(aq)', tags: ['Na2CO3(aq)'], mode:'single',
     explanation:'The carboxylic acid is a strong enough acid to protonate carbonate, releasing CO2 gas (effervescence) and leaving the carboxylate.',
@@ -8081,7 +9192,7 @@ var POOL = [
     gen:function(d){ return anyAcid(); },
     run:function(mol){ return { occurs:false }; } },
   { id:'oxidationSpecialAcids', label:'Oxidation of methanoic acid and ethanedioic acid', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'KMnO4(aq)/H2SO4(aq), heat under reflux', tags: ['KMnO4(aq)', 'H2SO4(aq)', 'heat under reflux'], mode:'fragments',
+    reagentText:'KMnO4(aq)/H2SO4(aq), heat', tags: ['KMnO4(aq)', 'H2SO4(aq)', 'heat'], mode:'fragments',
     explanation:'Methanoic acid still has an aldehyde-like H on its carbonyl carbon, and ethanedioic acid\'s two carboxyls sit on a weak C-C bond -- both are oxidised all the way to CO2 by hot acidified KMnO4, unlike other carboxylic acids.',
     gen:function(d){ return Math.random()<0.5 ? generateCarboxylicAcid(1) : generateEthanedioicAcid(); },
     run:function(mol){ return op.combustion(mol); } },
@@ -8113,16 +9224,16 @@ var POOL = [
     // replaced. HCl(aq)/H2SO4(aq) are ADDITIONAL accepted answers for a
     // student who wants to name a specific acid, not a substitute for the
     // generic one.
-    reagentText:'dilute acid, heat under reflux', tags: ['dilute acid', 'heat under reflux'],
-    tagAlternates: [['HCl(aq)', 'heat under reflux'], ['H2SO4(aq)', 'heat under reflux']], mode:'fragments',
+    reagentText:'dilute acid, heat', tags: ['dilute acid', 'heat'],
+    tagAlternates: [['HCl(aq)', 'heat'], ['H2SO4(aq)', 'heat']], mode:'fragments',
     explanation:'Aqueous acid catalyses hydrolysis of the ester back to the carboxylic acid and alcohol -- an equilibrium (unlike alkaline hydrolysis), so it needs reflux to drive it towards completion.',
     gen:function(d){ return anyEster(); },
-    run:function(mol){ return op.hydrolyzeEster(mol, 'COOH'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['H2O'], pH:'acidic', temperature:'heat'}); } },
   { id:'esterHydrolysisAlkaline', label:'Alkaline hydrolysis of ester', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'NaOH(aq), heat under reflux', tags: ['NaOH(aq)', 'heat under reflux'], mode:'fragments',
+    reagentText:'NaOH(aq), heat', tags: ['NaOH(aq)', 'heat'], mode:'fragments',
     explanation:'OH- attacks the ester\'s electrophilic carbonyl carbon and, unlike acidic hydrolysis, this is irreversible -- the carboxylate product can\'t be re-esterified once formed.',
     gen:function(d){ return anyEster(); },
-    run:function(mol){ return op.hydrolyzeEster(mol, 'COONa'); } },
+    run:function(mol){ return resolveRule(mol, {reagents:['NaOH'], solvent:'aq', temperature:'heat'}); } },
   { id:'acidAnhydrideHydrolysis', label:'Hydrolysis of acid anhydride', topic:'Carboxylic Acids & Derivatives',
     reagentText:'H2O', tags: ['H2O'], mode:'fragments',
     explanation:'Water\'s lone pair attacks either electrophilic carbonyl carbon of the anhydride directly (no catalyst needed, unlike ester hydrolysis), splitting it into two carboxylic acid units.',
@@ -8132,13 +9243,13 @@ var POOL = [
     // 'dilute acid' is the primary, exam-standard answer -- see
     // esterHydrolysisAcidic's own comment for why it's kept as the
     // displayed/primary tag rather than replaced by a named acid.
-    reagentText:'dilute acid, heat under reflux', tags: ['dilute acid', 'heat under reflux'],
-    tagAlternates: [['HCl(aq)', 'heat under reflux'], ['H2SO4(aq)', 'heat under reflux']], mode:'single',
+    reagentText:'dilute acid, heat', tags: ['dilute acid', 'heat'],
+    tagAlternates: [['HCl(aq)', 'heat'], ['H2SO4(aq)', 'heat']], mode:'single',
     explanation:'Aqueous acid protonates the amide\'s carbonyl oxygen, letting water attack and hydrolyse it through to the carboxylic acid and an ammonium salt.',
     gen:function(d){ return op.acylChlorideToAmide(anyAcylChloride(), null).product; },
     run:function(mol){ return op.hydrolyzeAmide(mol, 'COOH'); } },
   { id:'amideHydrolysisAlkaline', label:'Alkaline hydrolysis of amide', topic:'Carboxylic Acids & Derivatives',
-    reagentText:'NaOH(aq), heat under reflux', tags: ['NaOH(aq)', 'heat under reflux'], mode:'single',
+    reagentText:'NaOH(aq), heat', tags: ['NaOH(aq)', 'heat'], mode:'single',
     explanation:'OH- attacks the amide\'s electrophilic carbonyl carbon, hydrolysing it to the carboxylate and releasing ammonia.',
     gen:function(d){ return op.acylChlorideToAmide(anyAcylChloride(), null).product; },
     run:function(mol){ return op.hydrolyzeAmide(mol, 'COONa'); } },
@@ -8157,11 +9268,14 @@ var POOL = [
   // across the primary/secondary/tertiary steps). Deliberately NOT covered
   // at all: the ammonia/amine litmus-paper test -- observation-only, no
   // buildable product, same gap already deferred for every other
-  // qualitative test this session; and amino acids/proteins (zwitterion
-  // behaviour, peptide-bond formation, protein hydrolysis) -- a genuinely
-  // new molecule type this engine has no representation for at all, out
-  // of scope for a same-shaped-operator fix the way everything else here
-  // is.
+  // qualitative test this session. Amino acids/proteins (acid/base
+  // behaviour, peptide-bond formation, protein hydrolysis) ARE now covered,
+  // below -- turned out to need only generateAminoAcid plus two new
+  // operators (formPeptideBond/hydrolyzePeptideBond); the amphoteric
+  // reactions reuse protonateAmine/carboxylicAcidSaltFormation directly.
+  // Real amino-acid side-chain identity (R/S stereochemistry, the 20
+  // natural side chains, pKa/titration-curve values) is out of scope --
+  // only the alpha-amino-acid backbone chemistry the LOs actually name.
   { id:'diazotisationOfPhenylamine', label:'Diazotisation of phenylamine', topic:'Nitrogen Compounds',
     reagentText:'NaNO2(aq)/HCl(aq), 0-10°C', tags: ['NaNO2(aq)', 'HCl(aq)', '0-10°C'], mode:'single',
     explanation:'NaNO2/HCl generates nitrous acid in situ, which converts the primary aromatic amine\'s -NH2 into the diazonium ion -N2+; kept below 10°C since the diazonium salt decomposes above that.',
@@ -8203,7 +9317,33 @@ var POOL = [
     reagentText:'Br2(aq), room temperature', tags: ['Br2(aq)', 'room temperature'], mode:'single',
     explanation:'The ring is strongly activated by -NH2\'s lone-pair donation, so Br2(aq) alone (no Lewis acid catalyst) substitutes at all three ortho/para positions at once.',
     gen:function(d){ return generatePhenylamine(); },
-    run:function(mol){ return op.ringTribromination(mol, 'NH2'); } }
+    run:function(mol){ return op.ringTribromination(mol, 'NH2'); } },
+  { id:'aminoAcidPlusAcid', label:'Reaction of amino acids with acid', topic:'Nitrogen Compounds',
+    reagentText:'HCl(aq)', tags: ['HCl(aq)'], mode:'single',
+    explanation:'At low pH, the amino group\'s lone pair is protonated to -NH3+; the carboxyl group is already in its protonated -CO2H form and is unaffected.',
+    gen:function(d){ return generateAminoAcid(aminoAcidSideChainLen()); },
+    run:function(mol){ return op.protonateAmine(mol); } },
+  { id:'aminoAcidPlusAlkali', label:'Reaction of amino acids with alkali', topic:'Nitrogen Compounds',
+    reagentText:'NaOH(aq)', tags: ['NaOH(aq)'], mode:'single',
+    explanation:'At high pH, the carboxyl group is deprotonated to -CO2- (as its Na+ salt); the amino group is already in its unprotonated -NH2 form and is unaffected.',
+    gen:function(d){ return generateAminoAcid(aminoAcidSideChainLen()); },
+    run:function(mol){ return op.carboxylicAcidSaltFormation(mol); } },
+  { id:'peptideBondFormation', label:'Formation of a peptide bond', topic:'Nitrogen Compounds',
+    reagentText:'condensation (enzyme catalysed in vivo)', tags: ['condensation', 'enzyme catalyst'], mode:'single', byproductSpecies:['H2O'],
+    explanation:'The -CO2H of one alpha-amino acid condenses with the -NH2 of another, eliminating H2O and forming an amide (peptide) bond between the two residues.',
+    gen:function(d){ return generateAminoAcid(aminoAcidSideChainLen()); },
+    genReactant:function(d){ return { mol:generateAminoAcid(aminoAcidSideChainLen()) }; },
+    run:function(mol, reactant){ return op.formPeptideBond(mol, reactant.mol); } },
+  { id:'peptideBondHydrolysisAcidic', label:'Acid hydrolysis of a peptide bond', topic:'Nitrogen Compounds',
+    reagentText:'H2SO4(aq), heat', tags: ['H2SO4(aq)', 'heat'], mode:'fragments',
+    explanation:'Dilute acid hydrolyses the peptide bond back to its two constituent amino acids; since the conditions are acidic, every -NH2 freed is also protonated to -NH3+.',
+    gen:function(d){ return op.formPeptideBond(generateAminoAcid(aminoAcidSideChainLen()), generateAminoAcid(aminoAcidSideChainLen())).product; },
+    run:function(mol){ return op.hydrolyzePeptideBond(mol, 'acidic'); } },
+  { id:'peptideBondHydrolysisAlkaline', label:'Alkaline hydrolysis of a peptide bond', topic:'Nitrogen Compounds',
+    reagentText:'NaOH(aq), heat', tags: ['NaOH(aq)', 'heat'], mode:'fragments',
+    explanation:'Dilute alkali hydrolyses the peptide bond back to its two constituent amino acids; since the conditions are alkaline, every -CO2H freed is also deprotonated to -CO2-Na+.',
+    gen:function(d){ return op.formPeptideBond(generateAminoAcid(aminoAcidSideChainLen()), generateAminoAcid(aminoAcidSideChainLen())).product; },
+    run:function(mol){ return op.hydrolyzePeptideBond(mol, 'alkaline'); } }
 ];
 
 function escapeHtml(s){
@@ -8672,9 +9812,20 @@ function pickGuessMode(spec, occurs, forced){
 var reagentGuessTags = []; // strings -- canonical-cased when isKnownTag, raw typed text otherwise (invalid)
 var tagAutocompleteActiveIndex = -1;
 
+// "heat" and "heat under reflux" are the same markable point in H2 exams
+// -- reflux is just lab technique (how the heating is physically done to
+// stop volatiles escaping), never itself a scored detail, so a student
+// typing either one is answering identically. Every POOL entry's own
+// reagentText/tags now just say "heat" (the simpler, canonical form --
+// see workflow.md), but this still normalises "heat under reflux" to
+// "heat" before comparing, so a submission using the fuller phrase (from
+// habit, or from external notes) is never penalised for it.
+function normalizeConditionTag(t){
+  return t.toLowerCase()==='heat under reflux' ? 'heat' : t.toLowerCase();
+}
 function tagSetsEqual(a, b){
-  var sa = new Set(a.map(function(t){ return t.toLowerCase(); }));
-  var sb = new Set(b.map(function(t){ return t.toLowerCase(); }));
+  var sa = new Set(a.map(normalizeConditionTag));
+  var sb = new Set(b.map(normalizeConditionTag));
   if(sa.size!==sb.size) return false;
   var ok = true;
   sa.forEach(function(v){ if(!sb.has(v)) ok = false; });
@@ -8944,30 +10095,52 @@ function computeGivenProductItems(){
 }
 
 function generateQuestion(forcedType){
-  var spec, mol, result, difficulty, visual, reactant, reactantVisual, guard = 0;
+  var spec, mol, result, difficulty, visual, reactant, reactantVisual;
+  // Two independent retry loops, kept deliberately separate -- collapsing
+  // them into one (as this used to do) introduces a real rejection-
+  // sampling bias: redrawing a brand-new spec on EVERY retry means any
+  // spec whose gen() has a nonzero chance of overlapping/too-many-variants
+  // gets discarded (and replaced by an unrelated reaction) in proportion
+  // to that chance, so it ends up under-represented across many
+  // questions -- confirmed empirically (radSubCl/radSubBr, whose >4-variant
+  // rate is high, were landing at ~35-40% of their fair share over
+  // thousands of trials; chi-square goodness-of-fit vs. uniform was
+  // wildly significant). The fix: the render-quality retry (inner loop)
+  // keeps the SAME spec and only re-rolls the random molecule, so a
+  // reaction's odds of being picked never depend on how often it needs a
+  // second roll to render cleanly. Only the outer loop -- which reroll
+  // to a genuinely different spec -- fires, and only when this spec is
+  // structurally incompatible with today's enabled question types (e.g.
+  // a no-reaction case's only valid guess is 'product', but that's been
+  // switched off), so a disabled question type is never silently shown.
+  var specAttempts = 0;
   do {
     spec = pickSpec();
-    difficulty = 2 + Math.floor(Math.random()*4); // 2..5, same range gen_batch.js uses
-    // A reagent that's a REACTANT (its own structure affects the product,
-    // e.g. which chloroalkane a Friedel-Crafts alkylation uses) gets built
-    // as a real molecule via genReactant, not just named in reagentText --
-    // the same object goes to both the display AND run(), so the question
-    // and the correct answer can never disagree about which one was used.
-    reactant = spec.genReactant ? spec.genReactant(difficulty) : null;
-    mol = spec.gen(difficulty);
-    result = spec.run(mol, reactant);
-    visual = window.__renderStaticMolecule(mol);
-    reactantVisual = reactant ? window.__renderStaticMolecule(reactant.mol) : null;
-    guard++;
-  } while(
-    // A variants-mode operator collapses to {occurs:true, product:...} (no
-    // `variants` array at all) whenever there's only a single regiochemistry
-    // outcome -- e.g. a ring with just one open position -- so `.variants`
-    // can genuinely be undefined here even though occurs is true; treat that
-    // as the trivial 1-variant case rather than crashing on `.length`.
-    (spec.mode==='variants' && result.occurs && (result.variants ? result.variants.length : 1)>4 || (visual && visual.overlap) || (reactantVisual && reactantVisual.overlap))
-    && guard<50
-  );
+    specAttempts++;
+    var guard = 0;
+    do {
+      difficulty = 2 + Math.floor(Math.random()*4); // 2..5, same range gen_batch.js uses
+      // A reagent that's a REACTANT (its own structure affects the product,
+      // e.g. which chloroalkane a Friedel-Crafts alkylation uses) gets built
+      // as a real molecule via genReactant, not just named in reagentText --
+      // the same object goes to both the display AND run(), so the question
+      // and the correct answer can never disagree about which one was used.
+      reactant = spec.genReactant ? spec.genReactant(difficulty) : null;
+      mol = spec.gen(difficulty);
+      result = spec.run(mol, reactant);
+      visual = window.__renderStaticMolecule(mol);
+      reactantVisual = reactant ? window.__renderStaticMolecule(reactant.mol) : null;
+      guard++;
+    } while(
+      // A variants-mode operator collapses to {occurs:true, product:...} (no
+      // `variants` array at all) whenever there's only a single regiochemistry
+      // outcome -- e.g. a ring with just one open position -- so `.variants`
+      // can genuinely be undefined here even though occurs is true; treat that
+      // as the trivial 1-variant case rather than crashing on `.length`.
+      (spec.mode==='variants' && result.occurs && (result.variants ? result.variants.length : 1)>4 || (visual && visual.overlap) || (reactantVisual && reactantVisual.overlap))
+      && guard<50
+    );
+  } while(guessModeOptions(spec, result.occurs).filter(function(o){ return questionTypes[o]; }).length===0 && specAttempts<20);
   current = { spec:spec, mol:mol, difficulty:difficulty, result:result, visual:visual, reactant:reactant, reactantVisual:reactantVisual, guessMode: pickGuessMode(spec, result.occurs, forcedType) };
   showQuestion();
 }

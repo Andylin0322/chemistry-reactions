@@ -1046,14 +1046,103 @@ function protonateAmine(mol){
   return { occurs:true, product:v };
 }
 
+/* =========================================================================
+   AMINO ACID / PROTEIN OPERATORS
+   An amino acid's amphoteric behaviour (aminoAcidPlusAcid/-Alkali in the
+   POOL) needs no new operator at all -- it's just protonateAmine and
+   carboxylicAcidSaltFormation called directly on a generateAminoAcid
+   molecule, since its -NH2 and -COOH are the exact same flat-sub/group-node
+   shapes those two operators already expect. Only the peptide bond itself
+   (forming and breaking a bond neither operator has ever had to touch) is
+   genuinely new.
+========================================================================= */
+
+// H2N-CHR-COOH + H2N-CHR'-COOH -> a dipeptide + H2O -- peptide (amide) bond
+// formation between two alpha-amino acids' -CO2H and -NH2 ends, condensing
+// out water. Structurally this is esterifyCommon's own "fromGroup"
+// carbonyl-opening step (acid1's group:'COOH' node closes up into a real
+// oxo carbon) combined with acylChlorideToAmide's own amine-grafting step
+// (acid2's flat 'NH2' sub is promoted to a real element:'N' node and bonded
+// directly onto that carbon) -- both moves this file already uses
+// elsewhere, just combined on a COOH source instead of an acyl chloride.
+// acid1Mol supplies the dipeptide's free -NH2 (N-terminus) end, acid2Mol
+// supplies its free -CO2H (C-terminus) end, matching the source material's
+// own asn-lys convention.
+function formPeptideBond(acid1Mol, acid2Mol){
+  const v = cloneMol(acid1Mol);
+  const c = v.nodes.find(n=>n.group==='COOH');
+  if(!c) return { occurs:false };
+  c.group = null; c.oxo = true;
+
+  const aClone = cloneMol(acid2Mol);
+  const host = aClone.nodes.find(n=>!n.ring && n.subs && n.subs.includes('NH2'));
+  if(!host) return { occurs:false };
+  host.subs = host.subs.filter(s=>s!=='NH2');
+  const amine = newAmineNode(false);
+  aClone.nodes.push(amine);
+  aClone.edges.push({ a:host.id, b:amine.id, type:'S' });
+
+  v.nodes.push(...aClone.nodes);
+  v.edges.push(...aClone.edges);
+  v.edges.push({ a:c.id, b:amine.id, type:'S' });
+  return { occurs:true, product:v };
+}
+
+// Reverse of formPeptideBond: hydrolyses a dipeptide's single peptide bond
+// back into its two constituent amino acids. Finds the bond by its shape
+// (an oxo carbon bonded to a real element:'N' node with exactly 2
+// neighbours -- unlike a primary amide's flat 'NH2' sub, or a branching
+// secondary/tertiary amine's 3+ neighbours, this is the one shape only a
+// peptide/secondary-amide bond has here), reopens the carbonyl side to a
+// plain -COOH and demotes the nitrogen back to a flat 'NH2' sub on its
+// other neighbour, splits into the two amino-acid fragments exactly like
+// ester/anhydride hydrolysis already do, then applies the acidic or
+// alkaline condition's ionisation UNIFORMLY across every fragment's now-
+// plain-neutral ends -- reusing protonateAmine (mode:'acidic', every -NH2
+// -> -NH3+, matching the source diagram's "dilute H2SO4, heat" row) or
+// carboxylicAcidSaltFormation (mode:'alkaline', every -CO2H -> -CO2-Na+,
+// matching its "dilute NaOH, heat" row) rather than a bespoke ionisation
+// step, since both fragments come out of the split in exactly the shape
+// those two operators already expect.
+function hydrolyzePeptideBond(mol, mode){
+  const v = cloneMol(mol);
+  let bond = null;
+  for(const c of v.nodes){
+    if(c.ring || !c.oxo) continue;
+    const nNb = neighborsOf(v, c.id).find(nb=>{
+      const n = findNode(v, nb.to);
+      return n.element==='N' && !n.ring && neighborsOf(v, n.id).length===2;
+    });
+    if(nNb){ bond = { c, nId: nNb.to }; break; }
+  }
+  if(!bond) return { occurs:false };
+  bond.c.oxo = false;
+  bond.c.group = 'COOH';
+  const nNode = findNode(v, bond.nId);
+  const otherNb = neighborsOf(v, nNode.id).find(nb=>nb.to!==bond.c.id);
+  findNode(v, otherNb.to).subs.push('NH2');
+  v.nodes = v.nodes.filter(n=>n.id!==nNode.id);
+  v.edges = v.edges.filter(e=>e.a!==nNode.id && e.b!==nNode.id);
+
+  const fragments = connectedComponents(v).map(f=>({ nodes:f.nodes, edges:f.edges }));
+  const transform = mode==='acidic' ? protonateAmine : carboxylicAcidSaltFormation;
+  const products = fragments.map(f=>{
+    const r = transform(f);
+    return { kind:'chain', mol: r.occurs ? r.product : f };
+  });
+  return { occurs:true, products };
+}
+
 module.exports = {
   radicalSubstitution, additionX2, hydrogenation, mildOxidationDiol, oxidativeCleavage, doubleBondEdges,
-  hydrohalogenation, hydration, halohydrinFormation,
+  hydrohalogenation, hydration, halohydrinFormation, substitutionWeight, moreSubstitutedEnd,
   ringElectrophilicSubstitution, ringFriedelCraftsAlkylation, sideChainOxidationToBenzoicAcid, downgradeRingIfMono, upgradePhenylToRing,
+  ringPositionDirectingType, ringSubstitutionPositions, findCarbonylCarbon,
   nucleophilicSubstitutionFlat, nitrileFormation, nitrileHydrolysis, nitrileReduction, eliminationHX, alkylateAmine,
   oxidizeAlcohol, esterifyAcid, esterifyAcylChloride, ringFlatSubSwap, ringTribromination, ringTrinitration, combustion,
   cyanohydrinFormation, reduceCarbonyl, oxidizeAldehyde,
   carboxylicAcidSaltFormation, acidToAcylChloride, reduceCarboxylicAcid, hydrolyzeAcylChloride, acylChlorideToAmide,
   hydrolyzeEster, hydrolyzeAcidAnhydride, hydrolyzeAmide, reduceAmide, connectedComponents,
-  diazotisation, azoCoupling, protonateAmine, iodoformCleavage, iodoformCleavageFromAlcohol
+  diazotisation, azoCoupling, protonateAmine, iodoformCleavage, iodoformCleavageFromAlcohol,
+  formPeptideBond, hydrolyzePeptideBond
 };
