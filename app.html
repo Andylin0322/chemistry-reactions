@@ -597,7 +597,15 @@
   .tutorialCard {
     position: fixed; z-index: 1002; pointer-events: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0,0,0,.35); padding: 22px 22px 16px; width: min(360px, calc(100vw - 32px));
+    cursor: grab; touch-action: none;
   }
+  /* Card itself is the drag surface (see tutorialCard's own pointerdown
+     handler) so it can be pulled off whatever it's covering -- the
+     spotlight ring stays locked to the real target either way, only the
+     card moves. Buttons/links inside keep a normal pointer cursor so
+     they don't read as draggable themselves. */
+  .tutorialCard button, .tutorialCard a { cursor: pointer; }
+  .tutorialCard.dragging { cursor: grabbing; user-select: none; }
   .tutorialActionHint {
     display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 12px;
     border-top: 1px dashed var(--border); font-size: 0.78rem; font-weight: 700; color: var(--accent);
@@ -1124,24 +1132,28 @@
      cream/beige tone and --bg the near-black one in this dark-scoped card
      (see .paneCard's own --bg/--text redefinition), so this reads as beige
      everywhere this pane's tokens apply without hardcoding a color here. */
-  #topicsPane input[type=checkbox], #statsPane input[type=checkbox] {
+  #topicsPane input[type=checkbox], #settingsPane input[type=checkbox], #statsPane input[type=checkbox] {
     appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
     width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px;
     background: transparent; cursor: pointer; position: relative;
     transition: background 0.12s ease, border-color 0.12s ease;
   }
-  #topicsPane input[type=checkbox]:hover, #statsPane input[type=checkbox]:hover { border-color: var(--text); }
-  #topicsPane input[type=checkbox]:checked, #statsPane input[type=checkbox]:checked,
-  #topicsPane input[type=checkbox]:indeterminate, #statsPane input[type=checkbox]:indeterminate {
+  #topicsPane input[type=checkbox]:hover, #settingsPane input[type=checkbox]:hover, #statsPane input[type=checkbox]:hover { border-color: var(--text); }
+  #topicsPane input[type=checkbox]:checked, #settingsPane input[type=checkbox]:checked, #statsPane input[type=checkbox]:checked,
+  #topicsPane input[type=checkbox]:indeterminate, #settingsPane input[type=checkbox]:indeterminate, #statsPane input[type=checkbox]:indeterminate {
     background: var(--text); border-color: var(--text);
   }
-  #topicsPane input[type=checkbox]:checked::after, #statsPane input[type=checkbox]:checked::after {
+  #topicsPane input[type=checkbox]:checked::after, #settingsPane input[type=checkbox]:checked::after, #statsPane input[type=checkbox]:checked::after {
     content: ''; position: absolute; left: 5px; top: 1px; width: 5px; height: 9px;
     border: solid var(--bg); border-width: 0 2px 2px 0; transform: rotate(45deg);
   }
-  #topicsPane input[type=checkbox]:indeterminate::after, #statsPane input[type=checkbox]:indeterminate::after {
+  #topicsPane input[type=checkbox]:indeterminate::after, #settingsPane input[type=checkbox]:indeterminate::after, #statsPane input[type=checkbox]:indeterminate::after {
     content: ''; position: absolute; left: 3px; top: 7px; width: 10px; height: 2px; background: var(--bg);
   }
+  /* Settings pane is a single flat column of toggles, not the two-column
+     Topics/Questions grid -- .settingsList just stacks each checkLabel
+     with breathing room, reusing the same checkbox look defined above. */
+  .settingsList { display: flex; flex-direction: column; gap: 18px; max-width: 560px; }
 
   /* ---- Stats pane ---- */
   /* The pane itself should never need to scroll as a whole -- .statsMain
@@ -2127,7 +2139,8 @@
            the generic .navItem dispatch (which no-ops when activePane is
            already 'play', exactly the case this needs to still act on). -->
       <button type="button" class="navItem" id="navMistakesBtn">Mistakes</button>
-      <button type="button" class="navItem" id="navTopicsBtn" data-pane="topics">Topic and Question Selection</button>
+      <button type="button" class="navItem" id="navTopicsBtn" data-pane="topics">Topics & Question Types</button>
+      <button type="button" class="navItem" id="navSettingsBtn" data-pane="settings">Settings</button>
       <button type="button" class="navItem" id="navStatsBtn" data-pane="stats">Stats</button>
       <button type="button" class="navItem" id="navFeedbackBtn" data-pane="feedback">Feedback</button>
       <!-- A fixed row IN the nav list (not pushed to the sidebar's own
@@ -2282,7 +2295,7 @@
       </section>
 
       <section class="pane hidden" id="topicsPane">
-        <h2 class="paneHeading">Topic and Question Selection</h2>
+        <h2 class="paneHeading">Topics & Question Types</h2>
         <div class="topicsGrid">
           <div class="topicsCol">
             <div class="paneSectionLabel">Question Types</div>
@@ -2295,15 +2308,20 @@
             <div class="paneSectionLabel modeLabel">Mode</div>
             <label class="checkLabel"><input type="checkbox" id="practiceModeCb"> Practice</label>
             <p class="modeDescription" id="modeDescription"></p>
-            <div class="paneSectionLabel">Display</div>
-            <label class="checkLabel"><input type="checkbox" id="showReactionNameToggle" checked> Show reaction name</label>
-            <label class="checkLabel"><input type="checkbox" id="includeByproductsToggle"> Include non-organic byproducts (HCl, H2O, CO2) for condensation reactions</label>
-            <label class="checkLabel"><input type="checkbox" id="tagAutocompleteToggle" checked> Show autocomplete suggestions for reagent/condition guesses</label>
           </div>
           <div class="topicsCol">
             <div class="paneSectionLabel">Topics</div>
             <div id="pickerBlock"></div>
           </div>
+        </div>
+      </section>
+
+      <section class="pane hidden" id="settingsPane">
+        <h2 class="paneHeading">Settings</h2>
+        <div class="settingsList">
+          <label class="checkLabel"><input type="checkbox" id="showReactionNameToggle"> Show reaction name</label>
+          <label class="checkLabel"><input type="checkbox" id="includeByproductsToggle"> Include non-organic byproducts (HCl, H2O, CO2) for condensation reactions</label>
+          <label class="checkLabel"><input type="checkbox" id="tagAutocompleteToggle" checked> Show autocomplete suggestions for reagent/condition guesses</label>
         </div>
       </section>
 
@@ -7820,24 +7838,19 @@ var MB_TUTORIAL_STORAGE_KEY = "h2ChemDrill.mbTutorialSeen.v1";
 // Steps run through the SAME generic engine every other tutorial in this
 // app uses now (see window.__runTutorial, defined in the app-logic
 // script -- this block just calls it, same cross-script-block bridge
-// every other window.__ export in this file already uses). Two of the
-// six steps are real gates (waitForClick) rather than a plain "click
-// Next to continue" -- placing an atom and hitting Add to answer are the
-// two actions someone actually has to perform to use this tool at all,
-// so making the tour itself require them once is a better teacher than
-// just describing them.
+// every other window.__ export in this file already uses). Down to 3
+// steps (was 6, with only 2 real gates) -- the middle "how to edit" step
+// is reference material someone skims once and mostly ignores after, so
+// it's one dense card instead of three thin ones each demanding its own
+// Next click; placing an atom and hitting Add to answer are the two
+// things you actually can't use this tool without doing, so those stay
+// real gates (waitForClick) rather than "click Next to continue".
 var MB_TUTORIAL_STEPS = [
-  { title: "Pick a tool", body: "Choose an atom, bond, or group from the list on the left.",
-    target: function(){ return document.getElementById("mbAtomCatalog"); } },
-  { title: "Place an atom", body: "Click anywhere on the canvas to place it.",
+  { title: "Place an atom", body: "Click anywhere on the canvas to drop a carbon there — or pick a different atom, group, or a benzene ring from the panel on the left first.",
     target: function(){ return document.getElementById("mbSvg"); }, waitForClick: true, actionHint: "Click the canvas to place an atom" },
-  { title: "Grow from there", body: "Hover an atom to see its open slots.<br>Click a slot to add another atom there.",
+  { title: "Editing", body: "Hover an atom to see its open slots, and click one to grow from there. Click anything to select it — <span class=\"tutorialKey\">Backspace</span> deletes it, <span class=\"tutorialKey\">1</span>/<span class=\"tutorialKey\">2</span>/<span class=\"tutorialKey\">3</span> sets a bond's order, dragging moves it, and <span class=\"tutorialKey\">Shift</span>-click adds more to the selection. To bond two atoms together, select one and press <span class=\"tutorialKey\">C</span>, then click the other.",
     target: function(){ return document.getElementById("mbSvg"); } },
-  { title: "Select &amp; edit", body: "Click an atom or bond to select it.<br>To delete it, press <span class=\"tutorialKey\">Backspace</span>.<br>To change a bond's order, press <span class=\"tutorialKey\">1</span>, <span class=\"tutorialKey\">2</span>, or <span class=\"tutorialKey\">3</span>.",
-    target: function(){ return document.getElementById("mbSvg"); } },
-  { title: "Move &amp; connect", body: "Drag an atom or bond to move it.<br>Hold <span class=\"tutorialKey\">Shift</span> and click to select more than one.<br>To connect two atoms: select one, press <span class=\"tutorialKey\">C</span>, then click the other.",
-    target: function(){ return document.getElementById("mbSvg"); } },
-  { title: "You're set", body: "Happy with your molecule?<br>Click <b>Add to answer</b> to submit it.",
+  { title: "Add to answer", body: "Once the molecule looks right, click <b>Add to answer</b>.",
     target: function(){ return document.getElementById("mbAddBtn"); }, waitForClick: true, actionHint: "Click Add to answer to finish" }
 ];
 function openMbTutorial(){ if(window.__runTutorial) window.__runTutorial(MB_TUTORIAL_STEPS); }
@@ -8764,7 +8777,7 @@ var POOL = [
     gen:function(d){ return generateAlkylbenzene(1+Math.floor(Math.random()*3)); },
     run:function(mol){ return op.sideChainOxidationToBenzoicAcid(mol); } },
   { id:'tertButylbenzeneOxidation', label:'Side-chain oxidation of tert-butylbenzene', topic:'Arenes',
-    reagentText:'Hot, acidified KMnO4(aq)', tags: ['Hot, acidified KMnO4(aq)'], mode:'single',
+    reagentText:'KMnO4(aq), H2SO4(aq), heat', tags: ['KMnO4(aq)', 'H2SO4(aq)', 'heat'], mode:'single',
     explanation:'tert-Butylbenzene\'s benzylic carbon has no H of its own to remove, so hot acidified KMnO4 has nothing to oxidise -- no reaction.',
     gen:function(d){ return generateTertButylbenzene(); },
     run:function(mol){ return op.sideChainOxidationToBenzoicAcid(mol); } },
@@ -10047,9 +10060,16 @@ function revealTagAnswer(){
   var isCorrect = acceptableCombos.some(function(c){ return tagsMatchForGrading(reagentGuessTags, c); });
   var matchedCombo = bestMatchingTagCombo(reagentGuessTags, acceptableCombos);
   var submittedLower = new Set(reagentGuessTags.map(function(t){ return t.toLowerCase(); }));
+  // Just the tags actually left out -- NOT matchedCombo as a whole-combo
+  // fallback when `missing` comes back empty. That case is real and
+  // common: every required tag was submitted correctly, but an extra
+  // WRONG tag was also added (so `isCorrect` is still false, since
+  // grading needs an exact set match) -- nothing is actually missing
+  // then, so the ghost row should show nothing, not silently duplicate
+  // the tags already sitting there marked correct.
   var missing = matchedCombo.filter(function(t){ return !submittedLower.has(t.toLowerCase()); });
 
-  revealMissingTags = isCorrect ? [] : (missing.length ? missing : matchedCombo);
+  revealMissingTags = isCorrect ? [] : missing;
 
   renderTagBox(); // `revealed` is already true by now -- repaints every submitted chip with tagCorrect/tagWrong instead of tagInvalid, and appends revealMissingTags as ghost chips
   renderReagentAnswerNote(matchedCombo, acceptableCombos);
@@ -10850,12 +10870,28 @@ function reactantCandidateMatchesGiven(candidateMol){
     var s = specsToTry[i];
     for(var j=0;j<candidates.length;j++){
       var cand = candidates[j];
-      var r;
-      try { r = s.run(cand, current.reactant); }
-      catch(e){ continue; }
-      if(!r) continue;
-      var items = r.occurs ? computeCorrectAnswerSet(s, r).items : [{ kind:'chain', mol:cand }];
-      if(engineMod.productSetEqual(items, givenItems)) return true;
+      // The WHOLE per-candidate check is speculative -- this is "does
+      // running some sibling spec's run() on a candidate the student
+      // never intended for it happen to reproduce the given product,"
+      // not a real question about that candidate. A wrong-shaped
+      // candidate can make a sibling's run() succeed (no throw) but
+      // still come back mismatched against its OWN declared spec.mode --
+      // e.g. a 'fragments'-mode spec whose underlying rule-engine call
+      // chains through a transform that never hits a terminal
+      // `.products`/`.variants` result, leaving `result.products`
+      // undefined -- so computeCorrectAnswerSet's mode==='fragments'
+      // branch (`items: result.products`) and the productSetEqual call
+      // right after both need to be inside this try too, not just
+      // s.run() itself: either one throwing here just means "not a
+      // match," never a real error, since a genuinely correct candidate
+      // run through its OWN intended spec always produces a
+      // shape-consistent result.
+      try {
+        var r = s.run(cand, current.reactant);
+        if(!r) continue;
+        var items = r.occurs ? computeCorrectAnswerSet(s, r).items : [{ kind:'chain', mol:cand }];
+        if(engineMod.productSetEqual(items, givenItems)) return true;
+      } catch(e){ continue; }
     }
   }
   return false;
@@ -12850,7 +12886,12 @@ var questionTypes = { product:true, reactant:true, reagent:true, distinguish:tru
 // spec.byproductSpecies and computeCorrectAnswerSet. Off by default so
 // existing question difficulty/behaviour is unchanged unless turned on.
 var includeInorganicByproducts = false;
-var showReactionName = true;
+// Off by default -- the reaction name gives away which chapter this is,
+// which is often most of the actual puzzle, and most students never
+// noticed there was a toggle to turn it off in the first place (see
+// Settings' own tutorial step). A returning student's own saved choice
+// (loadSettings, just below) always wins over this default either way.
+var showReactionName = false;
 var showAutocompleteSuggestions = true;
 function buildSettingsSnapshot(){
   return {
@@ -13606,10 +13647,11 @@ wireQtypeCheckbox('distinguish', 'qtypeDistinguish');
 // dark card (#paneCard); switching just slides the outgoing pane away and
 // the incoming one into place (see the transform/opacity choreography
 // below) instead of navigating anywhere.
-var PANE_ORDER = ['play', 'topics', 'stats', 'feedback'];
+var PANE_ORDER = ['play', 'topics', 'settings', 'stats', 'feedback'];
 var PANE_EL = {
   play: document.getElementById('playPane'),
   topics: document.getElementById('topicsPane'),
+  settings: document.getElementById('settingsPane'),
   stats: document.getElementById('statsPane'),
   feedback: document.getElementById('feedbackPane')
 };
@@ -13619,8 +13661,12 @@ var PANE_INFO = {
     desc: 'Answer procedurally generated reaction questions — guess the product, the starting material, the reagents and conditions, or run a distinguishing test. Build a molecule, submit your answer, and reveal the correct one to see how you did.'
   },
   topics: {
-    title: 'Topic and Question Selection',
+    title: 'Topics & Question Types',
     desc: 'Choose which question types show up, and which topics and reactions they’re drawn from. Turn on Practice to weight questions toward the ones you’ve gotten wrong most often, regardless of the Topics selection.'
+  },
+  settings: {
+    title: 'Settings',
+    desc: 'Display and behaviour options for how a question is shown and answered.'
   },
   stats: {
     title: 'Stats',
@@ -13873,8 +13919,17 @@ function tutorialResolveVisibleTarget(step){
 function tutorialUiScale(){
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
 }
+// Set once the student actually drags the card (see the pointerdown
+// handler below), cleared again on every new step (tutorialEnterStep)
+// and whenever a tour starts fresh (__runTutorial) -- while it's true,
+// tutorialPlaceCard leaves the card exactly where it was dropped instead
+// of auto-repositioning it back onto the target, which is the whole
+// point of letting it be dragged in the first place: a card that snaps
+// back on the next resize or step-render was never really movable.
+var tutorialCardDragged = false;
 function tutorialPlaceCard(targetRect){
   var card = document.getElementById('tutorialCard');
+  if(tutorialCardDragged) return;
   var margin = 16;
   var uiScale = tutorialUiScale();
   var vw = window.innerWidth / uiScale, vh = window.innerHeight / uiScale;
@@ -13957,6 +14012,7 @@ function tutorialRenderCard(isNewGround){
 }
 function tutorialEnterStep(i){
   if(tutorialState.cleanupClick){ tutorialState.cleanupClick(); tutorialState.cleanupClick = null; }
+  tutorialCardDragged = false; // fresh step, fresh target -- let it auto-place again
   var isNewGround = i >= tutorialState.maxIndexReached;
   tutorialState.maxIndexReached = Math.max(tutorialState.maxIndexReached, i);
   tutorialState.index = i;
@@ -13995,6 +14051,50 @@ document.getElementById('tutorialBack').addEventListener('click', function(){
   if(tutorialState && tutorialState.index>0) tutorialEnterStep(tutorialState.index-1);
 });
 document.getElementById('tutorialNext').addEventListener('click', tutorialAdvance);
+// Drag the card by its own body (anywhere that isn't a button/link) so a
+// student can pull it off whatever it's covering -- the spotlight ring
+// stays put on the real target either way, only the card itself moves.
+// Pointer Events (not mouse/touch separately) so this works the same on
+// a trackpad click-drag or a touchscreen drag with one handler. Position
+// is tracked in the SAME unscaled (divided-by---ui-scale) coordinate
+// space tutorialPlaceCard already writes in, so a drag mid-tour and the
+// next step's auto-placement never disagree about what a "pixel" means.
+(function(){
+  var card = document.getElementById('tutorialCard');
+  var dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+  card.addEventListener('pointerdown', function(ev){
+    if(ev.target.closest('button, a')) return; // let Skip/Back/Next/action-hint clicks through untouched
+    var uiScale = tutorialUiScale();
+    var r = card.getBoundingClientRect();
+    dragging = true;
+    startX = ev.clientX; startY = ev.clientY;
+    startLeft = r.left/uiScale; startTop = r.top/uiScale;
+    card.style.transform = 'none';
+    card.style.left = startLeft+'px'; card.style.top = startTop+'px';
+    card.classList.add('dragging');
+    try{ card.setPointerCapture(ev.pointerId); }catch(e){}
+  });
+  card.addEventListener('pointermove', function(ev){
+    if(!dragging) return;
+    var uiScale = tutorialUiScale();
+    var vw = window.innerWidth/uiScale, vh = window.innerHeight/uiScale;
+    var margin = 8;
+    var left = startLeft + (ev.clientX-startX)/uiScale;
+    var top = startTop + (ev.clientY-startY)/uiScale;
+    left = Math.max(margin, Math.min(left, vw-card.offsetWidth-margin));
+    top = Math.max(margin, Math.min(top, vh-card.offsetHeight-margin));
+    card.style.left = left+'px'; card.style.top = top+'px';
+    tutorialCardDragged = true;
+  });
+  function endDrag(ev){
+    if(!dragging) return;
+    dragging = false;
+    card.classList.remove('dragging');
+    try{ card.releasePointerCapture(ev.pointerId); }catch(e){}
+  }
+  card.addEventListener('pointerup', endDrag);
+  card.addEventListener('pointercancel', endDrag);
+})();
 window.__runTutorial = function(steps, onFinish){
   if(tutorialState && tutorialState.cleanupClick) tutorialState.cleanupClick();
   tutorialState = { steps: steps, index: 0, onFinish: onFinish || null, cleanupClick: null, maxIndexReached: -1 };
@@ -14036,19 +14136,17 @@ function startTutorialDistinguishSet(){
   showPracticeMode('distinguish');
   renderDistinguishSet();
 }
-// The 3 "how did I do" beats (product/reactant/reagent) all point at the
-// same #answerBlock and say almost the same thing regardless of the actual
-// verdict -- a shared factory instead of 3 near-duplicate literals, since
-// this always runs AFTER a real Submit now (see PLAY_TUTORIAL_STEPS' own
-// comment on why there's no more seeded fake answer to react to).
-// includeReportMention only fires once (the first, product-mode occurrence)
-// -- repeating the same "you can report a bad question" aside 3 times in
-// one tour was exactly the kind of redundancy this rewrite was trying to
-// cut.
-function tutorialExplainResultStep(title, includeReportMention){
-  var body = 'Green = right. Red = wrong.<br>Missed one? Look for the “ghost” card.';
-  if(includeReportMention) body += '<br><br>Question seems off? Tap “Mistake in the question?”';
-  return { title: title, body: body, target: function(){ return document.getElementById('answerBlock'); } };
+// How grading looks is explained exactly ONCE, right after the first real
+// Submit (product mode) -- reactant and reagent questions later in this
+// tour grade on the same #answerBlock the same way, so re-explaining it
+// each time would just be the same card shown three times with a
+// different verdict. This step's body pairs the mini "screenshot" below
+// with that one explanation.
+function tutorialGradingStep(){
+  var body = tutorialGradingPreviewHtml() +
+    'Green’s right, red’s wrong -- and if you missed one, a faint outlined “ghost” card marks it. ' +
+    'If a question looks broken, “Mistake in the question?” reports it.';
+  return { title: 'Checking your answer', body: body, target: function(){ return document.getElementById('answerBlock'); } };
 }
 // The "How grading works" step's own two mini "screenshots" -- a real
 // molecule snapshot (generateAlcohol([1]), same one for both, its own
@@ -14074,8 +14172,8 @@ function tutorialGradingPreviewHtml(){
 // Runs whether the Play tour finished naturally or was skipped partway --
 // either way, whatever demo question it left behind needs replacing with a
 // genuine one before the student is handed control back, and the molecule
-// builder (possibly still open and lock*ed* mid "try building something",
-// see the tour's own step below) needs releasing so Skip can never strand
+// builder (possibly still open and lock*ed* mid "Build it", see that
+// step's own onEnter below) needs releasing so Skip can never strand
 // someone inside a builder they can't close.
 function tutorialRestorePlayState(){
   window.__mbCloseLocked = false;
@@ -14086,65 +14184,88 @@ function tutorialRestorePlayState(){
 }
 
 // One flat array, not a nested/resumable tutorial -- the "play builder
-// tutorial" section (see the "try building something" step below) is
-// literally window.__MB_TUTORIAL_STEPS spliced straight in via .concat,
-// reusing the exact same step objects the molecule builder's own "?"
-// button runs (see MB_TUTORIAL_STEPS in the molecule-builder script
-// block). Its own last step (waitForClick on Add to answer) is what
-// naturally carries this tour on to "How grading works" once a real
-// molecule has actually been submitted -- no separate resume/callback
+// tutorial" section is literally window.__MB_TUTORIAL_STEPS spliced
+// straight in via .concat, reusing the exact same step objects the
+// molecule builder's own "?" button runs (see MB_TUTORIAL_STEPS in the
+// molecule-builder script block). Its own last step (waitForClick on Add
+// to answer) is what naturally carries this tour on to Submit once a
+// real molecule has actually been built -- no separate resume/callback
 // machinery needed, since it's all one tutorialState under the hood.
+//
+// Cut from 19 steps to 13 in the rewrite that added this comment, mostly
+// by removing steps that only ever said "click Next to continue" with no
+// real action attached (a merged "Welcome"+"Read the question" opener, a
+// dropped "Your sandbox" filler card, grading explained once instead of
+// three times) and by making most of the rest -- 7 of the 13 -- into
+// real gates (waitForClick on the actual button) instead of narration.
+// A step you have to act on to pass teaches better than one you just
+// dismiss. The 2 short "How'd that go?"/"Same idea" pauses are the
+// deliberate exception -- NOT gates, and each sits right after a
+// waitForClick step whose own onEnter, one step later, would otherwise
+// overwrite the just-graded result (a new demo question, or a whole
+// pane switch) before the student ever got to actually look at it. See
+// each one's own comment below.
 var PLAY_TUTORIAL_STEPS = [
-  { title: 'Welcome!', body: 'Guess reactions.<br>New molecules, every time.',
+  { title: 'Guess the product', body: 'You’re given a molecule and asked something about its reaction — here, the product. Every question is freshly generated, so you won’t see the same one twice.',
+    target: function(){ return document.getElementById('equationRow'); },
     // Spotlights whatever question is already on screen a moment from now --
     // if that happened to be a Distinguishing Test (Play's 4th question
     // type, its own separate panel), swap to a real reaction question first
     // so #equationRow/#buildControlsRow actually exist to point at.
-    onEnter: function(){ if(currentPracticeMode!=='reaction'){ showPracticeMode('reaction'); generateQuestion(); } } },
-  { title: 'Read the question', body: 'Figure out the <b>product</b> of this reaction.',
-    target: function(){ return document.getElementById('equationRow'); },
-    onEnter: function(){ startTutorialQuestion('oxidationPrimaryAlcoholToCarboxylicAcid', 'product', function(){ return generateAlcohol([2]); }); } },
-  { title: 'Build it', body: 'Press <b>Build Molecule</b> to answer.',
+    onEnter: function(){
+      if(currentPracticeMode!=='reaction'){ showPracticeMode('reaction'); generateQuestion(); }
+      startTutorialQuestion('oxidationPrimaryAlcoholToCarboxylicAcid', 'product', function(){ return generateAlcohol([2]); });
+    } },
+  { title: 'Build it', body: 'Click <b>Build Molecule</b> to construct your answer.',
     target: function(){ return document.getElementById('buildBtn'); }, waitForClick: true, actionHint: 'Click Build Molecule',
     // Marking the builder's OWN tutorial seen here, just before the real
     // click, is what stops window.__openMoleculeBuilder's first-open auto-
     // trigger from ALSO firing an instant later and clobbering this very
-    // tutorial's state -- see its own comment.
-    onEnter: function(){ try{ localStorage.setItem(window.__MB_TUTORIAL_STORAGE_KEY, '1'); }catch(e){} } },
-  { title: 'Your sandbox', body: 'Build any molecule you like.<br>Give it a try!',
-    // Locks the molecule builder's own close (X) button so a first-timer
-    // can't back out without actually submitting one -- see
+    // tutorial's state -- see its own comment. Locking the builder's close
+    // (X) button here too, so a first-timer can't back out of the modal
+    // that's about to open without actually submitting something -- see
     // window.__mbCloseLocked's own comment in the molecule-builder script.
-    onEnter: function(){ window.__mbCloseLocked = true; } }
+    onEnter: function(){
+      try{ localStorage.setItem(window.__MB_TUTORIAL_STORAGE_KEY, '1'); }catch(e){}
+      window.__mbCloseLocked = true;
+    } }
 ].concat(window.__MB_TUTORIAL_STEPS).concat([
-  // Submit comes IMMEDIATELY after Add to answer -- grading is only
-  // explained once the student has actually submitted something real, not
-  // as a hypothetical preview beforehand (see tutorialGradingPreviewHtml's
-  // own step, right after this one). Unlocking the builder's close button
-  // here too, now that the guided "you must submit something" segment is
-  // over (the builder is already closed for real by this point -- Add to
-  // answer's own click handler always closes it -- this is just the
-  // matching release for the lock above).
-  { title: 'Submit', body: 'Press <b>Submit</b> to check your answer.',
+  // Unlocking the builder's close button here, now that the guided "you
+  // must submit something" segment is over -- the builder is already
+  // closed for real by this point (Add to answer's own click handler
+  // always closes it), this is just the matching release for the lock
+  // set back in "Build it" above.
+  { title: 'Submit', body: 'Click <b>Submit</b> to check it.',
     target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Click Submit',
     onEnter: function(){ window.__mbCloseLocked = false; } },
-  { title: 'Grading', body: tutorialGradingPreviewHtml(),
-    target: function(){ return document.getElementById('answerBlock'); } },
-  tutorialExplainResultStep('Result', true),
-  { title: 'Guess the reactant', body: 'You can also be asked for the <b>starting material</b> instead.<br>Build it the same way, then submit.',
+  tutorialGradingStep(),
+  { title: 'Guess the reactant', body: 'Sometimes it’s reversed — you’re given the product and asked for the starting material. Same process: build it, then submit.',
     target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Build a molecule, then press Submit',
     onEnter: function(){ startTutorialQuestion('dehydrationOfAlcohols', 'reactant', function(){ return generateAlcohol([2]); }); } },
-  tutorialExplainResultStep('Result', false),
-  { title: 'Reagents & conditions', body: 'Sometimes you’ll guess the <b>reagents and conditions</b> instead.<br>Type one below.',
-    target: function(){ return document.getElementById('tagTextInput'); },
+  // A plain pause, not another waitForClick -- the PREVIOUS step's click
+  // already submitted a real answer, and tutorialAdvance() fires in that
+  // same synchronous click handler, right after the real Submit handler
+  // grades it. Without a step landing here in between, the very next
+  // onEnter (starting the reagent demo question below) would overwrite
+  // `current` and re-render before the graded result ever got a chance
+  // to be seen -- this step is what actually stops that: no onEnter of
+  // its own, so the just-revealed result just sits there, untouched,
+  // until the student clicks Next themselves.
+  { title: 'How’d that go?', body: 'Take a look at the result above, then continue whenever you’re ready.',
+    target: function(){ return document.getElementById('answerBlock'); } },
+  { title: 'Reagents & conditions', body: 'Other questions ask for the reagents and conditions instead. Type one into the box below, then submit.',
+    target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Type a reagent/condition, then press Submit',
     onEnter: function(){ startTutorialQuestion('alcoholToBromoalkane', 'reagent', function(){ return generateAlcohol([2]); }); } },
-  { title: 'Your turn', body: 'Type a reagent, then press <b>Submit</b>.',
-    target: function(){ return document.getElementById('submitAnswerBtn'); }, waitForClick: true, actionHint: 'Type a reagent/condition, then press Submit' },
-  tutorialExplainResultStep('Result', false),
-  { title: 'Distinguishing tests', body: 'The last question type: describe a test that tells similar compounds apart.',
+  // Same reasoning as the pause step above -- the Distinguishing Tests
+  // step right after this one switches the whole pane via onEnter
+  // (showPracticeMode('distinguish')), which would otherwise blow away
+  // this result the instant Submit is clicked.
+  { title: 'Same idea', body: 'Check your result, then continue whenever you like.',
+    target: function(){ return document.getElementById('answerBlock'); } },
+  { title: 'Distinguishing tests', body: 'One more type: describe a test that would tell similar compounds apart.',
     target: function(){ return document.getElementById('distinguishRevealBtn'); }, waitForClick: true, actionHint: 'Click Reveal answers',
     onEnter: function(){ startTutorialDistinguishSet(); } },
-  { title: 'All set!', body: 'That’s everything!<br>Press <b>?</b> anytime you need this again.',
+  { title: 'Done', body: 'Click the <b>?</b> button any time you want to see this again.',
     target: function(){ return document.getElementById('tutorialHelpBtn'); } }
 ]);
 
@@ -14154,9 +14275,16 @@ var TOPICS_TUTORIAL_STEPS = [
   { title: 'Practice mode', body: 'Turning this on weights questions toward the reactions you’ve gotten wrong most often, instead of picking evenly at random.',
     target: function(){ return document.getElementById('practiceModeCb'); } },
   { title: 'Topics', body: 'Switch entire chapters, or individual reactions within them, on or off — only enabled ones are drawn from.',
-    target: function(){ return document.getElementById('pickerBlock'); } },
-  { title: 'Display options', body: 'These control whether the reaction name is shown up front, whether inorganic byproducts (H2O, HCl, CO2) need to be added to condensation answers, and whether reagent typing gets autocomplete suggestions.',
-    target: function(){ return document.querySelector('.topicsCol'); } }
+    target: function(){ return document.getElementById('pickerBlock'); } }
+];
+
+var SETTINGS_TUTORIAL_STEPS = [
+  { title: 'Reaction name', body: 'Off by default — showing it up front gives away which chapter\'s reaction this is, which is often most of the puzzle. Turn it on if you\'d rather always see it.',
+    target: function(){ return document.getElementById('showReactionNameToggle').closest('.checkLabel'); } },
+  { title: 'Byproducts', body: 'When on, a condensation reaction\'s answer also needs its small inorganic byproduct (H2O, HCl, CO2) added, not just the main organic product.',
+    target: function(){ return document.getElementById('includeByproductsToggle').closest('.checkLabel'); } },
+  { title: 'Autocomplete', body: 'Suggests known reagent/condition tags as you type a guess. Turn it off if you\'d rather type from memory with no hints.',
+    target: function(){ return document.getElementById('tagAutocompleteToggle').closest('.checkLabel'); } }
 ];
 
 var STATS_TUTORIAL_STEPS = [
@@ -14192,6 +14320,7 @@ function runPaneTutorial(){
   if(mistakesModeActive){ window.__runTutorial(MISTAKES_TUTORIAL_STEPS); return; }
   if(activePane==='play'){ window.__runTutorial(PLAY_TUTORIAL_STEPS, tutorialRestorePlayState); return; }
   if(activePane==='topics'){ window.__runTutorial(TOPICS_TUTORIAL_STEPS); return; }
+  if(activePane==='settings'){ window.__runTutorial(SETTINGS_TUTORIAL_STEPS); return; }
   if(activePane==='stats'){ window.__runTutorial(STATS_TUTORIAL_STEPS); return; }
   if(activePane==='feedback'){ window.__runTutorial(FEEDBACK_TUTORIAL_STEPS); return; }
 }
@@ -14200,16 +14329,18 @@ document.getElementById('tutorialHelpBtn').addEventListener('click', runPaneTuto
 // Shown automatically the FIRST time the app is ever opened on this device,
 // exactly the same "once, then only on request" pattern the molecule
 // builder's own tutorial already uses (see MB_TUTORIAL_STORAGE_KEY) -- the
-// intro is identical to the Play pane's own tutorial, per spec.
+// intro is identical to the Play pane's own tutorial, per spec. Actually
+// FIRED much further down, right after the boot-time nextQuestion() call
+// -- see that call's own comment for why the ordering matters.
 var TUTORIAL_INTRO_SEEN_KEY = 'h2ChemDrill.tutorialIntroSeen.v1';
-(function(){
+function showIntroTutorialIfUnseen(){
   var seen = false;
   try{ seen = localStorage.getItem(TUTORIAL_INTRO_SEEN_KEY)==='1'; }catch(e){ /* storage unavailable -- treat as never seen */ }
   if(!seen){
     try{ localStorage.setItem(TUTORIAL_INTRO_SEEN_KEY, '1'); }catch(e){ /* storage unavailable -- just won't persist across sessions */ }
     window.__runTutorial(PLAY_TUTORIAL_STEPS, tutorialRestorePlayState);
   }
-})();
+}
 
 // ---- optional cloud sync (Firebase) ----
 // localStorage stays the source of truth for THIS device and keeps
@@ -14588,7 +14719,20 @@ renderStats();
   });
 })();
 
+// nextQuestion() MUST run before showIntroTutorialIfUnseen() -- it picks
+// randomly among enabled question types (including Distinguishing Test,
+// its own separate panel), and the intro tutorial's own first step only
+// fixes up "wrong panel showing" via its onEnter, not "no question is
+// on screen at all yet" (this used to run the other way around, with
+// the tutorial auto-firing BEFORE nextQuestion() ever ran once -- so on
+// a real first visit, this same nextQuestion() call, still unconditional,
+// fired a moment later and silently clobbered whatever demo question the
+// tutorial had just carefully set up, sometimes leaving the tutorial
+// card spotlighting a panel that had already been swapped out from under
+// it. Ordering this call first makes that clobbering impossible instead
+// of relying on 1-in-4 odds not to hit it).
 nextQuestion();
+showIntroTutorialIfUnseen();
 })();
 </script>
 

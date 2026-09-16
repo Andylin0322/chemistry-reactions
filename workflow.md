@@ -429,6 +429,251 @@ used to live).
   used. Runs `PLAY_TUTORIAL_STEPS` verbatim, per the spec's explicit
   requirement that the intro be identical to the Play pane's own tutorial.
 
+## Recent work (2026-09-15 session, part 6) -- KMnO4 tag fix + Settings split + reaction-name default
+
+Three requests in one message.
+
+- **`tertButylbenzeneOxidation`'s tag was the one remaining "single blob
+  string" holdout** -- `tags: ['Hot, acidified KMnO4(aq)']`, the same
+  class of bug as last session's "heat under reflux"/"dilute X(aq)"
+  cleanup, just missed then because it wasn't one of the examples given.
+  Every other KMnO4-oxidant entry in the file already uses the split
+  form; this one now matches: `reagentText:'KMnO4(aq), H2SO4(aq), heat'`,
+  `tags: ['KMnO4(aq)', 'H2SO4(aq)', 'heat']`. Patched the matching line
+  in `reagents_conditions_reference.md` too. (Left the Distinguishing
+  Tests family's own "Hot acidified KMnO4(aq), under reflux" text alone
+  -- confirmed via `revealDistinguishAnswers` that `tests[]` strings are
+  pure reveal/display labels, never compared against student input the
+  way a POOL `tags` array is, so there's no equivalence bug to fix there.)
+- **Split "Topic and Question Selection" into two panes**: `#topicsPane`
+  ("Topics & Question Types" -- question-type checkboxes, Practice mode,
+  the Topics picker) and a new `#settingsPane` ("Settings" -- the 3
+  display/behaviour toggles: reaction name, byproducts, autocomplete).
+  New `navSettingsBtn` sidebar entry, `settings` added to
+  `PANE_ORDER`/`PANE_EL`/`PANE_INFO`, its own `.settingsList` CSS (flat
+  column instead of the Topics/Questions two-column grid), and the
+  shared custom-checkbox styling (previously scoped to `#topicsPane`/
+  `#statsPane`) extended to `#settingsPane` too. Split
+  `TOPICS_TUTORIAL_STEPS`'s old 4th "Display options" step (which
+  targeted `.topicsCol` -- now stale, since Display no longer lives
+  there) out into its own `SETTINGS_TUTORIAL_STEPS` (one step per
+  toggle, individually targeted), wired into `runPaneTutorial()`.
+  `topicsChangedSinceLastPlay`'s change-listener stays scoped to
+  `#topicsPane` only, unchanged -- Settings' own toggles affect only how
+  the CURRENT question renders, not which question should come up next,
+  so they correctly no longer force a fresh `nextQuestion()` on return
+  to Play (a small, free side-benefit of the split, not something that
+  needed its own fix).
+- **`showReactionName` now defaults to `false`** (was `true`) -- per the
+  user's own reasoning, most students never discovered the toggle
+  existed, and the name gives away which chapter's reaction it is, which
+  is often most of the actual puzzle. A returning student's own saved
+  choice in `loadSettings()` still always wins over this default; this
+  only changes what a genuinely first-time visitor sees.
+- Verified all three live: confirmed `showReactionNameToggle.checked ===
+  false` and `#qLabel` stays empty across 10 fresh questions on a clean
+  `localStorage.clear()` load; clicked through both new panes' tutorials
+  end to end (3 steps each, correct spotlight target every step); source-
+  confirmed the tag fix. `node engine/test.js` (174/174),
+  `node engine/vetting-agent.js` (70/70), `node scripts/build.js --check`
+  all unaffected -- app.html-only change, no engine/*.js touched.
+
+## Recent work (2026-09-15 session, part 5) -- "can't submit" in reactant mode
+
+User report with a screenshot: a "Guess the starting material" question
+(Acidic hydrolysis of nitriles), a molecule built and sitting in the
+answer area, Submit visually enabled -- clicking it did nothing at all.
+
+Root cause: `reactantCandidateMatchesGiven` (app.html) speculatively
+re-runs every OTHER POOL spec sharing a tag combo with the current one
+against the student's candidate, to check whether some sibling reaction
+happens to reproduce the given product (see its own long comment -- this
+is how "more than one valid starting material" is handled generically).
+The per-candidate try/catch only wrapped `s.run(cand, ...)` itself, not
+the two lines after it. The student's molecule here was amide-shaped
+(has an -NH2 AND a C=O, not the nitrile's C#N), and when tried against
+`esterHydrolysisAcidic` (shares the `H2SO4(aq)`+`heat` tags) that spec's
+rule-engine-backed `run()` matched an unrelated rule and chained through
+it without ever reaching a terminal `.products`/`.variants` result --
+`resolve()`'s own fallback return (`engine/resolve.js:72`) is `{occurs:
+true, product: mol2}`, singular, with no `.products` at all. That's a
+completely legitimate shape for a `mode:'single'` spec but not for
+`esterHydrolysisAcidic`, which is `mode:'fragments'` and expects
+`computeCorrectAnswerSet` to read `result.products` (plural) --
+so `items` came back `undefined`, and `engineMod.productSetEqual`
+(`engine/engine.js:235`) threw on `setA.length` reading `undefined`.
+That exception propagated all the way up through `revealAnswer` into
+the Submit button's own click handler -- uncaught, so the browser just
+silently dropped it (an event-handler exception doesn't interrupt the
+`.click()` call site, so nothing about the click even looked like it
+failed) and the reveal never happened.
+
+Confirmed this exact shape mismatch is a KNOWN, already-solved failure
+mode elsewhere in the same file: `getReagentAcceptableCombos` (the
+identical speculative-sibling-search, just for 'reagent' mode) already
+wraps its ENTIRE per-sibling body in one try/catch, with a comment
+describing this precise scenario almost verbatim ("a 'fragments'-mode
+spec's run silently leaving .products unset for a substrate it wasn't
+designed for ... should just be skipped, the same as one that throws
+outright"). `reactantCandidateMatchesGiven` was just the one place that
+never got the same treatment -- fixed by widening its try/catch to cover
+the full per-candidate check (run + shape extraction + comparison), not
+just the `run()` call, matching the sibling function exactly.
+
+Verified live: reproduced with a hand-built amide candidate (temporary
+debug hooks, removed after) against a real `nitrileHydrolysisAcidic`
+reactant question -- confirmed the exact same uncaught TypeError from
+the stack trace, confirmed it's gone after the fix (answer correctly
+reveals "Not quite", Submit hides, no console error), and confirmed a
+genuinely correct nitrile candidate still grades "Correct" afterward
+(the fix only swallows the speculative sibling's own internal shape
+mismatch, nothing about real grading). `node engine/test.js` (174/174),
+`node engine/vetting-agent.js` (70/70), `node scripts/build.js --check`
+all unaffected -- app.html-only change, no engine/*.js touched.
+
+## Recent work (2026-09-15 session, part 4) -- draggable tutorial card + a real race bug
+
+Two more user-reported tutorial issues, both in the same follow-up:
+(1) the instructions card should always be draggable, so it can be
+pulled off whatever it's obstructing; (2) the "Guess the reactant" step
+moved on before the student could see whether they'd gotten it right.
+
+- **Draggable `.tutorialCard`**: pointerdown/pointermove/pointerup on
+  the card itself (excluding clicks on its own buttons/links) drag it
+  anywhere on screen, clamped to the viewport. A `tutorialCardDragged`
+  flag, set on drag and cleared at the top of `tutorialEnterStep`,
+  makes `tutorialPlaceCard` skip its own auto-placement while set --
+  so a drag sticks for the rest of THAT step (including surviving a
+  window resize) but a fresh auto-placed position is chosen again the
+  moment the student moves to a different step, since the drag was
+  about avoiding THIS step's obstruction, not a permanent preference.
+  The spotlight ring is untouched by any of this -- it always tracks the
+  real target regardless of where the card itself has been dragged to.
+- **Real bug, not just a copy issue**: the "Guess the reactant" (and
+  "Reagents & conditions") complaint traced back to something worse than
+  missing pacing -- removing the "Result" steps in the redundancy pass
+  earlier this session meant the step immediately AFTER each gated
+  Submit called `startTutorialQuestion` again in its own `onEnter`,
+  which overwrites `current` and re-renders synchronously, in the same
+  click-handler tick as the grading that had just happened. There was no
+  frame in between for the graded colors to ever actually be seen.
+  Fixed by re-adding two short, genuinely non-repetitive pause steps
+  ("How'd that go?" / "Same idea" -- deliberately not another full
+  grading explanation, that's still said exactly once) right after the
+  reactant and reagent gated steps, each just `target: #answerBlock`
+  with no `onEnter` of its own -- so the just-revealed result sits there
+  untouched until the student clicks Next themselves. 11 steps -> 13.
+- **Second, independent bug found while testing the above**: the
+  intro tutorial's own auto-trigger (`showIntroTutorialIfUnseen`, the
+  `TUTORIAL_INTRO_SEEN_KEY` check) used to run BEFORE the boot-time
+  `nextQuestion()` call at the very bottom of the script, not after.
+  On a genuine first visit, that meant: tutorial fires, step 1's
+  `onEnter` correctly sets up its deterministic demo question -- then,
+  moments later in the same synchronous boot sequence, the unconditional
+  `nextQuestion()` call ran anyway and silently overwrote it with a
+  random one (sometimes swapping the whole pane to Distinguishing Tests,
+  sometimes swapping guessMode under a still-open "Build it" spotlight),
+  leaving the tutorial card narrating a question that was no longer
+  actually on screen. Reproduced directly (temporary debug hooks calling
+  `showPracticeMode('distinguish')` then the real trigger fn) before
+  fixing it structurally: `nextQuestion()` now always runs FIRST, and
+  `showIntroTutorialIfUnseen()` (the old inline IIFE, pulled out into a
+  named function so it could be moved) runs right after -- exactly the
+  order its own step 1 already assumed ("Spotlights whatever question is
+  already on screen a moment from now"). This was a real, if
+  probabilistic (about 1-in-4 odds per load, whatever `nextQuestion()`
+  happened to roll), first-run bug that predates this session's tutorial
+  rewrite entirely -- not something introduced by it, just uncovered
+  while verifying the fix above.
+- Verified live end-to-end (Browser pane, all 13 steps, dragging tested
+  both on the Play pane's own card and the one spliced in mid-molecule-
+  builder): confirmed the graded result stays visible and untouched at
+  both new pause steps, confirmed the drag survives a step, resets on
+  the next one, and confirmed several fresh `localStorage.clear()` +
+  reload cycles all land on the correct deterministic demo question
+  (previously intermittent). `node engine/test.js` (174/174),
+  `node engine/vetting-agent.js` (70/70), `node scripts/build.js --check`
+  all unaffected -- app.html-only change.
+
+## Recent work (2026-09-15 session, part 3) -- duplicate "missing tag" ghosts
+
+User-reported bug, with a screenshot: after submitting reagent-guess tags
+that included every correct tag PLUS one extra wrong one (e.g. `NaOH(aq)`,
+`K2Cr2O7(aq)`, `heat` for a question whose real answer was just `NaOH(aq)`
++ `heat`), the reveal showed `NaOH(aq)` and `heat` a SECOND time as pale
+"ghost" chips -- as if they'd been missed, when they were sitting right
+there marked correct.
+
+Root cause in `revealTagAnswer()` (app.html): `revealMissingTags =
+isCorrect ? [] : (missing.length ? missing : matchedCombo)`. `missing` is
+already the right thing to show (the matched combo's tags the student
+didn't type) -- but when the student typed every required tag correctly
+and only added an extra WRONG one, the overall answer is still marked
+incorrect (grading needs an exact set match) while `missing` correctly
+comes back empty (nothing was actually left out). The `: matchedCombo`
+fallback then substituted the WHOLE correct combo as ghosts, duplicating
+tags already shown as correct. Fix: `revealMissingTags = isCorrect ? [] :
+missing;` -- drop the fallback entirely, since there's nothing to fall
+back to when nothing is missing. Verified live (temporary debug hooks
+into `generateQuestion`/`revealAnswer`, removed after): reproduced the
+exact scenario from the screenshot (`esterHydrolysisAlkaline`, tags
+`['NaOH(aq)','K2Cr2O7(aq)','heat']`) and confirmed the ghost duplicates
+are gone, then re-checked a genuine miss (`['NaOH(aq)']` alone) still
+correctly ghosts the one real missing tag (`heat`).
+
+## Recent work (2026-09-15 session, part 2) -- tutorial rewrite
+
+User feedback on the interactive tutorial (`window.__runTutorial`, see
+"Interactive tutorial engine" above): too long, too much manual "click
+Next to continue" with no real interaction, and the copy read as
+obviously AI-written. All three addressed by editing content only --
+the generic step-runner engine itself (spotlight, `waitForClick` gating,
+Back/Skip, dots) was already sound and untouched.
+
+- **`MB_TUTORIAL_STEPS`** (molecule builder's own tour, also spliced into
+  the Play tour below): 6 steps -> 3. The 4 non-gated "how to edit" steps
+  (pick a tool / grow from there / select & edit / move & connect) --
+  each just a Next-click with no action required -- collapsed into one
+  reference-style card covering hover-for-slots, click-to-select,
+  Backspace/1/2/3, drag, Shift-click, and the C-to-connect shortcut. The
+  2 real gates (place an atom, Add to answer) stayed gates.
+- **`PLAY_TUTORIAL_STEPS`** (first-run/"?" Play tour): 19 steps -> 11, and
+  gated (waitForClick) steps went from 6/19 (32%) to 7/11 (64%) -- so the
+  tour spends most of its length on "do the real thing" rather than
+  "read this and click Next". Specific cuts: the content-free "Welcome!"
+  card merged into the first real (spotlighted) step instead of being
+  its own click; the "Your sandbox, give it a try!" filler card dropped
+  entirely (its one job -- locking the builder's close button, see
+  `window.__mbCloseLocked` -- moved into "Build it"'s own `onEnter`,
+  scoped so it still only fires on the guided Play-tour path, never the
+  standalone builder "?" tutorial); "Grading" and the first "Result"
+  step merged into one "Checking your answer" card (`tutorialGradingStep`,
+  replacing the old `tutorialExplainResultStep` factory); the 2 later
+  "Result" repeats (after the reactant and reagent demo questions) cut
+  outright -- the concept doesn't change per question type, so a student
+  who's seen it once doesn't need it re-explained twice more; and the
+  reagent question's 2 steps (an info-only card, then a separately gated
+  "Your turn") merged into 1 gated step, matching how the reactant
+  question already worked.
+- **Copy pass, whole tutorial**: dropped the exclamation-point/rhetorical-
+  question/cheerleading voice ("Welcome!", "Your sandbox", "Happy with
+  your molecule?", "That's everything!") in favor of plainer, declarative
+  microcopy with varied sentence shape instead of every card following
+  the identical "**Title** + one bolded imperative fragment" template.
+  No behavior change, text only.
+- Verified live via the Browser pane: cleared `localStorage`, ran the
+  full first-run Play tour click-by-click (Build Molecule -> place an
+  atom -> Add to answer -> Submit -> grading card -> reactant question ->
+  reagent question -> distinguishing test -> Done), confirmed it hands
+  back a real, non-demo question at the end
+  (`tutorialRestorePlayState`), and separately confirmed the standalone
+  molecule-builder "?" tutorial still opens on its own (3 steps) without
+  the close-button lock leaking into that path.
+- `node engine/test.js` (174/174), `node engine/vetting-agent.js`
+  (70/70), and `node scripts/build.js --check` all unaffected -- this is
+  entirely inside app.html's own app-logic script, no `engine/*.js`
+  touched.
+
 ## Recent work (2026-09-15 session) -- question-selection fairness bugs
 
 User report: with only "Guess Reagents & Conditions" enabled in Topic and

@@ -139,8 +139,8 @@ Generated from the app's own `POOL` data (115 reactions across 9 topics), for re
 - **Primary correct answer:** `KMnO4(aq), NaOH(aq), heat, H2SO4(aq)`
 
 ### Side-chain oxidation of tert-butylbenzene
-- **Reagents/Conditions shown to the student:** Hot, acidified KMnO4(aq)
-- **Primary correct answer:** `Hot, acidified KMnO4(aq)`
+- **Reagents/Conditions shown to the student:** KMnO4(aq), H2SO4(aq), heat
+- **Primary correct answer:** `KMnO4(aq), H2SO4(aq), heat`
 
 ## Halogen Derivatives
 
